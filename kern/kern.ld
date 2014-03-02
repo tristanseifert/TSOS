@@ -17,13 +17,8 @@ SECTIONS {
 		*(.rodata*);
 	}
 
-/*	.modules ALIGN(4K) : AT(ADDR(.modules) - 0xC0000000) {
+	.modules : AT(ADDR(.modules) - 0xC0000000) {
 		__kern_initcalls = .;
-		*(.initcall0*);
-		*(.initcall1*);
-		*(.initcall4*);
-		*(.initcall5*);
-		*(.initcall6*);
 		*(.initcall*);
 		BYTE(0x00); BYTE(0x00); BYTE(0x00); BYTE(0x00);
 
@@ -32,7 +27,7 @@ SECTIONS {
 		BYTE(0x00); BYTE(0x00); BYTE(0x00); BYTE(0x00);
 
 		__kern_callsend = .;
-	}*/
+	}
 }
 
 /*

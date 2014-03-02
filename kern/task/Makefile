@@ -1,5 +1,5 @@
-MODULE=runtime
-SOURCES=std.c error.c
+MODULE=task
+SOURCES=systimer.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)

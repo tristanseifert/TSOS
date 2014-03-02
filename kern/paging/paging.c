@@ -1,17 +1,21 @@
 #import <types.h>
 
-#import "kheap.h"
 #import "paging.h"
+#import "x86_pc/multiboot.h"
+#import "runtime/error.h"
  
 extern uint32_t __kern_size, __kern_bss_start, __kern_bss_size;
 
 uint32_t pages_total, pages_wired;
 static uint32_t previous_directory;
 
+// Multiboot struct: Used to get memory info
+extern multiboot_info_t *x86_multiboot_info;
+
 // Maps a memory section enum entry to a range
 static uint32_t section_to_memrange[6][2] = {
 	{0x00000000, 0x00000000}, // kMemorySectionNone
-	{0x00000000, 0x7FFFFFFF}, // kMemorySectionProcess
+	{0x00800000, 0x7FFFFFFF}, // kMemorySectionProcess
 	{0x80000000, 0xBFFFFFFF}, // kMemorySectionSharedLibraries
 	{0xC0000000, 0xC7FFFFFF}, // kMemorySectionKernel
 	{0xC8000000, 0xCFFFFFFF}, // kMemorySectionKernelHeap
@@ -136,8 +140,8 @@ void free_frame(page_t* page) {
 void paging_init() {
 	unsigned int i = 0;
 
-	// TODO: Make highmem address appear here
-	uint32_t mem_end_page = 0x20000000;
+	// Highmem is allocated only, so we ignore lowmem
+	uint32_t mem_end_page = (x86_multiboot_info->mem_upper * 1024);
 	nframes = mem_end_page / 0x1000;
 
 	pages_total = nframes;
@@ -145,15 +149,25 @@ void paging_init() {
 	frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
 	memclr(frames, INDEX_FROM_BIT(nframes));
 
-	// Allocate mem for a page directory.
+	// Allocate page directory.
 	kernel_directory = (page_directory_t *) kmalloc_a(sizeof(page_directory_t));
 	ASSERT(kernel_directory != NULL);
 	memclr(kernel_directory, sizeof(page_directory_t));
 	current_directory = kernel_directory;
 
-	// This step serves to map the kernel itself
-	// We don't allocate frames here, as that's done below.
+	// Map kernel itself
 	for(i = 0xC0000000; i < 0xC7FFF000; i += 0x1000) {
+		page_t* page = paging_get_page(i, true, kernel_directory);
+		memclr(page, sizeof(page_t));
+
+		page->present = 1;
+		page->rw = 1;
+		page->user = 0;
+		page->frame = ((i & 0x0FFFF000) >> 12);
+	}
+
+	// Identity map from 0x00000000 to 0x001F0000
+	for(i = 0; i < 0x00200000; i += 0x1000) {
 		page_t* page = paging_get_page(i, true, kernel_directory);
 		memclr(page, sizeof(page_t));
 
@@ -366,6 +380,36 @@ page_t* paging_get_page(uint32_t address, bool make, page_directory_t* dir) {
 	} else {
 		return 0;
 	}
+}
+
+/*
+ * Page fault handler
+ */
+void paging_page_fault_handler(err_registers_t regs) {
+	// A page fault has occurred.
+	// The faulting address is stored in the CR2 register.
+	uint32_t faulting_address;
+	__asm__ volatile("mov %%cr2, %0" : "=r" (faulting_address));
+
+	// The error code gives us details of what happened.
+	int present	= !(regs.err_code & 0x1); // Page not present
+	int rw = regs.err_code & 0x2; // Write operation?
+	int us = regs.err_code & 0x4; // Processor was in user-mode?
+	int reserved = regs.err_code & 0x8; // Overwritten CPU-reserved bits of page entry?
+	int id = regs.err_code & 0x10; // Caused by an instruction fetch?
+
+	kprintf("Page fault exception ( ");
+	if (present) kprintf("present ");
+	if (rw) kprintf("read-only ");
+	if (us) kprintf("user-mode ");
+	if (reserved) kprintf("reserved ");
+	if(id) kprintf("instruction fetch");
+	kprintf(") at 0x%X (regs 0x%X)\n", faulting_address, regs.err_code);
+
+	// Dump registers
+	error_dump_regs(regs);
+
+	for(;;);
 }
 
 /*

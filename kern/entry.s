@@ -1,3 +1,5 @@
+.extern x86_multiboot_info
+
 #########################################################################################
 # Multiboot header
 #########################################################################################
@@ -73,18 +75,16 @@ loader:
 	#push	%eax
 
 	# Write multiboot info pointer to memory
-	#mov		%ebx, sys_multiboot_info
+	mov		%ebx, x86_multiboot_info
 
-	# Check for SSE, and if it exists, enable it
-	mov		$0x1, %eax
-	cpuid
-	test	$(1 << 25), %edx
-	jz 		.+5
-	
+	# Enable SSE	
 	call	sse_init
 
 	# Initialise paging
 	call	paging_init
+
+	# Set up x86 hardware
+	call	x86_pc_init
 
 	# Jump into the kernel's main function
 	call	kernel_main
@@ -100,6 +100,7 @@ loader:
  * Enables the SSE features of the processor.
  */
 sse_init:
+	push	%eax
 	mov		%cr0, %eax
 
 	# clear coprocessor emulation CR0.EM
@@ -113,6 +114,8 @@ sse_init:
 	# set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time
 	or		$(3 << 9), %ax
 	mov		%eax, %cr4
+
+	pop		%eax
 	ret
 
 # GDT

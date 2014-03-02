@@ -2,10 +2,12 @@ CC=i686-pc-elf-gcc
 AS=i686-pc-elf-as
 LD=i686-pc-elf-ld
 
+LIBGCC_PATH=$(dir $(shell which $(CC)))../lib/gcc/i686-pc-elf/4.6.2/libgcc.a
+
 CURRENT_DIR=$(shell pwd)
 
-CFLAGS=-c -finline-functions -g -Wall -static -mmmx -msse -O2 -fno-exceptions -ftree-vectorize -nostartfiles -nodefaultlibs -std=c99 -Wno-unused-variable -mfpmath=387+sse -fno-stack-protector -I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/ -Wno-unused-function -mtune=pentium3 -fno-omit-frame-pointer -ffreestanding -Wno-unused-but-set-variable -pipe -O2 -march=i686 -falign-functions=16 -Wno-deprecated
-LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,kern.ld
+CFLAGS=-c -finline-functions -g -Wall -static -mmmx -msse -O2 -fno-exceptions -ftree-vectorize -nostartfiles -nodefaultlibs -std=c99 -Wno-unused-variable -mfpmath=387+sse -fno-stack-protector -I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/ -Wno-unused-function -fno-builtin -mtune=pentium3 -fno-omit-frame-pointer -ffreestanding -Wno-unused-but-set-variable -pipe -O2 -march=i686 -falign-functions=16 -Wno-deprecated
+LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,kern.ld -lgcc $(LIBGCC_PATH)
 ASFLAGS =
 
 # Export compilers and flags
@@ -19,7 +21,7 @@ export ASFLAGS
 export MAKE=$(shell pwd)/pretty_make.py
 
 # Subdirectories with makefiles
-SUBDIRS=paging console runtime
+SUBDIRS=paging console runtime x86_pc driver_support task
 .PHONY: subdirs $(SUBDIRS)
 
 SUBDIRS_CLEAN=$(addsuffix _clean, $(SUBDIRS))

@@ -1,5 +1,5 @@
 MODULE=runtime
-SOURCES=std.c error.c
+SOURCES=x86_pc.c idt.c 8259_pic.c 8254_pit.c interrupts.c isr.s
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)
@@ -9,7 +9,7 @@ all: $(OBJECTS)
 
 .c.o:
 	@echo "[CC] $<"
-	@$(CC) $(CFLAGS) $< -o $@
+	@$(CC) $(filter-out -O2,$(CFLAGS)) $< -o $@
 
 .s.o:
 	@echo "[AS] $<"

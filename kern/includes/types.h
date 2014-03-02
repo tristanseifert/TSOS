@@ -11,6 +11,8 @@
 // Console support (printing, panic, etc)
 #import "console/console.h"
 #import "console/panic.h"
+#import "paging/kheap.h"
+#import "driver_support/module.h"
 
 // X86 intrinsic macros (SSE)
 // #import <x86intrin.h>
