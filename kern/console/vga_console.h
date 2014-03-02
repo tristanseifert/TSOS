@@ -1,0 +1,1 @@
+void vga_console_putchar(char c);

@@ -1,0 +1,64 @@
+CC=i686-pc-elf-gcc
+AS=i686-pc-elf-as
+LD=i686-pc-elf-ld
+
+CURRENT_DIR=$(shell pwd)
+
+CFLAGS=-c -finline-functions -g -Wall -static -mmmx -msse -O2 -fno-exceptions -ftree-vectorize -nostartfiles -nodefaultlibs -std=c99 -Wno-unused-variable -mfpmath=387+sse -fno-stack-protector -I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/ -Wno-unused-function -mtune=pentium3 -fno-omit-frame-pointer -ffreestanding -Wno-unused-but-set-variable -pipe -O2 -march=i686 -falign-functions=16 -Wno-deprecated
+LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,kern.ld
+ASFLAGS =
+
+# Export compilers and flags
+export CC
+export AS
+export LD
+export CFLAGS
+export ASFLAGS
+
+# Use pretty make
+export MAKE=$(shell pwd)/pretty_make.py
+
+# Subdirectories with makefiles
+SUBDIRS=paging console runtime
+.PHONY: subdirs $(SUBDIRS)
+
+SUBDIRS_CLEAN=$(addsuffix _clean, $(SUBDIRS))
+
+# Source files to compile
+SOURCES=entry.s main.c init.c
+OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
+
+# Name of final executable
+EXECUTABLE=kernel.elf
+
+all: $(SUBDIRS) print $(SOURCES) $(EXECUTABLE)
+
+print:
+	@echo "\n\n[3;32;40m***** Compiling kernel core *****[0;37;49m"
+
+$(EXECUTABLE): $(OBJECTS)
+	@echo "\n\n[3;32;40m***** Linking kernel *****[0;37;49m"
+
+	$(CC) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
+
+	@i686-pc-elf-objdump -b elf32-i386 -S -d $@ > $@_symbols.txt
+
+.c.o:
+	@echo "[CC] $<"
+	@$(CC) $(CFLAGS) $< -o $@
+
+.s.o:
+	@echo "[AS] $<"
+	@$(AS) $(ASFLAGS) $< -o $@
+
+# Submodules
+$(SUBDIRS):
+	@echo "\n\n[3;32;40m***** Compiling $@ *****[0;37;49m"
+	@$(MAKE) -C $@ all
+
+$(SUBDIRS_CLEAN):
+	@$(MAKE) -C $(subst _clean,, $@) clean
+
+# Cleaning of the shit
+clean: $(SUBDIRS_CLEAN)
+	@rm -rf $(OBJECTS) $(EXECUTABLE)
