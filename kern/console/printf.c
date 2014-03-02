@@ -18,7 +18,7 @@ int sprintf(char* str, const char* format, ...) {
 }
 
 int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
-	// TODO: 'e', 'f', 'g', 'n' specifiers to do
+	// TODO: 'e', 'f', 'g', 'n'
 	
 	if (size == 0) {
 		return 0;
@@ -43,7 +43,7 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
 		bool alignLeft = false;
 		bool alwaysSign = false;
 		bool noSign = false;
-		bool padding = ' ';
+		char padding = ' ';
 		int minimumWidth = 0;
 		int precision = 1;
 		bool numberMustBeShort = false;
@@ -60,7 +60,6 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
 		
 		// then we loop (and we modify variables) until we find a specifier
 		do {
-			
 			switch (*format) {
 				// flags
 				case '-': alignLeft = true;	     format++; break;
@@ -113,7 +112,7 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
 				// specifiers
 				
 				
-				//      strings
+				// strings
 				case 's': {
 					char* nStr = va_arg(ap, char*);
 					size_t len = strlen(nStr);
@@ -133,8 +132,8 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
 					for(int i = 0; i < len; i++) {
 						*str++ = *nStr++;
 					}
-					/*while (*nStr)
-						*str++ = *nStr++;*/
+					while (*nStr)
+						*str++ = *nStr++;
 					
 					if (alignLeft && len < minimumWidth) {
 						while (len++ < minimumWidth) {
@@ -149,7 +148,7 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
 				
 				
 				
-				//      characters
+				// characters
 				case 'c': {
 					char toWrite;
 					/*if (numberMustBeLong)	 toWrite = (char)va_arg(ap, wchar_t);
@@ -175,7 +174,7 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap) {
 				}
 				
 				
-				//      numbers
+				// numbers
 				case 'o':       octal = true;
 				case 'p':       pointer = true;
 				case 'X':       capitalLetters = true;

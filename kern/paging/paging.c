@@ -9,6 +9,9 @@ extern uint32_t __kern_size, __kern_bss_start, __kern_bss_size;
 uint32_t pages_total, pages_wired;
 static uint32_t previous_directory;
 
+// Kernel heap, allocated during paging initialisation
+extern heap_t *kernel_heap;
+
 // Multiboot struct: Used to get memory info
 extern multiboot_info_t *x86_multiboot_info;
 

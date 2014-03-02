@@ -1,5 +1,5 @@
 MODULE=paging
-SOURCES=paging.c kheap.c
+SOURCES=paging.c kheap.c kheap_dumb.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)

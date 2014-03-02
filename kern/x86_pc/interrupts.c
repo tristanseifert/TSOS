@@ -100,6 +100,8 @@ int irq_register_handler(uint8_t irq, irq_callback_t callback) {
 				idt_flush_cache();
 			}
 
+			klog(kLogLevelDebug, "Added IRQ %u (Cb %u) *0x%X", irq, i, callback);
+
 			return 0;
 		}
 	}

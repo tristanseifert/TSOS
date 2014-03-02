@@ -16,8 +16,11 @@ void kern_timer_tick_init(void) {
  */
 void kern_timer_tick(void) {
 	ticks++;
+}
 
-	if(ticks % 100 == 0) {
-		kprintf("Second %u\n", ticks / 100);
-	}
+/*
+ * Returns the number of ticks since bootup.
+ */
+uint32_t kern_get_ticks(void) {
+	return ticks;
 }

@@ -1,4 +1,5 @@
 .extern x86_multiboot_info
+.extern vga_init
 
 #########################################################################################
 # Multiboot header
@@ -77,8 +78,11 @@ loader:
 	# Write multiboot info pointer to memory
 	mov		%ebx, x86_multiboot_info
 
-	# Enable SSE	
+	# Enable SSE
 	call	sse_init
+
+	# Set up console
+	call	vga_init
 
 	# Initialise paging
 	call	paging_init
@@ -103,7 +107,7 @@ sse_init:
 	push	%eax
 	mov		%cr0, %eax
 
-	# clear coprocessor emulation CR0.EM
+	# clear coprocessor emulation CR0.EM (enable FPU)
 	and		$0xFFFB, %ax
 
 	# set coprocessor monitoring CR0.MP
@@ -111,7 +115,7 @@ sse_init:
 	mov		%eax, %cr0
 	mov		%cr4, %eax
 
-	# set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time
+	# set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time (enable SSE)
 	or		$(3 << 9), %ax
 	mov		%eax, %cr4
 

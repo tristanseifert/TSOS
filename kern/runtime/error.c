@@ -8,7 +8,6 @@ extern elf_symbol_entry_t *kern_elf_symtab;
 extern unsigned int kern_elf_symtab_entries;
 
 void error_dump_regs(err_registers_t regs);
-extern void panic_halt_loop(void);
 
 uint32_t error_cr0, error_cr1, error_cr2, error_cr3;
 
@@ -60,7 +59,8 @@ static const char reg_names[18][4] = {
  * Dumps registers and exception name.
  */
 void error_dump_regs(err_registers_t regs) {
-	kprintf("\n%s\nError code: 0x%X\n", &err_names[regs.int_no], regs.err_code);
+	kprintf("\n");
+	klog(kLogLevelCritical, "%s (0x%X)", &err_names[regs.int_no], regs.err_code);
 
 	// Dump the registers now.
 	uint32_t registers[18] = {
@@ -70,7 +70,7 @@ void error_dump_regs(err_registers_t regs) {
 	};
 
 	for(uint8_t i = 0; i < 18; i+=2) {
-		kprintf("%s: 0x%8.8X %s: 0x%8.8X\n", &reg_names[i], registers[i], &reg_names[i+1], registers[i+1]);
+		klog(kLogLevelCritical, "%s: 0x%08X %s: 0x%08X", &reg_names[i], registers[i], &reg_names[i+1], registers[i+1]);
 	}
 
 	error_dump_stack_trace(256, regs.ebp);
@@ -97,7 +97,7 @@ void error_handler(err_registers_t regs) {
  * Dumps a stack trace, up to maxFrames deep.
  */
 void error_dump_stack_trace(unsigned int maxFrames, unsigned int address) {
-	kprintf("\nCall trace:\n");
+	klog(kLogLevelCritical, "Call trace:");
 
 	// Stack contains:
 	//  Second function argument
@@ -124,7 +124,7 @@ void error_dump_stack_trace(unsigned int maxFrames, unsigned int address) {
 		// Find closest symbol name
 		char *closest_symbol = error_get_closest_symbol(eip);
 		// Print
-		kprintf(" [%.8X] %s\n", eip, closest_symbol);
+		klog(kLogLevelCritical, " [%.8X] %s", eip, closest_symbol);
 		
 		// Unwind to previous stack frame
 		ebp = (unsigned int *) ebp[0];
@@ -132,14 +132,14 @@ void error_dump_stack_trace(unsigned int maxFrames, unsigned int address) {
 		// Is there a stack frame before this one? (EBP != 0)
 		if(!ebp) {
 			eip = 0;
-			kprintf("-- [End of trace] --\n");
+			klog(kLogLevelCritical, "-- [End of trace] --");
 			break;
 		}
 	}
 
 	// Print an end label if needed
 	if(eip) {
-		kprintf("-- End of stack trace. --\n");
+		klog(kLogLevelCritical, "-- [Trace cut short] --");
 	}
 }
 
@@ -180,8 +180,6 @@ char *error_get_closest_symbol(unsigned int address) {
 	entry = &kern_elf_symtab[index];
 	char *name = kern_elf_strtab + entry->st_name;
 	int offset = address - entry->st_address;
-
-	kprintf("%s\n", name);
 
 	if(offset == 0) {
 		// The address is the start of the symbol

@@ -74,7 +74,7 @@ void x86_pc_init(void) {
 				memcpy(kern_elf_strtab, (void *) ent->sh_addr, ent->sh_size);
 				// kprintf("String table copied from 0x%X to 0x%X, size 0x%X\n", ent->sh_addr, kern_elf_strtab, ent->sh_size);
 			} else {
-				kprintf("Couldn't find symbol string table\n");
+				klog(kLogLevelWarning, "Couldn't find symbol string table\n");
 			}
 
 			// kprintf("'%s' at 0x%X\n", kern_elf_strtab + kern_elf_symtab[96].st_name, kern_elf_symtab[96].st_address);
@@ -88,9 +88,9 @@ void x86_pc_init(void) {
 			himemStruct->mmap_addr = (uint32_t) new;
 		}
 
-		kprintf("%uKB low memory, %uKB high memory\n", x86_multiboot_info->mem_lower, x86_multiboot_info->mem_upper);
+		klog(kLogLevelDebug, "%uKB low memory, %uKB high memory", x86_multiboot_info->mem_lower, x86_multiboot_info->mem_upper);
 	} else {
-		kprintf("No multiboot info!\n");
+		klog(kLogLevelWarning, "No multiboot info!\n");
 	}
 
 	// Set up IDT
