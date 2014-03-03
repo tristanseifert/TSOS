@@ -8,6 +8,8 @@
 #import <stdint.h>
 #import <stdlib.h>
 
+#import <errno.h>
+
 // Console support (printing, panic, etc)
 #import "console/console.h"
 #import "console/panic.h"

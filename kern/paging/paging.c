@@ -6,11 +6,8 @@
  
 extern uint32_t __kern_size, __kern_bss_start, __kern_bss_size;
 
-uint32_t pages_total, pages_wired;
+uint32_t pages_total, pages_wired, pages_mapped;
 static uint32_t previous_directory;
-
-// Kernel heap, allocated during paging initialisation
-extern heap_t *kernel_heap;
 
 // Multiboot struct: Used to get memory info
 extern multiboot_info_t *x86_multiboot_info;
@@ -26,11 +23,11 @@ static uint32_t section_to_memrange[6][2] = {
 };
 
 // The kernel's page directory
-page_directory_t *kernel_directory = 0;
+page_directory_t *kernel_directory = NULL;
 uint32_t kern_dir_phys;
 
 // The current page directory;
-page_directory_t *current_directory = 0;
+page_directory_t *current_directory = NULL;
 
 // A bitset of frames - used or free.
 static uint32_t* frames;
@@ -39,34 +36,44 @@ static uint32_t nframes;
 extern uint32_t __kern_end;
 
 // Defined in kheap.c
-extern uint32_t kheap_placement_address;
+extern uint32_t dumb_heap_address;
 
 // Macros used in the bitset algorithms.
 #define INDEX_FROM_BIT(a) (a/(8*4))
 #define OFFSET_FROM_BIT(a) (a%(8*4))
 
 /*
- * Static function to set a bit in the frames bitset
+ * Set a bit in the frames bitset
+ *
+ * @param frame_addr Physical memory address
  */
 static void set_frame(uint32_t frame_addr) {
 	uint32_t frame = frame_addr / 0x1000;
 	uint32_t idx = INDEX_FROM_BIT(frame);
 	uint32_t off = OFFSET_FROM_BIT(frame);
 	frames[idx] |= (0x1 << off);
+
+	pages_mapped++;
 }
 
 /*
- * Static function to clear a bit in the frames bitset
+ * Clear a bit in the frames bitset
+ *
+ * @param frame_addr Physical memory address
  */
 static void clear_frame(uint32_t frame_addr) {
 	uint32_t frame = frame_addr / 0x1000;
 	uint32_t idx = INDEX_FROM_BIT(frame);
 	uint32_t off = OFFSET_FROM_BIT(frame);
 	frames[idx] &= ~(0x1 << off);
+
+	pages_mapped--;
 }
 
 /*
- * Static function to test if a bit is set.
+ * Check if a certain page is allocated.
+ *
+ * @param frame_addr Physical memory address
  */
 static uint32_t test_frame(uint32_t frame_addr) {
 	uint32_t frame = frame_addr / 0x1000;
@@ -76,7 +83,7 @@ static uint32_t test_frame(uint32_t frame_addr) {
 }
 
 /*
- * Static function to find the first free frame.
+ * Find the first free frame that can be allocated
  */
 static uint32_t first_frame() {
 	uint32_t i, j;
@@ -146,13 +153,15 @@ void paging_init() {
 	// Highmem is allocated only, so we ignore lowmem
 	uint32_t mem_end_page = (x86_multiboot_info->mem_upper * 1024);
 	nframes = mem_end_page / 0x1000;
-
 	pages_total = nframes;
 
+	klog(kLogLevelInfo, "%u pages available", pages_total);
+
+	// Allocate page frame table
 	frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
 	memclr(frames, INDEX_FROM_BIT(nframes));
 
-	// Allocate page directory.
+	// Allocate page directory
 	kernel_directory = (page_directory_t *) kmalloc_a(sizeof(page_directory_t));
 	ASSERT(kernel_directory != NULL);
 	memclr(kernel_directory, sizeof(page_directory_t));
@@ -179,6 +188,19 @@ void paging_init() {
 		page->user = 0;
 		page->frame = ((i & 0x0FFFF000) >> 12);
 	}
+
+	// Mark frames as in-use from 0x00000000 to the end of the BSS
+	uint32_t kern_end_phys = ((((uint32_t) &__kern_end) - 0xC0000000) & 0xFFFFF000) + 0x1000;
+	//uint32_t kern_end_phys = dumb_heap_address - 0xC0000000;
+
+	for(int i = 0; i < kern_end_phys; i += 0x1000) {
+		set_frame(i);
+	}
+
+	klog(kLogLevelDebug, "Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
+
+	// Create the kernel heap
+	kheap_install(0xC8000000, 0xCFFFF000, true, true);
 
 	// Convert kernel directory address to physical and save it
 	kern_dir_phys = (uint32_t) &kernel_directory->tablesPhysical;
@@ -209,7 +231,7 @@ page_directory_t *paging_new_directory() {
 	uint32_t phys_loc;
 
 	// Allocate a page-aligned block of memory, put physical address in phys_loc
-	page_directory_t* directory = (page_directory_t *) kmalloc_int(sizeof(page_directory_t), true, &phys_loc);
+	page_directory_t* directory = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t), &phys_loc);
 	ASSERT(directory != NULL);
 	memclr(directory, sizeof(page_directory_t));
 

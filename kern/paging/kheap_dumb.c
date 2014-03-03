@@ -7,38 +7,52 @@
 #import <types.h>
 #import "kheap.h"
 
+// Smart heap functions
+extern void *kheap_smart_alloc(size_t size, bool aligned, uint32_t *phys);
+
 // end is defined in the linker script.
 extern uint32_t __kern_end;
-uint32_t placement_address = (uint32_t) &__kern_end;
+uint32_t dumb_heap_address = (uint32_t) &__kern_end;
 
-uint32_t kmalloc_int(size_t sz, bool align, uint32_t *phys) {
-	if(align && (placement_address & 0xFFFFF000)) {
-		placement_address &= 0xFFFFF000;
-		placement_address += 0x1000;
-	}
-	
-	// Get physical address, if requested
-	if (phys) {
-		*phys = placement_address & 0x0FFFFFFF;
-	}
+// Smart kernel heap
+extern heap_t *kernel_heap;
 
-	uint32_t tmp = placement_address;
-	placement_address += sz;
-	return tmp;
+/*
+ * Allocates memory.
+ */
+static void *kmalloc_int(size_t sz, bool align, uint32_t *phys) {
+	// Use the dumb allocator if needed
+	if(!kernel_heap) {
+		if(align && (dumb_heap_address & 0xFFFFF000)) {
+			dumb_heap_address &= 0xFFFFF000;
+			dumb_heap_address += 0x1000;
+		}
+		
+		// Get physical address, if requested
+		if (phys) {
+			*phys = dumb_heap_address & 0x0FFFFFFF;
+		}
+
+		uint32_t tmp = dumb_heap_address;
+		dumb_heap_address += sz;
+		return (void *) tmp;
+	} else {
+		return kheap_smart_alloc(sz, align, phys);
+	}
 }
 
-uint32_t kmalloc_a(size_t sz) {
+void *kmalloc_a(size_t sz) {
 	return kmalloc_int(sz, 1, 0);
 }
 
-uint32_t kmalloc_p(size_t sz, uint32_t *phys) {
+void *kmalloc_p(size_t sz, uint32_t *phys) {
 	return kmalloc_int(sz, 0, phys);
 }
 
-uint32_t kmalloc_ap(size_t sz, uint32_t *phys) {
+void *kmalloc_ap(size_t sz, uint32_t *phys) {
 	return kmalloc_int(sz, 1, phys);
 }
 
-uint32_t kmalloc(size_t sz) {
+void *kmalloc(size_t sz) {
 	return kmalloc_int(sz, 0, 0);
 }

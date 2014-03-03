@@ -29,3 +29,12 @@ void panic(char *message, char *file, uint32_t line) {
 	// Halt by going into an infinite loop.
 	for(;;);
 }
+
+/*
+ * Prints a stack dump at the current position in the source file.
+ */
+void dump_stack_here(void) {
+	uint32_t ebp;
+	__asm__("mov %%ebp, %0" : "=r" (ebp));
+	error_dump_stack_trace(256, ebp);
+}

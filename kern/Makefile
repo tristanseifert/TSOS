@@ -21,7 +21,7 @@ export ASFLAGS
 export MAKE=$(shell pwd)/pretty_make.py
 
 # Subdirectories with makefiles
-SUBDIRS=paging console runtime x86_pc driver_support task
+SUBDIRS=paging console runtime x86_pc driver_support task bus
 .PHONY: subdirs $(SUBDIRS)
 
 SUBDIRS_CLEAN=$(addsuffix _clean, $(SUBDIRS))
@@ -43,6 +43,7 @@ $(EXECUTABLE): $(OBJECTS)
 
 	$(CC) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
 
+	@i686-pc-elf-objcopy --strip-debug $@
 	@i686-pc-elf-objdump -b elf32-i386 -S -d $@ > $@_symbols.txt
 
 .c.o:

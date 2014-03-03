@@ -1,4 +1,5 @@
 .extern x86_multiboot_info
+.extern x86_pc_init_multiboot
 .extern vga_init
 
 #########################################################################################
@@ -84,6 +85,9 @@ loader:
 	# Set up console
 	call	vga_init
 
+	# Initialise x86 multiboot stuff
+	call	x86_pc_init_multiboot
+
 	# Initialise paging
 	call	paging_init
 
@@ -138,7 +142,7 @@ gdt_table:
 	.long	gdt_start											# Linear address to GDT	
 
 
-# Reserve a stack of 128K
+# Reserve a stack of 64K
 .section .bss
 stack_bottom:
 .skip 0x10000
@@ -170,10 +174,10 @@ boot_page_table2:
 	.set addr, addr+0x1000
 	.endr
 
-# Mirror the first 4 MB throughout the address space.
+# Mirror the first 8 MB throughout the address space for now.
 .align 0x1000
 boot_page_directory:
-	.rept 512
+	.rept 390
 	.long (boot_page_table - 0xC0000000) + 0x07
 	.long (boot_page_table2 - 0xC0000000) + 0x07
 	.endr
