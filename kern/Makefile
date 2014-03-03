@@ -6,7 +6,7 @@ LIBGCC_PATH=$(dir $(shell which $(CC)))../lib/gcc/i686-pc-elf/4.6.2/libgcc.a
 
 CURRENT_DIR=$(shell pwd)
 
-CFLAGS=-c -finline-functions -g -Wall -static -mmmx -msse -O2 -fno-exceptions -ftree-vectorize -nostartfiles -nodefaultlibs -std=c99 -Wno-unused-variable -mfpmath=387+sse -fno-stack-protector -I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/ -Wno-unused-function -fno-builtin -mtune=pentium3 -fno-omit-frame-pointer -ffreestanding -Wno-unused-but-set-variable -pipe -O2 -march=i686 -falign-functions=16 -Wno-deprecated
+CFLAGS=-c -finline-functions -g -Wall -fstack-protector-all -static -mmmx -msse -O2 -fno-exceptions -ftree-vectorize -nostartfiles -nodefaultlibs -std=c99 -Wno-unused-variable -mfpmath=387+sse -I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/ -Wno-unused-function -fno-builtin -mtune=pentium3 -fno-omit-frame-pointer -ffreestanding -Wno-unused-but-set-variable -pipe -O2 -march=i686 -falign-functions=16 -Wno-deprecated
 LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,kern.ld -lgcc $(LIBGCC_PATH)
 ASFLAGS =
 
@@ -27,7 +27,7 @@ SUBDIRS=paging console runtime x86_pc driver_support task bus
 SUBDIRS_CLEAN=$(addsuffix _clean, $(SUBDIRS))
 
 # Source files to compile
-SOURCES=entry.s main.c init.c
+SOURCES=entry.s main.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 # Name of final executable
@@ -43,8 +43,8 @@ $(EXECUTABLE): $(OBJECTS)
 
 	$(CC) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
 
-	@i686-pc-elf-objcopy --strip-debug $@
 	@i686-pc-elf-objdump -b elf32-i386 -S -d $@ > $@_symbols.txt
+	@i686-pc-elf-objcopy --strip-debug $@
 
 .c.o:
 	@echo "[CC] $<"

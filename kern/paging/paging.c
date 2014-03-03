@@ -189,18 +189,16 @@ void paging_init() {
 		page->frame = ((i & 0x0FFFF000) >> 12);
 	}
 
-	// Mark frames as in-use from 0x00000000 to the end of the BSS
-	uint32_t kern_end_phys = ((((uint32_t) &__kern_end) - 0xC0000000) & 0xFFFFF000) + 0x1000;
-	//uint32_t kern_end_phys = dumb_heap_address - 0xC0000000;
-
-	for(int i = 0; i < kern_end_phys; i += 0x1000) {
-		set_frame(i);
-	}
-
-	klog(kLogLevelDebug, "Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
 
 	// Create the kernel heap
 	kheap_install(0xC8000000, 0xCFFFF000, true, true);
+
+	// Mark frames as in-use from 0x00000000 to the end of the dumb heap
+	uint32_t kern_end_phys = ((dumb_heap_address - 0xC0000000) & 0xFFFFF000) + 0x1000;
+	for(int i = 0; i < kern_end_phys; i += 0x1000) {
+		set_frame(i);
+	}
+	klog(kLogLevelDebug, "Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
 
 	// Convert kernel directory address to physical and save it
 	kern_dir_phys = (uint32_t) &kernel_directory->tablesPhysical;

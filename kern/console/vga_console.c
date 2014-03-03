@@ -60,10 +60,9 @@ void vga_console_putchar(char c) {
 	// Line wrapping
 	if(vga_x == 80) {
 		vga_x = 0;
-		vga_y++;
-
+		
 		// Scroll lines up if needed
-		if(vga_y == 25) {
+		if(++vga_y == 25) {
 			vga_scroll_up();
 
 			vga_x = 0;

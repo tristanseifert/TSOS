@@ -28,8 +28,8 @@
 #define PANIC(msg) panic(msg, __FILE__, __LINE__);
 #define ASSERT(b) ((b) ? (void)0 : panic_assert(__FILE__, __LINE__, #b))
 
-#define IRQ_OFF __asm__ volatile("cli");
-#define IRQ_RES __asm__ volatile("sti");
+#define IRQ_OFF() __asm__ volatile("cli");
+#define IRQ_RES() __asm__ volatile("sti");
 
 #define ENDIAN_DWORD_SWAP(x) ((x >> 24) & 0xFF) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | ((x << 24) & 0xFF000000)
 #define ENDIAN_WORD_SWAP(x) ((x & 0xFF) << 0x08) | ((x & 0xFF00) >> 0x08)

@@ -85,3 +85,19 @@ void *kmalloc(size_t sz);
  * @param address Address of memory on kernel heap
  */
 void kfree(void* address);
+
+/*
+ * Resizes an allocated block of memory.
+ *
+ * @param addr Address of block
+ * @param size New size to change to.
+ */
+void *krealloc(void *addr, size_t size);
+
+/*
+ * Allocates memory for count items with size bytes per item.
+ *
+ * @param count Number of items
+ * @param size Size of a single item
+ */
+void *kcalloc(size_t count, size_t size);

@@ -8,6 +8,7 @@
 
 // Buffer for printf
 static char printf_buffer[1024];
+static char log_buffer[1024+32];
 
 // Colours used for each log level
 static enum vga_colour log_level_colour[6][2] = {
@@ -51,16 +52,14 @@ int klog(enum log_type type, const char* format, ...) {
 	if(type < CONSOLE_MIN_LOG_LEVEL) return 0;
 
 	// Format our initial string
-	static char buffer[1024];
-	static char buffer2[1024+32];
 	
 	va_list ap;
 	va_start(ap, format);
-	vsprintf(buffer, format, ap);
+	vsprintf(printf_buffer, format, ap);
 	va_end(ap);
 
 	// Prepend the timestamp
-	int n = sprintf(buffer2, "%08X: %s\n", kern_get_ticks(), buffer);
+	int n = sprintf(log_buffer, "%08X: %s\n", kern_get_ticks(), printf_buffer);
 
 	// Update the colour of the VGA console
 	enum vga_colour old_fg = vga_get_fg_colour();
@@ -71,8 +70,8 @@ int klog(enum log_type type, const char* format, ...) {
 
 	// Display each char of the buffer
 	for(int i = 0; i < 1024+32; i++) {
-		if(buffer2[i]) {
-			vga_console_putchar(buffer2[i]);
+		if(log_buffer[i]) {
+			vga_console_putchar(log_buffer[i]);
 		} else {
 			// Terminating character reached
 			break;

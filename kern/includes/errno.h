@@ -14,6 +14,7 @@
 #define ENOTFOUND 2
 #define EBUSY 3
 #define EINVAL 4
+#define ENOMEM 5
 
 // Global symbol indicating last error
 static int errno;

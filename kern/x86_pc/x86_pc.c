@@ -104,7 +104,7 @@ void x86_pc_init(void) {
 	// Set up system timer
 	x86_pc_init_timer();
 
-	// __asm__ volatile("sti");
+	__asm__ volatile("sti");
 }
 
 /*

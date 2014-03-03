@@ -1,8 +1,15 @@
 #import <types.h>
+#import "x86_pc/x86_pc.h"
 
-void test_pagefault(void);
+void __stack_chk_guard_setup(void);
 
-void kernel_main() {
+void smash_stack(char *input) {
+	char buf[16];
+
+	strcpy(buf, input);
+}
+
+void kernel_main(void) {
 	// Initialise modules
 	modules_load();
 
@@ -15,31 +22,47 @@ void kernel_main() {
 
 	// test_pagefault();
 
-	klog(kLogLevelDebug, "Begin memory test.\n");
+/*	klog(kLogLevelDebug, "Begin memory test.\n");
 
-	int numChunks = 4;
-	int sizes[8] = {63, 64, 64, 1024, 4096, 8192, 16384, 17000};
+	int numChunks = 32;
+	int sizes[8] = {16, 32, 64, 128, 256, 512, 1024, 2048};
 	void *memories[numChunks];
-
 	int currentSize = 0;
+	uint32_t phys;
 
 	for(int i = 0; i < 8; i++) {
 		currentSize = sizes[i];
 		klog(kLogLevelDebug, "Allocating %u %u byte chunks", numChunks, currentSize);
 
 		for(int x = 0; x < numChunks; x++) {
-			memories[x] = (void *) kmalloc(currentSize);
+			memories[x] = (void *) kmalloc_p(currentSize, &phys);
 		}
+
+		klog(kLogLevelWarning, "NIEDERKLATSCHEN SCHREIBKUGELN 0x%X", phys);
 
 		klog(kLogLevelDebug, "Freeing chunks");
 
-		for(int x = 0; x < numChunks-1; x++) {
+		for(int x = 0; x < numChunks; x++) {
 			kfree(memories[x]);
 		}
-	}
-	
+	} */
+
+	char *doom = "smash the stack !!!!!!!!";
+	smash_stack(doom);
 
 	while(1);
+}
+
+/*
+ * Performs initialisation before the actual kernel runs.
+ */
+void kernel_init(void) {
+	// Set up stack guards
+	__stack_chk_guard_setup();
+	klog(kLogLevelDebug, "Stack guards initialised");
+
+	// Set up platform
+	x86_pc_init();
 }
 
 void test_pagefault(void) {

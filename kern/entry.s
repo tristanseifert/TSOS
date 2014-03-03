@@ -91,10 +91,8 @@ loader:
 	# Initialise paging
 	call	paging_init
 
-	# Set up x86 hardware
-	call	x86_pc_init
-
-	# Jump into the kernel's main function
+	# Initialise kernel, then execute it
+	call	kernel_init
 	call	kernel_main
 
 	# In case the kernel returns, hang forever

@@ -50,7 +50,9 @@ static irq_callback_t irq_callbacks[MAX_IRQ][MAX_IRQ_CALLBACK];
  * Called by IRQ handlers when an IRQ is called to service it by calling the
  * appropriate callbacks.
  */
-void irq_handler(unsigned int irq) {
+void irq_handler(uint32_t irq) {
+	irq &= 0x1F;
+
 	// IRQs 7 and 15 can be spurious
 	if(irq == 7 || irq == 15) {
 		uint16_t isr = i8259_get_isr();
@@ -74,7 +76,7 @@ void irq_handler(unsigned int irq) {
 			}
 		}
 	} else {
-		kprintf("Unhandled IRQ %u\n", irq);
+		klog(kLogLevelError, "Unhandled IRQ Level %u", irq);
 	}
 
 	i8259_eoi(irq);
