@@ -6,7 +6,12 @@ LIBGCC_PATH=$(dir $(shell which $(CC)))../lib/gcc/i686-pc-elf/4.6.2/libgcc.a
 
 CURRENT_DIR=$(shell pwd)
 
-CFLAGS=-c -finline-functions -g -Wall -fstack-protector-all -static -mmmx -msse -O2 -fno-exceptions -ftree-vectorize -nostartfiles -nodefaultlibs -std=c99 -Wno-unused-variable -mfpmath=387+sse -I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/ -Wno-unused-function -fno-builtin -mtune=pentium3 -fno-omit-frame-pointer -ffreestanding -Wno-unused-but-set-variable -pipe -O2 -march=i686 -falign-functions=16 -Wno-deprecated
+ARCH_ARGS=-march=i686 -mtune=pentium3 -mmmx -msse -mfpmath=387+sse
+WARNINGS=-Wall -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-deprecated -Wformat -Wno-format-extra-args -Wformat-security -Wformat-nonliteral -Wformat=2
+INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/
+OPTIONS=-falign-functions=16 -fstack-protector-all -fno-exceptions -ftree-vectorize -ffast-math -fno-builtin -fno-omit-frame-pointer
+
+CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -std=c99 -nostartfiles -nodefaultlibs -ffreestanding $(OPTIONS) $(INCLUDES) $(WARNINGS)
 LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,kern.ld -lgcc $(LIBGCC_PATH)
 ASFLAGS =
 

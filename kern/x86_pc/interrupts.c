@@ -76,7 +76,7 @@ void irq_handler(uint32_t irq) {
 			}
 		}
 	} else {
-		klog(kLogLevelError, "Unhandled IRQ Level %u", irq);
+		klog(kLogLevelError, "Unhandled IRQ Level %u", (unsigned int) irq);
 	}
 
 	i8259_eoi(irq);
@@ -102,7 +102,7 @@ int irq_register_handler(uint8_t irq, irq_callback_t callback) {
 				idt_flush_cache();
 			}
 
-			klog(kLogLevelDebug, "Added IRQ %u (Cb %u) *0x%X", irq, i, callback);
+			klog(kLogLevelDebug, "Added IRQ %u (Cb %u) *0x%X", (unsigned int) irq, (unsigned int) i, (unsigned int) callback);
 
 			return 0;
 		}

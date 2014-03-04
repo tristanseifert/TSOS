@@ -59,7 +59,7 @@ int klog(enum log_type type, const char* format, ...) {
 	va_end(ap);
 
 	// Prepend the timestamp
-	int n = sprintf(log_buffer, "%08X: %s\n", kern_get_ticks(), printf_buffer);
+	int n = sprintf(log_buffer, "%08X: %s\n", (unsigned int) kern_get_ticks(), printf_buffer);
 
 	// Update the colour of the VGA console
 	enum vga_colour old_fg = vga_get_fg_colour();

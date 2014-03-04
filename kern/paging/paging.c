@@ -4,16 +4,16 @@
 #import "x86_pc/multiboot.h"
 #import "runtime/error.h"
  
-extern uint32_t __kern_size, __kern_bss_start, __kern_bss_size;
+extern unsigned int __kern_size, __kern_bss_start, __kern_bss_size;
 
-uint32_t pages_total, pages_wired, pages_mapped;
-static uint32_t previous_directory;
+unsigned int pages_total, pages_wired, pages_mapped;
+static unsigned int previous_directory;
 
 // Multiboot struct: Used to get memory info
 extern multiboot_info_t *x86_multiboot_info;
 
 // Maps a memory section enum entry to a range
-static uint32_t section_to_memrange[6][2] = {
+static unsigned int section_to_memrange[6][2] = {
 	{0x00000000, 0x00000000}, // kMemorySectionNone
 	{0x00800000, 0x7FFFFFFF}, // kMemorySectionProcess
 	{0x80000000, 0xBFFFFFFF}, // kMemorySectionSharedLibraries
@@ -24,19 +24,19 @@ static uint32_t section_to_memrange[6][2] = {
 
 // The kernel's page directory
 page_directory_t *kernel_directory = NULL;
-uint32_t kern_dir_phys;
+unsigned int kern_dir_phys;
 
 // The current page directory;
 page_directory_t *current_directory = NULL;
 
 // A bitset of frames - used or free.
-static uint32_t* frames;
-static uint32_t nframes;
+static unsigned int* frames;
+static unsigned int nframes;
 
-extern uint32_t __kern_end;
+extern unsigned int __kern_end;
 
 // Defined in kheap.c
-extern uint32_t dumb_heap_address;
+extern unsigned int dumb_heap_address;
 
 // Macros used in the bitset algorithms.
 #define INDEX_FROM_BIT(a) (a/(8*4))
@@ -47,10 +47,10 @@ extern uint32_t dumb_heap_address;
  *
  * @param frame_addr Physical memory address
  */
-static void set_frame(uint32_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
-	uint32_t idx = INDEX_FROM_BIT(frame);
-	uint32_t off = OFFSET_FROM_BIT(frame);
+static void set_frame(unsigned int frame_addr) {
+	unsigned int frame = frame_addr / 0x1000;
+	unsigned int idx = INDEX_FROM_BIT(frame);
+	unsigned int off = OFFSET_FROM_BIT(frame);
 	frames[idx] |= (0x1 << off);
 
 	pages_mapped++;
@@ -61,10 +61,10 @@ static void set_frame(uint32_t frame_addr) {
  *
  * @param frame_addr Physical memory address
  */
-static void clear_frame(uint32_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
-	uint32_t idx = INDEX_FROM_BIT(frame);
-	uint32_t off = OFFSET_FROM_BIT(frame);
+static void clear_frame(unsigned int frame_addr) {
+	unsigned int frame = frame_addr / 0x1000;
+	unsigned int idx = INDEX_FROM_BIT(frame);
+	unsigned int off = OFFSET_FROM_BIT(frame);
 	frames[idx] &= ~(0x1 << off);
 
 	pages_mapped--;
@@ -75,23 +75,23 @@ static void clear_frame(uint32_t frame_addr) {
  *
  * @param frame_addr Physical memory address
  */
-static uint32_t test_frame(uint32_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
-	uint32_t idx = INDEX_FROM_BIT(frame);
-	uint32_t off = OFFSET_FROM_BIT(frame);
+static unsigned int test_frame(unsigned int frame_addr) {
+	unsigned int frame = frame_addr / 0x1000;
+	unsigned int idx = INDEX_FROM_BIT(frame);
+	unsigned int off = OFFSET_FROM_BIT(frame);
 	return (frames[idx] & (0x1 << off));
 }
 
 /*
  * Find the first free frame that can be allocated
  */
-static uint32_t first_frame() {
-	uint32_t i, j;
+static unsigned int first_frame() {
+	unsigned int i, j;
 	for (i = 0; i < INDEX_FROM_BIT(nframes); i++) {
 		if (frames[i] != 0xFFFFFFFF) { // nothing free, check next
 			// At least one bit is free here
 			for (j = 0; j < 32; j++) {
-				uint32_t toTest = 0x1 << j;
+				unsigned int toTest = 0x1 << j;
 
 				// If this frame is free, return
 				if (!(frames[i] & toTest)) {
@@ -111,9 +111,9 @@ void alloc_frame(page_t* page, bool is_kernel, bool is_writeable) {
 	if (page->frame != 0) {
 		return;
 	} else {
-		uint32_t idx = first_frame();
+		unsigned int idx = first_frame();
 
-		if (idx == (uint32_t) -1) {
+		if (idx == (unsigned int) -1) {
 			PANIC("No Free Frames");
 		}
 
@@ -135,7 +135,7 @@ void alloc_frame(page_t* page, bool is_kernel, bool is_writeable) {
  * Function to deallocate a frame.
  */
 void free_frame(page_t* page) {
-	uint32_t frame;
+	unsigned int frame;
 	if (!(frame=page->frame)) {
 		return;
 	} else {
@@ -151,14 +151,14 @@ void paging_init() {
 	unsigned int i = 0;
 
 	// Highmem is allocated only, so we ignore lowmem
-	uint32_t mem_end_page = (x86_multiboot_info->mem_upper * 1024);
+	unsigned int mem_end_page = (x86_multiboot_info->mem_upper * 1024);
 	nframes = mem_end_page / 0x1000;
 	pages_total = nframes;
 
 	klog(kLogLevelInfo, "%u pages available", pages_total);
 
 	// Allocate page frame table
-	frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
+	frames = (unsigned int *) kmalloc(INDEX_FROM_BIT(nframes));
 	memclr(frames, INDEX_FROM_BIT(nframes));
 
 	// Allocate page directory
@@ -194,14 +194,14 @@ void paging_init() {
 	kheap_install(0xC8000000, 0xCFFFF000, true, true);
 
 	// Mark frames as in-use from 0x00000000 to the end of the dumb heap
-	uint32_t kern_end_phys = ((dumb_heap_address - 0xC0000000) & 0xFFFFF000) + 0x1000;
+	unsigned int kern_end_phys = ((dumb_heap_address - 0xC0000000) & 0xFFFFF000) + 0x1000;
 	for(int i = 0; i < kern_end_phys; i += 0x1000) {
 		set_frame(i);
 	}
 	klog(kLogLevelDebug, "Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
 
 	// Convert kernel directory address to physical and save it
-	kern_dir_phys = (uint32_t) &kernel_directory->tablesPhysical;
+	kern_dir_phys = (unsigned int) &kernel_directory->tablesPhysical;
 	kern_dir_phys -= 0xC0000000;
 	kernel_directory->physicalAddr = kern_dir_phys;
 
@@ -215,7 +215,7 @@ void paging_init() {
 void paging_switch_directory(page_directory_t* new) {
 	__asm__ volatile("mov %%cr3, %0" : "=r" (previous_directory));
 
-	uint32_t tables_phys_ptr = (uint32_t) new->physicalAddr;
+	unsigned int tables_phys_ptr = (unsigned int) new->physicalAddr;
 	current_directory = new;
 	__asm__ volatile("mov %0, %%cr3" : : "r"(tables_phys_ptr));
 }
@@ -226,7 +226,7 @@ void paging_switch_directory(page_directory_t* new) {
  * code so IRQ handlers won't triple-fault the machine.
  */
 page_directory_t *paging_new_directory() {
-	uint32_t phys_loc;
+	unsigned int phys_loc;
 
 	// Allocate a page-aligned block of memory, put physical address in phys_loc
 	page_directory_t* directory = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t), &phys_loc);
@@ -248,19 +248,19 @@ page_directory_t *paging_new_directory() {
  * Maps length bytes starting at physicalAddress anywhere in the specified memory
  * region.
  */
-uint32_t paging_map_section(uint32_t physAddress, uint32_t length, page_directory_t* dir, paging_memory_section_t sec) {
-	uint32_t section_start = section_to_memrange[sec][0];
-	uint32_t section_end = section_to_memrange[sec][1];
+unsigned int paging_map_section(unsigned int physAddress, unsigned int length, page_directory_t* dir, paging_memory_section_t sec) {
+	unsigned int section_start = section_to_memrange[sec][0];
+	unsigned int section_end = section_to_memrange[sec][1];
 
 	// Round up length to a multiple of a page
 	length &= 0xFFFFF000;
 	length += 0x1000;
 
 	// Align physical address to a page boundary.
-	uint32_t phys_transformed = physAddress & 0xFFFFF000;
+	unsigned int phys_transformed = physAddress & 0xFFFFF000;
 
-	uint32_t found_length = 0;
-	uint32_t mapping_start = 0;
+	unsigned int found_length = 0;
+	unsigned int mapping_start = 0;
 
 	for(int i = section_start; i < section_end; i+= 0x1000) {
 		// Try to get the page, but do not allocate it
@@ -318,7 +318,7 @@ uint32_t paging_map_section(uint32_t physAddress, uint32_t length, page_director
  * Basically performs the exact opposite of the above, unmapping a section of
  * memory.
  */
-void paging_unmap_section(uint32_t virtAddr, uint32_t length, page_directory_t* dir) {
+void paging_unmap_section(unsigned int virtAddr, unsigned int length, page_directory_t* dir) {
 	// Round up length to a multiple of a page
 	length &= 0xFFFFF000;
 	length += 0x1000;
@@ -335,8 +335,8 @@ void paging_unmap_section(uint32_t virtAddr, uint32_t length, page_directory_t* 
 unsigned int paging_get_free_pages() {
 	unsigned int frames_allocated = 0;
 
-	uint32_t i;
-	volatile uint32_t x; // GCC likes optimising this away
+	unsigned int i;
+	volatile unsigned int x; // GCC likes optimising this away
 
 	for (i = 0; i < INDEX_FROM_BIT(nframes); i++) {
 		// Count bits free
@@ -354,8 +354,8 @@ unsigned int paging_get_free_pages() {
 paging_stats_t paging_get_stats() {
 	unsigned int frames_allocated = 0;
 
-	uint32_t i;
-	volatile uint32_t x; // GCC likes optimising this away
+	unsigned int i;
+	volatile unsigned int x; // GCC likes optimising this away
 
 	for (i = 0; i < INDEX_FROM_BIT(nframes); i++) {
 		// Count bits free
@@ -380,21 +380,21 @@ paging_stats_t paging_get_stats() {
  *
  * Note that address = the logical address we wish to map.
  */
-page_t* paging_get_page(uint32_t address, bool make, page_directory_t* dir) {
+page_t* paging_get_page(unsigned int address, bool make, page_directory_t* dir) {
 	// Turn the address into an index.
 	address /= 0x1000;
 
 	// Find the page table containing this address.
-	uint32_t table_idx = address / 1024;
+	unsigned int table_idx = address / 1024;
 
 	if (dir->tables[table_idx]) { // If this table is already assigned
 		return &dir->tables[table_idx]->pages[address % 0x400];
 	} else if(make == true) {
-		uint32_t tmp;
+		unsigned int tmp;
 		dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &tmp);
 
 		// update physical address
-		uint32_t phys_ptr = tmp | 0x7;
+		unsigned int phys_ptr = tmp | 0x7;
 		phys_ptr &= 0x0FFFFFFF; // get rid of high nybble
 		dir->tablesPhysical[table_idx] = phys_ptr;
 		dir->tables[table_idx]->pages[address % 0x400].present = 0;
@@ -411,7 +411,7 @@ page_t* paging_get_page(uint32_t address, bool make, page_directory_t* dir) {
 void paging_page_fault_handler(err_registers_t regs) {
 	// A page fault has occurred.
 	// The faulting address is stored in the CR2 register.
-	uint32_t faulting_address;
+	unsigned int faulting_address;
 	__asm__ volatile("mov %%cr2, %0" : "=r" (faulting_address));
 
 	// The error code gives us details of what happened.
@@ -427,7 +427,7 @@ void paging_page_fault_handler(err_registers_t regs) {
 	if (us) kprintf("user-mode ");
 	if (reserved) kprintf("reserved ");
 	if(id) kprintf("instruction fetch");
-	kprintf(") at 0x%X (regs 0x%X)\n", faulting_address, regs.err_code);
+	kprintf(") at 0x%X (regs 0x%X)\n", faulting_address, (unsigned int) regs.err_code);
 
 	// Dump registers
 	error_dump_regs(regs);
@@ -438,6 +438,6 @@ void paging_page_fault_handler(err_registers_t regs) {
 /*
  * Flushes an address out of the MMU's cache.
  */
-void paging_flush_tlb(uint32_t addr) {
+void paging_flush_tlb(unsigned int addr) {
 	__asm__ volatile("invlpg (%0)" : : "r" (addr) : "memory");
 }

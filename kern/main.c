@@ -19,9 +19,7 @@ void kernel_main(void) {
 	klog(kLogLevelWarning, "Warning 0x%X", 0x80808080);
 	klog(kLogLevelError, "Error 0x%X", 0x12345678);
 	klog(kLogLevelCritical, "Critical 0x%X", 0xD00D);*/
-
-	// test_pagefault();
-
+	
 /*	klog(kLogLevelDebug, "Begin memory test.\n");
 
 	int numChunks = 32;
@@ -59,7 +57,6 @@ void kernel_main(void) {
 void kernel_init(void) {
 	// Set up stack guards
 	__stack_chk_guard_setup();
-	klog(kLogLevelDebug, "Stack guards initialised");
 
 	// Set up platform
 	x86_pc_init();
@@ -69,5 +66,5 @@ void test_pagefault(void) {
 	uint32_t *ptr = (uint32_t *) 0xA0000000;
 	uint32_t do_page_fault = *ptr;
 
-	kprintf("deather 0x%X\n", do_page_fault);
+	kprintf("deather 0x%X\n", (unsigned int) do_page_fault);
 }

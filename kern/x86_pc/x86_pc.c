@@ -88,7 +88,7 @@ void x86_pc_init_multiboot(void) {
 			himemStruct->mmap_addr = (uint32_t) new;
 		}
 
-		klog(kLogLevelInfo, "%uKB low memory, %uKB high memory", x86_multiboot_info->mem_lower, x86_multiboot_info->mem_upper);
+		klog(kLogLevelInfo, "%uKB low memory, %uKB high memory", (unsigned int) x86_multiboot_info->mem_lower, (unsigned int) x86_multiboot_info->mem_upper);
 	} else {
 		klog(kLogLevelWarning, "No multiboot info!");
 	}	
@@ -120,4 +120,18 @@ static void x86_pc_init_timer(void) {
 
 	// Set up the system timer
 	irq_register_handler(0, kern_timer_tick);
+}
+
+/*
+ * Reads a quadword from a specific MSR to memory pointed to by lo and hi.
+ */
+void x86_pc_read_msr(uint32_t msr, uint32_t *lo, uint32_t *hi) {
+	__asm__ volatile("rdmsr" : "=a"(*lo), "=d"(*hi) : "c"(msr));
+}
+
+/*
+ * Writes a quadword of data (split into low and high words) to a specific MSR.
+ */
+void x86_pc_write_msr(uint32_t msr, uint32_t lo, uint32_t hi) {
+	__asm__ volatile("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
 }

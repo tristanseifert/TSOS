@@ -60,7 +60,7 @@ static const char reg_names[18][4] = {
  */
 void error_dump_regs(err_registers_t regs) {
 	kprintf("\n");
-	klog(kLogLevelCritical, "%s (0x%X)", &err_names[regs.int_no], regs.err_code);
+	klog(kLogLevelCritical, "%s (0x%X)", (char *) &err_names[regs.int_no], (unsigned int) regs.err_code);
 
 	// Dump the registers now.
 	uint32_t registers[18] = {
@@ -70,7 +70,7 @@ void error_dump_regs(err_registers_t regs) {
 	};
 
 	for(uint8_t i = 0; i < 18; i+=2) {
-		klog(kLogLevelCritical, "%s: 0x%08X %s: 0x%08X", &reg_names[i], registers[i], &reg_names[i+1], registers[i+1]);
+		klog(kLogLevelCritical, "%s: 0x%08X %s: 0x%08X", (char *) &reg_names[i], (unsigned int) registers[i], (char *) &reg_names[i+1], (unsigned int) registers[i+1]);
 	}
 
 	error_dump_stack_trace(256, regs.ebp);
@@ -186,9 +186,9 @@ char *error_get_closest_symbol(unsigned int address) {
 		return name;
 	} else { // Offset
 		if(offset > 0) { // positive offset
-			sprintf(outBuffer, "%s+0x%X", name, offset);
+			sprintf(outBuffer, "%s+0x%X", name, (unsigned int) offset);
 		} else if(offset < 0) { // negative offset
-			sprintf(outBuffer, "%s-0x%X", name, -offset);
+			sprintf(outBuffer, "%s-0x%X", name, (unsigned int) -offset);
 		}
 
 		return outBuffer;
@@ -205,6 +205,8 @@ void *__stack_chk_guard = NULL;
 void __stack_chk_guard_setup(void) {
 	unsigned int *p = (unsigned int *) __stack_chk_guard;
 	*p = 0xDEADBEEF;
+	
+	klog(kLogLevelDebug, "Stack guards initialised");
 }
  
 void __attribute__((noreturn)) __stack_chk_fail() { 

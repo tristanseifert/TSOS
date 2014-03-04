@@ -87,7 +87,7 @@ static long long l_possibleOverruns = 0;	///< Number of possible overruns
 #define OFFSET_FROM_BIT(a) (a%(8*4))
 
 // Internal functions
-void *kheap_smart_alloc(size_t size, bool aligned, uint32_t *phys);
+void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys);
 static void free(void *address);
 
 // Memory allocator
@@ -99,35 +99,35 @@ static void lalloc_free(void *);
 // Kernel heap and pagetables
 heap_t *kernel_heap = NULL;
 extern page_directory_t *kernel_directory;
-static uint32_t nframes;
+static unsigned int nframes;
 
 /*
  * Set a bit in the kernel_heap->bitmap bitset
  */
-static void set_frame(uint32_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
-	uint32_t idx = INDEX_FROM_BIT(frame);
-	uint32_t off = OFFSET_FROM_BIT(frame);
+static void set_frame(unsigned int frame_addr) {
+	unsigned int frame = frame_addr / 0x1000;
+	unsigned int idx = INDEX_FROM_BIT(frame);
+	unsigned int off = OFFSET_FROM_BIT(frame);
 	kernel_heap->bitmap[idx] |= (0x1 << off);
 }
 
 /*
  * Clear a bit in the kernel_heap->bitmap bitset
  */
-static void clear_frame(uint32_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
-	uint32_t idx = INDEX_FROM_BIT(frame);
-	uint32_t off = OFFSET_FROM_BIT(frame);
+static void clear_frame(unsigned int frame_addr) {
+	unsigned int frame = frame_addr / 0x1000;
+	unsigned int idx = INDEX_FROM_BIT(frame);
+	unsigned int off = OFFSET_FROM_BIT(frame);
 	kernel_heap->bitmap[idx] &= ~(0x1 << off);
 }
 
 /*
  * Check if a certain page is allocated.
  */
-static uint32_t test_frame(uint32_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
-	uint32_t idx = INDEX_FROM_BIT(frame);
-	uint32_t off = OFFSET_FROM_BIT(frame);
+static unsigned int test_frame(unsigned int frame_addr) {
+	unsigned int frame = frame_addr / 0x1000;
+	unsigned int idx = INDEX_FROM_BIT(frame);
+	unsigned int off = OFFSET_FROM_BIT(frame);
 	return (kernel_heap->bitmap[idx] & (0x1 << off));
 }
 
@@ -139,7 +139,7 @@ static uint32_t test_frame(uint32_t frame_addr) {
  * @param supervisor When set, mapped pages are only accessible by supervisor.
  * @param readonly Causes mapped pages to be readonly to lower priv levels.
  */
-void kheap_install(uint32_t start, uint32_t end, bool supervisor, bool readonly) {
+void kheap_install(unsigned int start, unsigned int end, bool supervisor, bool readonly) {
 	// Allocate memory for pages
 	for(int i = start; i < end; i += 0x1000) {
 		paging_get_page(i, true, kernel_directory);
@@ -152,7 +152,7 @@ void kheap_install(uint32_t start, uint32_t end, bool supervisor, bool readonly)
 	memclr(heap, sizeof(heap_t));
 
 	// Allocate memory for the bitmap
-	uint32_t size = end - start;
+	unsigned int size = end - start;
 	nframes = size / 0x1000;
 
 	heap->bitmap = kmalloc(INDEX_FROM_BIT(nframes));
@@ -180,8 +180,8 @@ void kheap_install(uint32_t start, uint32_t end, bool supervisor, bool readonly)
  * @param phys Pointer to memory to store the physical address in
  * @return Pointer to memory, or NULL if error.
  */
-void *kheap_smart_alloc(size_t size, bool aligned, uint32_t *phys) {
-	uint32_t ptr = (uint32_t) lalloc_malloc(size);
+void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys) {
+	unsigned int ptr = (unsigned int) lalloc_malloc(size);
 
 	// Handle an out of memory condition
 	if(!ptr) {
@@ -228,7 +228,7 @@ void kfree(void* address) {
 	if(kernel_heap) {
 		free(address);
 	} else {
-		klog(kLogLevelWarning, "Tried to free 0x%X on dumb heap", address);
+		klog(kLogLevelWarning, "Tried to free 0x%X on dumb heap", (unsigned int) address);
 	}
 }
 
@@ -268,18 +268,18 @@ static int allocator_unlock() {
  */
 static void* allocator_alloc(size_t pages) {
 	bool pagesFound = false;
-	uint32_t first_free_page = 0;
+	unsigned int first_free_page = 0;
 	void *start = NULL;
 
 	// Check all free frames for a section of pages
-	uint32_t i, j, k, l = 0;
+	unsigned int i, j, k, l = 0;
 
 	for (i = 0; i < INDEX_FROM_BIT(nframes); i++) {
 		// Skip if all 32 frames are filled
 		if (kernel_heap->bitmap[i] != 0xFFFFFFFF) {
 			// Check which one of the 32 frames are filled
 			for (j = 0; j < 32; j++) {
-				uint32_t toTest = 0x1 << j;
+				unsigned int toTest = 0x1 << j;
 
 				// If this frame is free, increment a counter
 				if (!(kernel_heap->bitmap[i] & toTest)) {
@@ -303,7 +303,7 @@ static void* allocator_alloc(size_t pages) {
 	}
 
 	// We drop down here if there wasn't enough pages
-	klog(kLogLevelError, "Could not allocate 0x%X pages (last checked page is 0x%X)", pages, first_free_page);
+	klog(kLogLevelError, "Could not allocate 0x%X pages (last checked page is 0x%X)", (unsigned int) pages, first_free_page);
 	return NULL;
 
 	// Enough free pages were found
@@ -311,7 +311,7 @@ static void* allocator_alloc(size_t pages) {
 	// klog(kLogLevelDebug, "Allocated 0x%X pages (page 0x%X)", pages, first_free_page);
 	start = (void *) (first_free_page * 0x1000) + kernel_heap->start_address;
 
-	uint32_t address = (first_free_page * 0x1000) + kernel_heap->start_address;
+	unsigned int address = (first_free_page * 0x1000) + kernel_heap->start_address;
 
 	page_t *page;
 
@@ -342,7 +342,7 @@ static void* allocator_alloc(size_t pages) {
  */
 static int allocator_free(void *mem, size_t pages) {
 	page_t *page;
-	uint32_t address = (uint32_t) mem;
+	unsigned int address = (unsigned int) mem;
 
 #if DEBUG_PAGE_ALLOCATION
 	klog(kLogLevelDebug, "Freed 0x%X pages (virt 0x%X)", pages, address);

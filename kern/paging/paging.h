@@ -30,16 +30,16 @@ typedef struct page_directory {
 	// Array of ptrs to page_table structs.
 	page_table_t* tables[1024];
 	// Array of pointers to page tables above, but giving their physical location
-	uint32_t tablesPhysical[1024];
+	unsigned int tablesPhysical[1024];
 	// Physical address of tablesPhysical.
-	uint32_t physicalAddr;
+	unsigned int physicalAddr;
 } page_directory_t;
 
 typedef struct paging_stats {
-	uint32_t total_pages;
-	uint32_t pages_mapped;
-	uint32_t pages_free;
-	uint32_t pages_wired;
+	unsigned int total_pages;
+	unsigned int pages_mapped;
+	unsigned int pages_free;
+	unsigned int pages_wired;
 } paging_stats_t;
 
 void alloc_frame(page_t*, bool, bool);
@@ -50,10 +50,10 @@ paging_stats_t paging_get_stats();
 void paging_init();
 void paging_switch_directory(page_directory_t*);
 page_directory_t *paging_new_directory();
-page_t* paging_get_page(uint32_t, bool, page_directory_t*);
+page_t* paging_get_page(unsigned int, bool, page_directory_t*);
 
-uint32_t paging_map_section(uint32_t, uint32_t, page_directory_t*, paging_memory_section_t);
-void paging_unmap_section(uint32_t, uint32_t, page_directory_t*);
+unsigned int paging_map_section(unsigned int, unsigned int, page_directory_t*, paging_memory_section_t);
+void paging_unmap_section(unsigned int, unsigned int, page_directory_t*);
 
 void paging_page_fault_handler();
-void paging_flush_tlb(uint32_t);
+void paging_flush_tlb(unsigned int);

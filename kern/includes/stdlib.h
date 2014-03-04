@@ -61,8 +61,8 @@ int toupper(int c);
 void* memclr(void* start, size_t count);
 
 // standard library: input/output
-int snprintf(char* str, size_t size, const char* format, ...);
-int sprintf(char* str, const char* format, ...);
+int snprintf(char* str, size_t size, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
+int sprintf(char* str, const char* format, ...) __attribute__ ((format (printf, 2, 3)));
 int vsprintf(char* str, const char* format, va_list ap);
 int vsnprintf(char* str, size_t size, const char* format, va_list ap);
 

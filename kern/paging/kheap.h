@@ -9,7 +9,7 @@ typedef struct heap {
 	 * The virtual starting address fo the heap. It is allocated free physical
 	 * memory pages by the paging physical memory allocator.
 	 */
-	uint32_t start_address;
+	unsigned int start_address;
 
 	/*
 	 * Number of bytes currently occupied by the heap. This will usually be a
@@ -22,7 +22,7 @@ typedef struct heap {
 	 * equal to this, any further memory allocations will fail, and an error
 	 * code of ENOMEM will be set.
 	 */
-	uint32_t end_address;
+	unsigned int end_address;
 
 	/*
 	 * Whether allocated pages are supervisor only or readonly.
@@ -34,7 +34,7 @@ typedef struct heap {
 	 * the memory range allocated to the kernel heap. Used to find places
 	 * where to map stuff.
 	 */
-	uint32_t *bitmap;
+	unsigned int *bitmap;
 } heap_t;
 
 /*
@@ -45,7 +45,7 @@ typedef struct heap {
  * @param supervisor When set, mapped pages are only accessible by supervisor.
  * @param readonly Causes mapped pages to be readonly to lower priv levels.
  */
-void kheap_install(uint32_t start, uint32_t end, bool supervisor, bool readonly);
+void kheap_install(unsigned int start, unsigned int end, bool supervisor, bool readonly);
 
 
 // !Heap accessing functions
@@ -62,7 +62,7 @@ void *kmalloc_a(size_t sz);
  * @param sz Size of memory to allocate
  * @param phys Pointer to memory to place physical address in
  */
-void *kmalloc_p(size_t sz, uint32_t *phys);
+void *kmalloc_p(size_t sz, unsigned int *phys);
 
 /*
  * Allocates a page-aligned chunk of memory and gets physical address.
@@ -70,7 +70,7 @@ void *kmalloc_p(size_t sz, uint32_t *phys);
  * @param sz Size of memory to allocate
  * @param phys Pointer to memory to place physical address in
  */
-void *kmalloc_ap(size_t sz, uint32_t *phys);
+void *kmalloc_ap(size_t sz, unsigned int *phys);
 
 /*
  * Allocates a chunk of memory.

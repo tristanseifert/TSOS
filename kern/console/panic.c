@@ -2,7 +2,7 @@
 #import "panic.h"
 #import "runtime/error.h"
 
-void panic_assert(char *file, uint32_t line, char *desc) {
+void panic_assert(char *file, unsigned int line, char *desc) {
 	// An assertion failed, and we have to panic.
 	__asm__ volatile("cli"); // Disable interrupts.
 
@@ -16,7 +16,7 @@ void panic_assert(char *file, uint32_t line, char *desc) {
 	for(;;);
 }
 
-void panic(char *message, char *file, uint32_t line) {
+void panic(char *message, char *file, unsigned int line) {
 	// We encountered a massive problem and have to stop.
 	__asm__ volatile("cli"); // Disable interrupts.
 
