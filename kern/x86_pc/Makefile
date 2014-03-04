@@ -1,5 +1,5 @@
 MODULE=runtime
-SOURCES=x86_pc.c idt.c 8259_pic.c 8254_pit.c interrupts.c isr.s
+SOURCES=x86_pc.c idt.c 8259_pic.c 8254_pit.c interrupts.c isr.s tss.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)

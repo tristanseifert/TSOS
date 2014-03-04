@@ -48,7 +48,7 @@ $(EXECUTABLE): $(OBJECTS)
 
 	$(CC) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
 
-	@i686-pc-elf-objdump -b elf32-i386 -S -d $@ > $@_symbols.txt
+	@i686-pc-elf-objdump -b elf32-i386 -d $@ > $@_symbols.txt
 	@i686-pc-elf-objcopy --strip-debug $@
 
 .c.o:

@@ -1,3 +1,8 @@
+.set GDT_KERNEL_CODE, 0x08
+.set GDT_KERNEL_DATA, 0x10
+.set GDT_USER_CODE, 0x18
+.set GDT_USER_DATA, 0x20
+
 .extern error_handler
 .extern irq_handler
 .extern last_irq_number
@@ -150,7 +155,7 @@ isr14:
 	mov		%ds, %ax											# Lower 16-bits of eax = ds.
 	push	%eax												# save the data segment descriptor
 
-	mov 	$0x10, %ax											# load the kernel data segment descriptor
+	mov 	$GDT_KERNEL_DATA, %ax								# load the kernel data segment descriptor
 	mov 	%ax, %ds
 	mov 	%ax, %es
 	mov 	%ax, %fs
@@ -176,7 +181,7 @@ error_common_stub:
 	mov		%ds, %ax											# Lower 16-bits of eax = ds.
 	push	%eax												# save the data segment descriptor
 
-	mov 	$0x10, %ax											# load the kernel data segment descriptor
+	mov 	$GDT_KERNEL_DATA, %ax								# load the kernel data segment descriptor
 	mov 	%ax, %ds
 	mov 	%ax, %es
 	mov 	%ax, %fs

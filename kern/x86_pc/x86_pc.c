@@ -1,3 +1,5 @@
+#undef __ASSEMBLY__
+
 #import <types.h>
 #import "x86_pc.h"
 #import "binfmt_elf.h"
@@ -5,6 +7,7 @@
 #import "interrupts.h"
 #import "8259_pic.h"
 #import "8254_pit.h"
+#import "tss.h"
 
 #import "task/systimer.h"
 
@@ -98,6 +101,9 @@ void x86_pc_init(void) {
 	// Set up IDT
 	idt_init();
 
+	// Set up bogus TSS
+	tss_init();
+
 	// Remap PICs
 	i8259_remap(0x20, 0x28);
 
@@ -134,4 +140,14 @@ void x86_pc_read_msr(uint32_t msr, uint32_t *lo, uint32_t *hi) {
  */
 void x86_pc_write_msr(uint32_t msr, uint32_t lo, uint32_t hi) {
 	__asm__ volatile("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
+}
+
+/*
+ * Reads the timestamp counter.
+ */
+uint64_t x86_pc_read_tsc(void) {
+	unsigned int lo, hi;
+
+	__asm__ volatile("rdtsc" : "=a" (lo), "=d" (hi));
+	return (uint64_t) hi << 32 | lo;
 }

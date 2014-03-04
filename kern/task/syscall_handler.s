@@ -44,9 +44,44 @@ syscall_enter:
 	sysexit
 
 ###############################################################################
+# Called when a task wishes to yield its CPU slice.
+###############################################################################
+sys_yield:
+	pushl	%edx				# %eip to resume with
+	pushl	%ecx				# %esp to resume with
+	call	task_yield			# Run scheduler
+
+###############################################################################
 # Locations of the various syscall routines
 ###############################################################################
 .section .rodata
 syscall_table:
+	.long	.invalid_syscall	# Syscall 0 is invalid
+
+#	.long	sys_exit			# Exit with return code
+#	.long	sys_yield			# Cause this task to yield its CPU slicen
+
+#	.long	sys_fork			# Create new proccess with current %eip
+#	.long	sys_read			# Read from specified file handle
+#	.long	sys_write			# Write to specified file handle
+#	.long	sys_open			# Open a file handle
+#	.long	sys_close			# Close a file handle
+#	.long	sys_creat			# Create a file and return file handle
+#	.long	sys_link			# Create symlink
+#	.long	sys_unlink			# Deletes a file
+
+#	.long	sys_execve			# Replace this program with a new binary
+
+#	.long	sys_chdir			# Change current directory
+
+#	.long	sys_time			# seconds since Jan 1, 1970
+
+#	.long	sys_mknod
+#	.long	sys_chmod
+#	.long	sys_lchown
+#	.long	sys_stat
+
+#	.long	sys_lseek
+#	.long	sys_getpid
 
 syscall_table_end:

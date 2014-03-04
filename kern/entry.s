@@ -2,6 +2,8 @@
 .extern x86_pc_init_multiboot
 .extern vga_init
 
+.globl	gdt_kernel_tss
+
 #########################################################################################
 # Multiboot header
 #########################################################################################
@@ -134,6 +136,9 @@ gdt_start:
 	.quad	0x00CF92000000FFFF									# Kernel data
 	.quad	0x00CFFA000000FFFF									# User code
 	.quad	0x00CFF2000000FFFF									# User data
+
+gdt_kernel_tss:
+	.quad	0x0000000000000000									# Kernel TSS
 
 gdt_table:
 	.word	0x27												# Length

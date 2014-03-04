@@ -1,5 +1,5 @@
 MODULE=task
-SOURCES=systimer.c syscall.c syscall_handler.s
+SOURCES=systimer.c syscall.c syscall_handler.s task.c taskswitch.s
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)
