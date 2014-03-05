@@ -210,7 +210,13 @@ void __stack_chk_guard_setup(void) {
 }
  
 void __attribute__((noreturn)) __stack_chk_fail() { 
-	PANIC("Kernel stack memory corruption detected");
+	IRQ_OFF();
+
+	klog(kLogLevelCritical, "Kernel stack memory corruption detected!");
+
+	uint32_t ebp;
+	__asm__("mov %%ebp, %0" : "=r" (ebp));
+	error_dump_stack_trace(256, ebp);
 
 	// Halt by going into an infinite loop.
 	for(;;);

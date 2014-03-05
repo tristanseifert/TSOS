@@ -26,15 +26,23 @@ struct task_state {
  * context switch.
  */
 struct task {
-	// General task state
+	volatile int state; // 0 = runnable, >0 unrunnable, <0 stopped
+	uint64_t ticks; // number of TSC ticks this task got
+	uint8_t priority; // 0-15, where 0 is least and 15 is most
+
+	// Task state
 	task_state_t state;
 
 	// FPU state
 	bool uses_fpu;
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
 
-	// Scheduler info
-	uint64_t ticks;
+	// General info
+	unsigned int pid;
+	char name[64];
+
+	// Signal to be sent to this process
+	unsigned int next_signal;
 };
 
 /*

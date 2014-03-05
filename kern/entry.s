@@ -2,6 +2,7 @@
 .extern x86_pc_init_multiboot
 .extern vga_init
 
+.globl	gdt_table
 .globl	gdt_kernel_tss
 
 #########################################################################################
@@ -141,7 +142,7 @@ gdt_kernel_tss:
 	.quad	0x0000000000000000									# Kernel TSS
 
 gdt_table:
-	.word	0x27												# Length
+	.word	gdt_table-gdt_start-1								# Length
 	.long	gdt_start											# Linear address to GDT	
 
 

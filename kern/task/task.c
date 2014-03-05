@@ -12,6 +12,9 @@ static uint8_t fxsave_area[512] __attribute__((aligned(16)));
 // TSC value when this task started
 static uint64_t task_start_ticks;
 
+// PID of the last task
+static unsigned int last_pid;
+
 // Function to perform a context switch
 extern void task_switch(task_state_t state);
 

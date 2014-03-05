@@ -4,7 +4,7 @@
 
 void panic_assert(char *file, unsigned int line, char *desc) {
 	// An assertion failed, and we have to panic.
-	__asm__ volatile("cli"); // Disable interrupts.
+	IRQ_OFF();
 
 	klog(kLogLevelCritical, "ASSERTION FAILURE(%s) at %s:%i", desc, file, line);
 
@@ -18,7 +18,7 @@ void panic_assert(char *file, unsigned int line, char *desc) {
 
 void panic(char *message, char *file, unsigned int line) {
 	// We encountered a massive problem and have to stop.
-	__asm__ volatile("cli"); // Disable interrupts.
+	IRQ_OFF();
 
 	klog(kLogLevelCritical, "PANIC(%s) at %s:%i", message, file, line);
 

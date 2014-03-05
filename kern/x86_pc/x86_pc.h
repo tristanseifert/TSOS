@@ -3,7 +3,7 @@
 #define GDT_USER_CODE 0x18
 #define GDT_USER_DATA 0x20
 
-#define GDT_KERNEL_TSS 0x28
+#define GDT_KERNEL_TSS (GDT_USER_DATA + 8)
 
 // include below only from C code
 #ifndef __ASSEMBLY__
