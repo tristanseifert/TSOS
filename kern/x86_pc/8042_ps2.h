@@ -10,11 +10,22 @@ typedef enum {
 	kI8042DeviceMouse = 2
 } i8042_device_type_t;
 
+// Device state
+typedef enum {
+	kI8042StateFailed = -2,
+	kI8042StateNone = -1,
+	kI8042StateWaitingForResetAck,
+	kI8042StateWaitingForPOST,
+	kI8042StateWaitingReady
+} i8042_device_state_t;
+
 // Device struct
 struct i8042_ps2_device {
 	bool isUsable;
 	bool connected;
+
 	i8042_device_type_t type;
+	i8042_device_state_t state;
 
 	// used for driver purposes
 	device_t device;
@@ -28,11 +39,3 @@ struct i8042_ps2 {
 	// Whether the controller has one or two ports
 	bool isDualPort;
 };
-
-/*
- * Sends a reset command to the device on the specified port.
- *
- * @param port PS2 port
- * @return -1 if timeout, 0 if success, 1 if error
- */
-int i8042_reset_device(uint8_t port);
