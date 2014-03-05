@@ -44,18 +44,8 @@ void tss_init() {
 	// Flags
 	gdt[5] = 0x89;
 
-	// Print
-	kprintf("TSS entry: 0x");
-	for(int i = 0; i < 8; i++) {
-		kprintf("%02X", gdt[i]);
-	}
-	kprintf("\n");
-
 	// Flush GDT
 	__asm__ volatile("lgdt gdt_table");
-
-	// Debug
-	klog(kLogLevelDebug, "Set up TSS base 0x%X limit 0x%X (0x%08X%08X)", (unsigned int) base, (unsigned int) limit, (unsigned int) gdt_kernel_tss, (unsigned int) *(&gdt_kernel_tss+1));
 
 	// Load the TSS (entry 0x28, CPL3, LDT mode)
 	uint32_t gdt_number = GDT_KERNEL_TSS | 0x03;

@@ -85,18 +85,8 @@ loader:
 	# Enable SSE
 	call	sse_init
 
-	# Set up console
-	call	vga_init
-
-	# Initialise x86 multiboot stuff
-	call	x86_pc_init_multiboot
-
-	# Initialise paging
-	call	paging_init
-
-	# Initialise kernel, then execute it
-	call	kernel_init
-	call	kernel_main
+	# Jump into main function
+	call	main
 
 	# In case the kernel returns, hang forever
 	cli

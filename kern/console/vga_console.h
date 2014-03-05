@@ -18,6 +18,10 @@ enum vga_colour {
 	vga_colour_white = 15,
 };
 
+// Initialise VGA driver
+void vga_init(void);
+
+// Print a character to the VGA console
 void vga_console_putchar(char c);
 void vga_console_reset();
 

@@ -153,6 +153,7 @@ void paging_init() {
 	// Highmem is allocated only, so we ignore lowmem
 	unsigned int mem_end_page = (x86_multiboot_info->mem_upper * 1024);
 	nframes = mem_end_page / 0x1000;
+	nframes += 0x100; // lowmem
 	pages_total = nframes;
 
 	klog(kLogLevelInfo, "%u pages available", pages_total);

@@ -14,7 +14,16 @@ static int platform_init(void) {
 	memclr(platform_bus, sizeof(platform_bus));
 
 	// Register bus
-	bus_register(platform_bus, "platform");
+	bus_register(platform_bus, PLATFORM_BUS_NAME);
+
+	// Register the devices
+	device_t *ps2 = kmalloc(sizeof(device_t));
+	memclr(ps2, sizeof(device_t));
+
+	ps2->connection = kDeviceConnectionInternal;
+	ps2->node.name = "i8042 PS2 Controller";
+
+	bus_add_device(ps2, platform_bus);
 
 	return 0;
 }

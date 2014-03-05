@@ -44,43 +44,44 @@
 #define LIBALLOC_DEAD	0xdeaddead
 
 // Allocator types
-/** A structure found at the top of all system allocated 
- * memory blocks. It details the usage of the memory block.
+/*
+ * A structure found at the top of all system allocated memory blocks. It 
+ * details the usage of the memory block.
  */
 struct allocator_major {
-	struct allocator_major *prev;		///< Linked list information.
-	struct allocator_major *next;		///< Linked list information.
-	unsigned int pages;					///< The number of pages in the block.
-	unsigned int size;					///< The number of pages in the block.
-	unsigned int usage;					///< The number of bytes used in the block.
-	struct allocator_minor *first;		///< A pointer to the first allocated memory in the block.	
+	struct allocator_major *prev;
+	struct allocator_major *next;
+	unsigned int pages;	
+	unsigned int size;
+	unsigned int usage;
+	struct allocator_minor *first;
 };
 
-/** This is a structure found at the beginning of all
- * sections in a major block which were allocated by a
- * malloc, calloc, realloc call.
+/*
+ * This is a structure found at the beginning of all sections in a major block
+ * which were allocated by a malloc, calloc, realloc call.
  */
 struct	allocator_minor {
-	struct allocator_minor *prev;		///< Linked list information.
-	struct allocator_minor *next;		///< Linked list information.
-	struct allocator_major *block;		///< The owning block. A pointer to the major structure.
-	unsigned int magic;					///< A magic number to idenfity correctness.
-	unsigned int size; 					///< The size of the memory allocated. Could be 1 byte or more.
-	unsigned int req_size;				///< The size of memory requested.
+	struct allocator_minor *prev;
+	struct allocator_minor *next;
+	struct allocator_major *block;
+	unsigned int magic;
+	unsigned int size;
+	unsigned int req_size;
 };
 
 // Allocator state
-static struct allocator_major *l_memRoot = NULL;	///< The root memory block acquired from the system.
-static struct allocator_major *l_bestBet = NULL; ///< The major with the most free memory.
+static struct allocator_major *l_memRoot = NULL; // root memory vlock from system
+static struct allocator_major *l_bestBet = NULL; // Major block with most free memory
 
-static unsigned int l_pageSize  = 4096;			///< The size of an individual page. Set up in allocator_init.
-static unsigned int l_pageCount = 16;			///< The number of pages to request per chunk. Set up in allocator_init.
-static unsigned long long l_allocated = 0;		///< Running total of allocated memory.
-static unsigned long long l_inuse	 = 0;		///< Running total of used memory.
+static unsigned int l_pageSize = 4096; // size of a page
+static unsigned int l_pageCount = 16; // pages to request per chunk
+static unsigned long long l_allocated = 0; // total allocated memory
+static unsigned long long l_inuse = 0; // total used memory
 
-static long long l_warningCount = 0;		///< Number of warnings encountered
-static long long l_errorCount = 0;			///< Number of actual errors
-static long long l_possibleOverruns = 0;	///< Number of possible overruns
+static long long l_warningCount = 0; // warnings
+static long long l_errorCount = 0; // errors
+static long long l_possibleOverruns = 0; // possible overruns
 
 // Bitmap macros
 #define INDEX_FROM_BIT(a) (a/(8*4))
@@ -366,6 +367,9 @@ static int allocator_free(void *mem, size_t pages) {
 	return 0;
 }
 
+/*
+ * Allocate a new memory page.
+ */
 static struct allocator_major *allocate_new_page(unsigned int size) {
 	unsigned int st;
 	struct allocator_major *maj;
@@ -374,48 +378,49 @@ static struct allocator_major *allocate_new_page(unsigned int size) {
 	st  = size + sizeof(struct allocator_major);
 	st += sizeof(struct allocator_minor);
 
-			// Perfect amount of space?
-	if ((st % l_pageSize) == 0)
+	// Perfect amount of space?
+	if ((st % l_pageSize) == 0) {
 		st  = st / (l_pageSize);
-	else
+	} else {
+		// No, we need more space
 		st  = st / (l_pageSize) + 1;
-						// No, add the buffer. 
-
+	}
 	
-	// Make sure it's >= the minimum size.
+	// Make sure it's  the minimum size.
 	if (st < l_pageCount) st = l_pageCount;
 	
 	maj = (struct allocator_major*)allocator_alloc(st);
 
-	if (maj == NULL) 
-	{
+	if (maj == NULL)  {
 		l_warningCount += 1;
 		#if defined DEBUG || defined INFO
-		printf("liballoc: WARNING: allocator_alloc(%i) return NULL\n", st);
-		FLUSH();
+		klog(kLogLevelDebug, "liballoc: WARNING: allocator_alloc(%i) return NULL", st);
 		#endif
-		return NULL;	// uh oh, we ran out of memory.
+
+		// We ran out of memory
+		return NULL;
 	}
 	
-	maj->prev 	= NULL;
-	maj->next 	= NULL;
-	maj->pages 	= st;
-	maj->size 	= st * l_pageSize;
-	maj->usage 	= sizeof(struct allocator_major);
-	maj->first 	= NULL;
+	maj->prev = NULL;
+	maj->next = NULL;
+	maj->pages = st;
+	maj->size = st * l_pageSize;
+	maj->usage = sizeof(struct allocator_major);
+	maj->first = NULL;
 
 	l_allocated += maj->size;
 
 	#ifdef DEBUG
-	printf("liballoc: Resource allocated %x of %i pages (%i bytes) for %i size.\n", maj, st, maj->size, size);
-
-	printf("liballoc: Total memory usage = %i KB\n",  (int)((l_allocated / (1024))));
-	FLUSH();
+	klog(kLogLevelDebug, "liballoc: Resource allocated %x of %i pages (%i bytes) for %i size.", maj, st, maj->size, size);
+	klog(kLogLevelDebug, "liballoc: Total memory usage = %i KB",  (int)((l_allocated / (1024))));
 	#endif
 	
 	return maj;
 }
 
+/*
+ * Allocates a memory block of the requested size.
+ */
 static void *lalloc_malloc(size_t req_size) {
 	int startedBet = 0;
 	unsigned long long bestSize = 0;
@@ -432,15 +437,12 @@ static void *lalloc_malloc(size_t req_size) {
 	}
 
 	// Ideally, we really want an alignment of 0 or 1 in order to save space.
-	
 	allocator_lock();
 
 	if (size == 0) {
 		l_warningCount += 1;
 		#if defined DEBUG || defined INFO
-		printf("liballoc: WARNING: alloc(0) called from %x\n",
-							__builtin_return_address(0));
-		FLUSH();
+		klog(kLogLevelDebug, "liballoc: WARNING: alloc(0) called from %x", __builtin_return_address(0));
 		#endif
 		allocator_unlock();
 		return lalloc_malloc(1);
@@ -448,45 +450,40 @@ static void *lalloc_malloc(size_t req_size) {
 	
 
 	if (l_memRoot == NULL) {
-		#if defined DEBUG || defined INFO
 		#ifdef DEBUG
-		printf("liballoc: initialization of liballoc " VERSION "\n");
-		#endif
-		atexit(allocator_dump);
-		FLUSH();
+		klog(kLogLevelDebug, "liballoc: initialization of liballoc " VERSION "");
 		#endif
 			
-		// This is the first time we are being used.
+		// First run of allocator
 		l_memRoot = allocate_new_page(size);
 		if (l_memRoot == NULL) {
 			allocator_unlock();
+
 			#ifdef DEBUG
-			printf("liballoc: initial l_memRoot initialization failed\n", p); 
+			klog(kLogLevelDebug, "liballoc: initial l_memRoot initialization failed", p); 
 			FLUSH();
 			#endif
+
 			return NULL;
 		}
 
 		#ifdef DEBUG
-		printf("liballoc: set up first memory major %x\n", l_memRoot);
+		klog(kLogLevelDebug, "liballoc: set up first memory major %x", l_memRoot);
 		FLUSH();
 		#endif
 	}
 
 
 	#ifdef DEBUG
-	printf("liballoc: %x lalloc_malloc(%i): ", 
-					__builtin_return_address(0),
-					size);
+	klog(kLogLevelDebug, "liballoc: %x lalloc_malloc(%i): ", __builtin_return_address(0), size);
 	FLUSH();
 	#endif
 
 	// Now we need to bounce through every major and find enough space....
-
 	maj = l_memRoot;
 	startedBet = 0;
 	
-	// Start at the best bet....
+	// Start at largest free major block
 	if (l_bestBet != NULL) {
 		bestSize = l_bestBet->size - l_bestBet->usage;
 
@@ -496,12 +493,12 @@ static void *lalloc_malloc(size_t req_size) {
 		}
 	}
 	
+	// Loop until we have no more majors
 	while (maj != NULL) {
-		diff  = maj->size - maj->usage;	
-										// free memory in the block
+		diff  = maj->size - maj->usage;	// free memory in the block
 
+		// If it's bigger than the best bet, remember that
 		if (bestSize < diff) {
-			// Hmm.. this one has more memory then our bestBet. Remember!
 			l_bestBet = maj;
 			bestSize = diff;
 		}
@@ -509,13 +506,13 @@ static void *lalloc_malloc(size_t req_size) {
 		// CASE 1:  There is not enough space in this major block.
 		if (diff < (size + sizeof(struct allocator_minor))) {
 			#ifdef DEBUG
-			printf("CASE 1: Insufficient space in block %x\n", maj);
-			FLUSH();
+			klog(kLogLevelDebug, "Insufficient space in block %x", maj);
 			#endif
 				
 			// Another major block next to this one?
 			if (maj->next != NULL)  {
-				maj = maj->next;		// Hop to that one.
+				// Go to it
+				maj = maj->next;
 				continue;
 			}
 
@@ -527,25 +524,24 @@ static void *lalloc_malloc(size_t req_size) {
 			}
 
 			// Create a new major block next to this one and...
-			maj->next = allocate_new_page(size);	// next one will be okay.
-			if (maj->next == NULL) break;			// no more memory.
+			maj->next = allocate_new_page(size);
+			if (maj->next == NULL) break;
+
 			maj->next->prev = maj;
 			maj = maj->next;
-
-			// .. fall through to CASE 2 ..
 		}
 
-		// CASE 2: It's a brand new block.
+		// It's a brand new block.
 		if (maj->first == NULL) {
 			maj->first = (struct allocator_minor*)((uintptr_t)maj + sizeof(struct allocator_major));
 
 			
-			maj->first->magic 		= LIBALLOC_MAGIC;
-			maj->first->prev 		= NULL;
-			maj->first->next 		= NULL;
-			maj->first->block 		= maj;
-			maj->first->size 		= size;
-			maj->first->req_size 	= req_size;
+			maj->first->magic = LIBALLOC_MAGIC;
+			maj->first->prev = NULL;
+			maj->first->next = NULL;
+			maj->first->block = maj;
+			maj->first->size = size;
+			maj->first->req_size = req_size;
 			maj->usage 	+= size + sizeof(struct allocator_minor);
 
 			l_inuse += size;
@@ -555,14 +551,14 @@ static void *lalloc_malloc(size_t req_size) {
 			ALIGN(p);
 			
 			#ifdef DEBUG
-			printf("CASE 2: returning %x\n", p); 
-			FLUSH();
+			klog(kLogLevelDebug, "returning %x", p); 
 			#endif
+
 			allocator_unlock();		// release the lock
 			return p;
 		}
 
-		// CASE 3: Block in use and enough space at the start of the block.
+		// Block in use and enough space at the start of the block.
 		diff =  (uintptr_t)(maj->first);
 		diff -= (uintptr_t)maj;
 		diff -= sizeof(struct allocator_major);
@@ -573,12 +569,12 @@ static void *lalloc_malloc(size_t req_size) {
 			maj->first->prev->next = maj->first;
 			maj->first = maj->first->prev;
 				
-			maj->first->magic 	= LIBALLOC_MAGIC;
-			maj->first->prev 	= NULL;
-			maj->first->block 	= maj;
-			maj->first->size 	= size;
-			maj->first->req_size 	= req_size;
-			maj->usage 			+= size + sizeof(struct allocator_minor);
+			maj->first->magic = LIBALLOC_MAGIC;
+			maj->first->prev = NULL;
+			maj->first->block = maj;
+			maj->first->size = size;
+			maj->first->req_size = req_size;
+			maj->usage += size + sizeof(struct allocator_minor);
 
 			l_inuse += size;
 
@@ -586,14 +582,14 @@ static void *lalloc_malloc(size_t req_size) {
 			ALIGN(p);
 
 			#ifdef DEBUG
-			printf("CASE 3: returning %x\n", p); 
-			FLUSH();
+			klog(kLogLevelDebug, "returning %x", p); 
 			#endif
+
 			allocator_unlock();		// release the lock
 			return p;
 		}
 		
-		// CASE 4: There is enough space in this block. But is it contiguous?
+		// There is enough space in this block. But is it contiguous?
 		min = maj->first;
 		
 		// Looping within the block now...
@@ -605,10 +601,9 @@ static void *lalloc_malloc(size_t req_size) {
 					diff -= (uintptr_t)min;
 					diff -= sizeof(struct allocator_minor);
 					diff -= min->size; 
-						// minus already existing usage..
+					// Subtract already existing usage..
 
 					if (diff >= (size + sizeof(struct allocator_minor))) {
-						// yay....
 						min->next = (struct allocator_minor*)((uintptr_t)min + sizeof(struct allocator_minor) + min->size);
 						min->next->prev = min;
 						min = min->next;
@@ -625,22 +620,22 @@ static void *lalloc_malloc(size_t req_size) {
 						ALIGN(p);
 
 						#ifdef DEBUG
-						printf("CASE 4.1: returning %x\n", p); 
-						FLUSH();
+						klog(kLogLevelDebug, "returning %x", p); 
 						#endif
+
 						allocator_unlock();		// release the lock
 						return p;
 					}
 				}
 
-				// CASE 4.2: Is there space between two minors?
+				// Is there space between two minors?
 				if (min->next != NULL) {
 					// is the difference between here and next big enough?
 					diff  = (uintptr_t)(min->next);
 					diff -= (uintptr_t)min;
 					diff -= sizeof(struct allocator_minor);
 					diff -= min->size;
-										// minus our existing usage.
+					// Subtract our existing usage.
 
 					if (diff >= (size + sizeof(struct allocator_minor))) {
 						new_min = (struct allocator_minor*)((uintptr_t)min + sizeof(struct allocator_minor) + min->size);
@@ -662,23 +657,21 @@ static void *lalloc_malloc(size_t req_size) {
 
 
 						#ifdef DEBUG
-						printf("CASE 4.2: returning %x\n", p); 
-						FLUSH();
+						klog(kLogLevelDebug, "returning %x", p); 
 						#endif
 						
-						allocator_unlock();		// release the lock
+						allocator_unlock();
 						return p;
 					}
-				}	// min->next != NULL
+				}
 
 				min = min->next;
 		} // while min != NULL ...
 
-		// CASE 5: Block full! Ensure next block and loop.
+		// Block full! Ensure next block and loop.
 		if (maj->next == NULL) {
 			#ifdef DEBUG
-			printf("CASE 5: block full\n");
-			FLUSH();
+			klog(kLogLevelDebug, "block full");
 			#endif
 
 			if (startedBet == 1) {
@@ -688,26 +681,25 @@ static void *lalloc_malloc(size_t req_size) {
 			}
 				
 			// we've run out. we need more...
-			maj->next = allocate_new_page(size);		// next one guaranteed to be okay
-			if (maj->next == NULL) break;			//  uh oh,  no more memory.....
+			maj->next = allocate_new_page(size);
+			if (maj->next == NULL) break;
 			maj->next->prev = maj;
 
 		}
 
 		maj = maj->next;
-	} // while (maj != NULL)
+	}
 
-	allocator_unlock();		// release the lock
+	allocator_unlock();
 
 	#ifdef DEBUG
-	printf("All cases exhausted. No memory available.\n");
-	FLUSH();
+	klog(kLogLevelDebug, "All cases exhausted. No memory available.");
 	#endif
+
 	#if defined DEBUG || defined INFO
-	printf("liballoc: WARNING: lalloc_malloc(%i) returning NULL.\n", size);
-	allocator_dump();
-	FLUSH();
+	klog(kLogLevelDebug, "liballoc: WARNING: lalloc_malloc(%i) returning NULL.", size);
 	#endif
+
 	return NULL;
 }
 
@@ -718,8 +710,7 @@ static void lalloc_free(void *ptr) {
 	if (ptr == NULL) {
 		l_warningCount += 1;
 		#if defined DEBUG || defined INFO
-		printf("liballoc: WARNING: lalloc_free)(NULL) called from %x\n",
-							__builtin_return_address(0));
+		klog(kLogLevelDebug, "liballoc: WARNING: lalloc_free)(NULL) called from %x", __builtin_return_address(0));
 		FLUSH();
 		#endif
 		return;
@@ -727,12 +718,10 @@ static void lalloc_free(void *ptr) {
 
 	UNALIGN(ptr);
 
-	allocator_lock();		// lockit
-
+	allocator_lock();
 
 	min = (struct allocator_minor*)((uintptr_t)ptr - sizeof(struct allocator_minor));
 
-	
 	if (min->magic != LIBALLOC_MAGIC) {
 		l_errorCount += 1;
 
@@ -743,41 +732,30 @@ static void lalloc_free(void *ptr) {
 			((min->magic & 0xFF) == (LIBALLOC_MAGIC & 0xFF)) 
 		  ) {
 			l_possibleOverruns += 1;
+
 			#if defined DEBUG || defined INFO
-			printf("liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x\n",
-								min->magic,
-								LIBALLOC_MAGIC);
-			FLUSH();
+			klog(kLogLevelDebug, "liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x", min->magic, LIBALLOC_MAGIC);
 			#endif
 		}
 						
 						
 		if (min->magic == LIBALLOC_DEAD) {
 			#if defined DEBUG || defined INFO
-			printf("liballoc: ERROR: multiple lalloc_free)() attempt on %x from %x.\n", 
-									ptr,
-									__builtin_return_address(0));
-			FLUSH();
+			klog(kLogLevelDebug, "liballoc: ERROR: multiple lalloc_free)() attempt on %x from %x.", ptr, __builtin_return_address(0));
 			#endif
+
 		} else {
 			#if defined DEBUG || defined INFO
-			printf("liballoc: ERROR: Bad lalloc_free)(%x) called from %x\n",
-								ptr,
-								__builtin_return_address(0));
-			FLUSH();
+			klog(kLogLevelDebug, "liballoc: ERROR: Bad lalloc_free)(%x) called from %x", ptr, __builtin_return_address(0));
 			#endif
 		}
 			
-		// being lied to...
-		allocator_unlock();		// release the lock
+		allocator_unlock();
 		return;
 	}
 
 	#ifdef DEBUG
-	printf("liballoc: %x lalloc_free)(%x): ", 
-				__builtin_return_address(0),
-				ptr);
-	FLUSH();
+	klog(kLogLevelDebug, "liballoc: %x lalloc_free)(%x): ", __builtin_return_address(0), ptr);
 	#endif
 	
 	maj = min->block;
@@ -785,15 +763,12 @@ static void lalloc_free(void *ptr) {
 	l_inuse -= min->size;
 
 	maj->usage -= (min->size + sizeof(struct allocator_minor));
-	min->magic  = LIBALLOC_DEAD;		// No mojo.
+	min->magic  = LIBALLOC_DEAD;
 
 	if (min->next != NULL) min->next->prev = min->prev;
 	if (min->prev != NULL) min->prev->next = min->next;
 
-	if (min->prev == NULL) maj->first = min->next;	
-						// Might empty the block. This was the first
-						// minor.
-
+	if (min->prev == NULL) maj->first = min->next;
 
 	// We need to clean up after the majors now....
 	if (maj->first == NULL) { // Block completely unused.
@@ -815,13 +790,8 @@ static void lalloc_free(void *ptr) {
 		}
 
 	}
-
-	#ifdef DEBUG
-	printf("OK\n");
-	FLUSH();
-	#endif
 	
-	allocator_unlock();		// release the lock
+	allocator_unlock();
 }
 
 static void* lalloc_calloc(size_t nobj, size_t size) {
@@ -855,7 +825,7 @@ static void* lalloc_realloc(void *p, size_t size) {
 	ptr = p;
 	UNALIGN(ptr);
 
-	allocator_lock();		// lockit
+	allocator_lock();
 
 	min = (struct allocator_minor*)((uintptr_t)ptr - sizeof(struct allocator_minor));
 
@@ -871,37 +841,26 @@ static void* lalloc_realloc(void *p, size_t size) {
 		  ) {
 			l_possibleOverruns += 1;
 			#if defined DEBUG || defined INFO
-			printf("liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x\n",
-								min->magic,
-								LIBALLOC_MAGIC);
-			FLUSH();
+			klog(kLogLevelDebug, "liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x", min->magic, LIBALLOC_MAGIC);
 			#endif
 		}
 						
 						
 		if (min->magic == LIBALLOC_DEAD) {
 			#if defined DEBUG || defined INFO
-			printf("liballoc: ERROR: multiple lalloc_free)() attempt on %x from %x.\n", 
-									ptr,
-									__builtin_return_address(0));
-			FLUSH();
+			klog(kLogLevelDebug, "liballoc: ERROR: multiple lalloc_free() attempt on %x from %x.", ptr, __builtin_return_address(0));
 			#endif
 		} else {
 			#if defined DEBUG || defined INFO
-			printf("liballoc: ERROR: Bad lalloc_free)(%x) called from %x\n",
-								ptr,
-								__builtin_return_address(0));
-			FLUSH();
+			klog(kLogLevelDebug, "liballoc: ERROR: Bad lalloc_free(%x) called from %x", ptr, __builtin_return_address(0));
 			#endif
 		}
 		
-		// being lied to...
-		allocator_unlock();		// release the lock
+		allocator_unlock();
 		return NULL;
 	}	
 	
 	// Definitely a memory block.
-	
 	real_size = min->req_size;
 
 	if (real_size >= size) {
@@ -913,7 +872,7 @@ static void* lalloc_realloc(void *p, size_t size) {
 	allocator_unlock();
 
 	// If we got here then we're reallocating to a block bigger than us.
-	ptr = lalloc_malloc(size);					// We need to allocate new memory
+	ptr = lalloc_malloc(size);
 	memcpy(ptr, p, real_size);
 	lalloc_free(p);
 

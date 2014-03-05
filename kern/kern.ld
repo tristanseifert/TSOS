@@ -19,7 +19,14 @@ SECTIONS {
 
 	.modules : AT(ADDR(.modules) - 0xC0000000) {
 		__kern_initcalls = .;
-		*(.initcall*);
+		*(.initcall0*);
+		*(.initcall1*);
+		*(.initcall2*);
+		*(.initcall3*);
+		*(.initcall4*);
+		*(.initcall5*);
+		*(.initcall6*);
+		*(.initcall7*);
 		BYTE(0x00); BYTE(0x00); BYTE(0x00); BYTE(0x00);
 
 		__kern_exitcalls = .;

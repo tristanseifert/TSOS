@@ -90,6 +90,8 @@ void hashmap_release(hashmap_t* map) {
  * overwritten.
  */
 void hashmap_insert(hashmap_t* hashmap, void* key, void* value) {
+	ASSERT(hashmap);
+
 	// Create a copy of the key.
 	size_t keyLength = strlen(key);
 	void* keyCopy = (void *) kmalloc(keyLength+1);
@@ -172,6 +174,8 @@ void hashmap_insert(hashmap_t* hashmap, void* key, void* value) {
  * Retrieves an item from the hashmap, or returns NULL if not found.
  */
 void* hashmap_get(hashmap_t* hashmap, void* key) {
+	ASSERT(hashmap);
+
 	// Calculate hash
 	size_t keyLength = strlen(key);
 	uint32_t hash = default_hash(key, keyLength);
@@ -206,6 +210,8 @@ void* hashmap_get(hashmap_t* hashmap, void* key) {
  * key as well.
  */
 int hashmap_delete(hashmap_t* hashmap, void* key) {
+	ASSERT(hashmap);
+	
 	// Calculate hash
 	size_t keyLength = strlen(key);
 	uint32_t hash = default_hash(key, keyLength);

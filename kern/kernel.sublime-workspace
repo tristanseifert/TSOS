@@ -1,0 +1,856 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"i",
+				"i8254_mode_t"
+			],
+			[
+				"i8",
+				"i8254_set_ticks"
+			],
+			[
+				"i82",
+				"i8254_mode_single_shot"
+			],
+			[
+				"PIT_I",
+				"PIT_IO_PORT"
+			],
+			[
+				"symbo",
+				"symbol_string_table"
+			],
+			[
+				"phys",
+				"physaddr"
+			],
+			[
+				"phy",
+				"phys_addr"
+			],
+			[
+				"Mongo",
+				"MongoId"
+			],
+			[
+				"apc_de",
+				"apc_delete"
+			],
+			[
+				"selected",
+				"selected_image_id"
+			],
+			[
+				"op",
+				"option	Tag"
+			],
+			[
+				"categor",
+				"category_info"
+			],
+			[
+				"font-",
+				"font-style"
+			],
+			[
+				"font",
+				"font-variant"
+			],
+			[
+				"text-",
+				"text-transform"
+			],
+			[
+				"request",
+				"requestComponents"
+			],
+			[
+				"backg",
+				"background"
+			],
+			[
+				"rgb",
+				"rgba"
+			],
+			[
+				"page-brea",
+				"page-break-before"
+			],
+			[
+				"page-br",
+				"page-break-after"
+			],
+			[
+				"a",
+				"auto"
+			],
+			[
+				"articl",
+				"article-info"
+			],
+			[
+				"list-",
+				"list-style-type"
+			],
+			[
+				"back",
+				"background"
+			],
+			[
+				"backg-",
+				"background-color"
+			],
+			[
+				"sockadd",
+				"sockaddr_in"
+			],
+			[
+				"tls_conn",
+				"tls_connection"
+			],
+			[
+				"inc",
+				"include"
+			],
+			[
+				"push_to",
+				"push_token"
+			],
+			[
+				"Intro_TextQueue",
+				"Intro_TextQueueOff"
+			],
+			[
+				"Intro_TextFade",
+				"Intro_TextFadeStep"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "x86_pc/x86_pc.c",
+			"settings":
+			{
+				"buffer_size": 4586,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/x86_pc.h",
+			"settings":
+			{
+				"buffer_size": 474,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/multiboot.h",
+			"settings":
+			{
+				"buffer_size": 4577,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/isr.s",
+			"settings":
+			{
+				"buffer_size": 6276,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/8254_pit.c",
+			"settings":
+			{
+				"buffer_size": 745,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/8254_pit.h",
+			"settings":
+			{
+				"buffer_size": 246,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/interrupts.c",
+			"settings":
+			{
+				"buffer_size": 2774,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/interrupts.h",
+			"settings":
+			{
+				"buffer_size": 201,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Packages/Makefile/Make.sublime-build",
+	"command_palette":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 124.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/tristanseifert/TSOS/kern/x86_pc/tss.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/tss.c",
+		"/Users/tristanseifert/TSOS/kern/runtime/error.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/Makefile",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/isr.S",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/isr.s",
+		"/Users/tristanseifert/TSOS/kern/Makefile",
+		"/Users/tristanseifert/TSOS/kern/kernel.elf_symbols.txt",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/8259_pic.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/8259_pic.c",
+		"/Users/tristanseifert/TSOS/kern/task/Makefile",
+		"/Users/tristanseifert/TSOS/bochsrc.txt",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/idt.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/idt.c",
+		"/Users/tristanseifert/TSOS/kern/runtime/Makefile",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/multiboot.h",
+		"/Users/tristanseifert/MosquitOS/kern/sys/system.c",
+		"/Users/tristanseifert/MosquitOS/kern/sys/system.h",
+		"/Users/tristanseifert/MosquitOS/kern/sys/paging.c",
+		"/Users/tristanseifert/MosquitOS/kern/Makefile",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/binfmt_elf.h",
+		"/Users/tristanseifert/MosquitOS/kern/runtime/error_handler.c",
+		"/Users/tristanseifert/MosquitOS/kern/runtime/error_handler.h",
+		"/Users/tristanseifert/MosquitOS/kern/sys/irq.h",
+		"/Users/tristanseifert/MosquitOS/kern/sys/irq_handlers.S",
+		"/Users/tristanseifert/Downloads/paging/src/interrupt.s",
+		"/Users/tristanseifert/TSOS/.gitignore",
+		"/Users/tristanseifert/TSOS/kern/paging/untitled",
+		"/Users/tristanseifert/TSOS/kern/paging/kheap.c",
+		"/Users/tristanseifert/TSOS/kern/paging/kheap.h",
+		"/Users/tristanseifert/TSOS/kern/runtime/std.c",
+		"/Users/tristanseifert/TSOS/kern/includes/stdlib.h",
+		"/Users/tristanseifert/MosquitOS/kern/runtime/std_sse.c",
+		"/Users/tristanseifert/TSOS/kern/console/vga_console.h",
+		"/Users/tristanseifert/TSOS/kern/console/panic.h",
+		"/Users/tristanseifert/TSOS/kern/console/panic.c",
+		"/Users/tristanseifert/TSOS/kern/console/Makefile",
+		"/Users/tristanseifert/TSOS/kern/paging/Makefile",
+		"/Users/tristanseifert/MosquitOS/kern/runtime/panic.c",
+		"/Users/tristanseifert/MosquitOS/kern/runtime/panic.h",
+		"/Users/tristanseifert/TSOS/kern/kern.ld",
+		"/Users/tristanseifert/MosquitOS/kern/sys/paging.h",
+		"/Users/tristanseifert/MosquitOS/kern/io/io.h",
+		"/Users/tristanseifert/TSOS/kern/includes/types.h",
+		"/Users/tristanseifert/TSOS/kern/console/printf.c",
+		"/Users/tristanseifert/TSOS/kern/runtime/std.h",
+		"/Users/tristanseifert/TSOS/kern/console/console.h",
+		"/Users/tristanseifert/TSOS/kern/console/console.c",
+		"/Users/tristanseifert/MosquitOS/kern/io/console.c",
+		"/Users/tristanseifert/TSOS/kern/console/printf.h",
+		"/Users/tristanseifert/MosquitOS/kern/runtime/std.h",
+		"/Users/tristanseifert/MosquitOS/kern/io/console.h",
+		"/Users/tristanseifert/MosquitOS/kern/entry.s",
+		"/Users/tristanseifert/TSOS/kern/pretty_make.py",
+		"/Users/tristanseifert/TSOS/Templates/makefile_template",
+		"/Users/tristanseifert/TSOS/tool/gdt.c",
+		"/Users/tristanseifert/TSOS/README.md",
+		"/Users/tristanseifert/TSOS/kern/main.asm",
+		"/Users/tristanseifert/TSOS/kernel.ld",
+		"/Volumes/TSOS/BOOT/GRUB/GRUB.CFG",
+		"/Users/tristanseifert/TSOS/build.sh",
+		"/Users/tristanseifert/MosquitOS/build.sh",
+		"/Users/tristanseifert/TSOS/out/kernel.lst",
+		"/Users/tristanseifert/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/plugins/imagepicker/dialogs/props.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/css/post.css",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/plugins/imagepicker/plugin.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/imagepicker.php",
+		"/Volumes/Kartoffel WWW/horizon/admin/media_util.php",
+		"/Users/tristanseifert/Downloads/ckeditor 4/plugins/imagepicker/dialogs/props.js",
+		"/Users/tristanseifert/Downloads/ckeditor 4/config.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/config.js",
+		"/Users/tristanseifert/Downloads/ckeditor 2/config.js",
+		"/Users/tristanseifert/Downloads/ckeditor 2/ckeditor.js",
+		"/Users/tristanseifert/Downloads/ckeditor/ckeditor.js",
+		"/Users/tristanseifert/Downloads/ckeditor/imagepicker/dialogs/props.js",
+		"/Users/tristanseifert/Downloads/ckeditor/imagepicker/plugin.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/build-config.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/js/imagepicker.js",
+		"/Volumes/Kartoffel WWW/horizon/css/bootstrap.css",
+		"/Volumes/Kartoffel WWW/horizon/css/bootstrap.min.css",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/skins/moonocolor/editor.css",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/skins/moonocolor/presets.css",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/skins/moonocolor/mainui.css",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/skins/moonocolor/dialog.css",
+		"/Users/tristanseifert/Downloads/abbr/dialogs/abbr.js",
+		"/Users/tristanseifert/Downloads/abbr/plugin.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/js/post.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/js/jquery.cookie.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/plugins/image/plugin.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/inc/UploadHandler.php",
+		"/Volumes/Kartoffel WWW/horizon/admin/js/jquery.fileupload.js",
+		"/Users/tristanseifert/Downloads/jQuery-File-Upload-9.5.6/js/jquery.fileupload.js",
+		"/Users/tristanseifert/Downloads/jQuery-File-Upload-9.5.6/js/jquery.fileupload-ui.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/media_upload.php",
+		"/Volumes/Kartoffel WWW/horizon/admin/js/main.js",
+		"/Volumes/Kartoffel WWW/horizon/admin/index.php",
+		"/Volumes/Kartoffel WWW/horizon/admin/UploadHandler.php",
+		"/Users/tristanseifert/Downloads/jQuery-File-Upload-9.5.6/index.html",
+		"/Users/tristanseifert/Downloads/jQuery-File-Upload-9.5.6/css/jquery.fileupload.css",
+		"/Users/tristanseifert/Downloads/jQuery-File-Upload-9.5.6/css/jquery.fileupload-ui.css",
+		"/Users/tristanseifert/Downloads/jQuery-File-Upload-9.5.6/js/main.js",
+		"/Users/tristanseifert/Downloads/jQuery-File-Upload-9.5.6/basic-plus.html",
+		"/Volumes/Kartoffel WWW/horizon/css/article.css",
+		"/Volumes/Kartoffel WWW/horizon/admin/ckeditor/samples/jquery.html",
+		"/Users/tristanseifert/Downloads/ckeditor 3/core/ckeditor_base.js",
+		"/Volumes/Kartoffel WWW/horizon/inc/defaut_settings.json",
+		"/Volumes/Kartoffel WWW/horizon/inc/rss.php",
+		"/Volumes/Kartoffel WWW/horizon/robots.txt",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/article_print.css",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/head.js",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/article.css",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/article.js",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/author.js",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/author.css",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/author.html",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/main.js",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/main.css",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/index.html",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/article.html",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/bootstrap-theme.css",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/bootstrap.css",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/bootstrap.min.css",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/bootstrap.css.map",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/jquery.cookie.js",
+		"/Users/tristanseifert/Downloads/fancyapps-fancyBox-18d1712/source/helpers/jquery.fancybox-thumbs.js",
+		"/Users/tristanseifert/Downloads/fancyapps-fancyBox-18d1712/source/helpers/jquery.fancybox-buttons.js",
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/fancybox.css"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 88.0,
+		"where_history":
+		[
+			"<open folders>,/Users/tristanseifert/TSOS/kern",
+			"<open folders>",
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"i8259_",
+			"x86_pc_init_timer",
+			"    ",
+			"entry.",
+			"gdt_kernel_tss",
+			"entry.",
+			"   ",
+			"g->",
+			"   ",
+			"irqs_handled",
+			"irq_handler",
+			"asm_irq_handlers",
+			"Unhandled IRQ",
+			"K",
+			"irq_register_handler",
+			"plugin_ctrl",
+			"PIC2_COMMAND",
+			"PIC1_COMMAND",
+			"    ",
+			"kern_elf_strtab",
+			"kern_elf_symtab",
+			"kern_elf_symtab_entries",
+			"sys_set_idt_gate",
+			"sys_set_idt(",
+			"sys_set_idt",
+			"sys_set_idt_gate",
+			"sys_setup_ints",
+			"sys_kern",
+			"sys_multiboot_info",
+			"error_cr0",
+			"error_cr1",
+			"    ",
+			"  ",
+			"popCnt",
+			"paging_switch_directory",
+			"memclr",
+			"kmalloc",
+			"panic_halt_loop",
+			"end",
+			"kheap",
+			"KHEAP_START",
+			"    ",
+			"u32int",
+			"tss",
+			"gdt",
+			"malloc",
+			"memclr",
+			"u32int",
+			"page_directory",
+			"paging_get_page",
+			"paging_init",
+			"magic",
+			"page_directory",
+			"boot_page_table",
+			"paging_map",
+			"bold",
+			"USE_COLOR",
+			"--use-colors",
+			"gdt_table",
+			"    ",
+			"$",
+			";",
+			"db",
+			"dw",
+			"flush_gdt",
+			"''",
+			"elf",
+			"row",
+			"data-orig",
+			"JV",
+			"check",
+			"  ",
+			"post_get_markup",
+			"date",
+			"posts",
+			"CKEDITOR.dialog.add",
+			"icons:",
+			"youtube",
+			"indent",
+			"widget",
+			"indent",
+			"image_box",
+			".parts",
+			"imageURL",
+			"nulla",
+			"Image ID",
+			"updateDates",
+			"z-index",
+			"z",
+			"    ",
+			"class",
+			"    ",
+			"pickImage",
+			"    ",
+			"widget",
+			"\\\"",
+			"'",
+			"\"",
+			"Upload",
+			"  ",
+			"    ",
+			"jpeg_quality",
+			"browser_container",
+			"    ",
+			"request",
+			"6",
+			"content",
+			"    ",
+			"download",
+			"chmod",
+			"create_scaled_image",
+			"chmod",
+			"image_mode",
+			"umask",
+			"create_scaled",
+			"gd_create_scaled",
+			"image_mode",
+			"gd_create_scaled_image",
+			"image_library",
+			"gd_create_scaled_image",
+			"$write_func",
+			"$file_path",
+			"		list($file_path, $new_file_path) =\n			$this->get_scaled_image_file_paths($file_name, $version);",
+			"scaled",
+			"set_additional_file_properties",
+			"deleteURl",
+			"get_scaled_image",
+			"get_scaled_image_file_paths"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"	",
+			"kern_tss_gdt_entry.",
+			"entry->",
+			"gdt_kernel_tss->",
+			"	",
+			"entry.",
+			"	",
+			"PIC2_CMD",
+			"PIC1_CMD",
+			"	",
+			"idt_set_gate",
+			"x86_multiboot_info",
+			"	",
+			"uint32_t",
+			"	",
+			"",
+			"#",
+			".byte",
+			".word",
+			"**",
+			"	",
+			"\"",
+			"",
+			"\\\"",
+			"	",
+			"if(",
+			"	",
+			"\"",
+			"	",
+			"1024x768",
+			"</p>\n\n<p>",
+			"nav-collapse-1",
+			"	",
+			"uint8_t",
+			"	",
+			", ",
+			"",
+			"<bool>YES</bool>",
+			"<bool>NO</bool>",
+			",",
+			"",
+			"9,	",
+			"8,	",
+			"7,	",
+			"6,	",
+			"5,	",
+			"4,	",
+			"3,	",
+			"2,	",
+			"1,	",
+			"0,	",
+			"6,	",
+			"5,	",
+			"4,	",
+			"1,	",
+			"2,	",
+			"3,	",
+			".68k"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "x86_pc/x86_pc.c",
+					"settings":
+					{
+						"buffer_size": 4586,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3544,
+								3550
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1163.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "x86_pc/x86_pc.h",
+					"settings":
+					{
+						"buffer_size": 474,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								153,
+								153
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "x86_pc/multiboot.h",
+					"settings":
+					{
+						"buffer_size": 4577,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3959,
+								3969
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "x86_pc/isr.s",
+					"settings":
+					{
+						"buffer_size": 6276,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1200,
+								1250
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/R/R.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 743.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "x86_pc/8254_pit.c",
+					"settings":
+					{
+						"buffer_size": 745,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								548,
+								554
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/C++/C.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "x86_pc/8254_pit.h",
+					"settings":
+					{
+						"buffer_size": 246,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								246,
+								246
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "x86_pc/interrupts.c",
+					"settings":
+					{
+						"buffer_size": 2774,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1447,
+								1453
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 358.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "x86_pc/interrupts.h",
+					"settings":
+					{
+						"buffer_size": 201,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								201,
+								144
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 113.0
+	},
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true
+}

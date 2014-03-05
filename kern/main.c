@@ -1,5 +1,7 @@
 #import <types.h>
 #import "x86_pc/x86_pc.h"
+#import "paging/paging.h"
+#import "console/vga_console.h"
 
 void __stack_chk_guard_setup(void);
 
@@ -9,7 +11,22 @@ void smash_stack(char *input) {
 	strcpy(buf, input);
 }
 
-void kernel_main(void) {
+void main(void) {
+	// Console
+	vga_init();
+
+	// Copy multiboot
+	x86_pc_init_multiboot();
+
+	// Paging and VM
+	paging_init();
+
+	// Set up stack guard
+	__stack_chk_guard_setup();
+
+	// Set up platform
+	x86_pc_init();
+
 	// Initialise modules
 	modules_load();
 
@@ -51,16 +68,6 @@ void kernel_main(void) {
 	while(1);
 }
 
-/*
- * Performs initialisation before the actual kernel runs.
- */
-void kernel_init(void) {
-	// Set up stack guards
-	__stack_chk_guard_setup();
-
-	// Set up platform
-	x86_pc_init();
-}
 
 void test_pagefault(void) {
 	uint32_t *ptr = (uint32_t *) 0xA0000000;

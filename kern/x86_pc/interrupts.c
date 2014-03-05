@@ -25,6 +25,7 @@ extern void irq_13(void);
 extern void irq_14(void); 
 extern void irq_15(void); 
 
+// Assembly IRQ handlers
 static const uint32_t asm_irq_handlers[MAX_IRQ] = {
 	(uint32_t) irq_0, (uint32_t) irq_1,
 	(uint32_t) irq_2, (uint32_t) irq_3,
@@ -45,6 +46,12 @@ static uint32_t irqs_spurious;
 
 // IRQ callbacks
 static irq_callback_t irq_callbacks[MAX_IRQ][MAX_IRQ_CALLBACK];
+
+// Whether the old PIC is used, or if the APIC is used
+extern bool pic_enabled;
+
+// Private functions
+static void irq_eoi(uint8_t irq);
 
 /*
  * Called by IRQ handlers when an IRQ is called to service it by calling the
@@ -79,15 +86,15 @@ void irq_handler(uint32_t irq) {
 		klog(kLogLevelError, "Unhandled IRQ Level %u", (unsigned int) irq);
 	}
 
-	i8259_eoi(irq);
+	irq_eoi(irq);
 }
 
 /*
  * Registers an IRQ handler.
  */
 int irq_register_handler(uint8_t irq, irq_callback_t callback) {
-	// Unmask IRQ in the PIC
-	i8259_clear_mask(irq);
+	// Unmask IRQ
+	irq_unmask(irq);
 	irqs_handled[irq] = true;
 
 	// Find an IRQ callback slot
@@ -110,4 +117,37 @@ int irq_register_handler(uint8_t irq, irq_callback_t callback) {
 
 	// No IRQs free
 	return -1;
+}
+
+/*
+ * Masks an IRQ.
+ */
+void irq_mask(uint8_t irq) {
+	if(pic_enabled) {
+		i8259_set_mask(irq);
+	} else {
+
+	}
+}
+
+/*
+ * Unmask an IRQ.
+ */
+void irq_unmask(uint8_t irq) {
+	if(pic_enabled) {
+		i8259_clear_mask(irq);
+	} else {
+
+	}
+}
+
+/*
+ * Signal the end of an interrupt.
+ */
+static void irq_eoi(uint8_t irq) {
+	if(pic_enabled) {
+		i8259_eoi(irq);
+	} else {
+
+	}
 }

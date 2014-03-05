@@ -1,16 +1,14 @@
 #import <types.h>
 #import "bus.h"
-
 #import "runtime/hashmap.h"
 
-static list_t *bus_list;
-static hashmap_t *driver_array;
+#define DEBUG_DRIVER_REG	0
+#define DEBUG_DEVICE_REG	0
+#define DEBUG_BUS_REG		1
+#define DEBUG_DRIVER_MATCH	0
 
-// Type inserted into the bus to driver hashmap
-typedef struct {
-	bus_t *bus;
-	list_t *drivers;
-} bus_drivers_t;
+static hashmap_t *busses;
+static list_t *bus_names;
 
 /*
  * The parent of all busses.
@@ -24,25 +22,93 @@ static node_t root = {
  * Initialises the bus subsystem.
  */
 static int bus_sys_init(void) {
-	bus_list = list_allocate();
 	root.children = list_allocate();
-
-	driver_array = hashmap_allocate();
+	bus_names = list_allocate();
+	busses = hashmap_allocate();
 
 	klog(kLogLevelDebug, "Bus subsystem initialised");
 
 	return 0;
 }
-
 module_early_init(bus_sys_init);
+
+/*
+ * Called once all drivers are loaded to match them to a device.
+ */
+static int bus_match_devices(void) {
+	char *name;
+	bus_t *bus;
+	device_t *device;
+	driver_t *driver;
+
+	// Loop through all the busses
+	for(int i = 0; i < bus_names->num_entries; i++) {
+		// Get name and bus
+		name = list_get(bus_names, i);
+		bus_load_drivers(name);
+	}
+
+	return 0;
+}
+module_post_driver_init(bus_match_devices);
+
+/*
+ * Tries to match devices that haven't got a loaded driver with a driver. This
+ * is useful for hotplug events and whatnot.
+ */
+void bus_load_drivers(char *name) {
+	bus_t *bus = hashmap_get(busses, name);
+	driver_t *driver;
+	device_t *device;
+
+	#if DEBUG_DRIVER_MATCH
+	klog(kLogLevelDebug, "Matching drivers on bus '%s'", name);
+	#endif
+
+	// make sure the bus exists
+	if(bus) {
+		// Iterate over all the devices
+		for(int j = 0; j < bus->devices->num_entries; j++) {
+			device = list_get(bus->devices, j);
+			#if DEBUG_DRIVER_MATCH
+			klog(kLogLevelDebug, " Device '%s'", device->node.name);
+			#endif
+
+			// Does this device have a driver loaded?
+			if(!device->driver) {
+				// Iterate through all drivers
+				for(int k = 0; k < bus->drivers->num_entries; k++) {
+					driver = list_get(bus->drivers, k);
+
+					// This driver supports this device
+					if(driver->supportsDevice(device)) {
+						device->driver = driver;
+
+						// Run driver data fetching method, if defined
+						if(driver->getDriverData) {
+							device->device_info = driver->getDriverData(device);
+						}
+
+						#if DEBUG_DRIVER_MATCH
+						klog(kLogLevelDebug, "  Found driver '%s': 0x%X 0x%X", driver->name, driver, device->device_info);
+						#endif
+					}
+				}
+			}
+		}
+	}
+}
 
 /*
  * Registers a bus with the system.
  */
 void bus_register(bus_t *bus, char *name) {
 	// Check if name is used already
-	if(unlikely(hashmap_get(driver_array, name) != NULL)) {
+	if(hashmap_get(busses, name) != NULL) {
+		#if DEBUG_BUS_REG
 		klog(kLogLevelError, "A bus named '%s' is already registered!", name);
+		#endif
+
 		return;
 	}
 
@@ -54,43 +120,43 @@ void bus_register(bus_t *bus, char *name) {
 	bus->node.parent = &root;
 	bus->node.children = list_allocate();
 
-	list_add(bus_list, bus);
+	// Add to root bus
 	list_add(root.children, bus);
 
-	// Allocate a structure to shove into the driver array
-	bus_drivers_t *drivers = (bus_drivers_t *) kmalloc(sizeof(bus_drivers_t));
-	memclr(drivers, sizeof(bus_drivers_t));
+	// Remember name of the bus
+	list_add(bus_names, name);
 
-	drivers->bus = bus;
-	drivers->drivers = list_allocate();
-
-	hashmap_insert(driver_array, name, drivers);
+	// Save bus
+	hashmap_insert(busses, name, (void *) bus);
 
 	// Store a pointer to the list in the bus structure
-	bus->drivers = drivers->drivers;
+	bus->drivers = list_allocate();
 
+	#if DEBUG_BUS_REG
 	klog(kLogLevelDebug, "Registered bus '%s'", name);
+	#endif
 }
 
 /*
  * Registers a driver for a certain bus.
  */
 int bus_register_driver(driver_t *driver, char* busName) {
-	bus_drivers_t *drivers = hashmap_get(driver_array, busName);
+	bus_t *bus = hashmap_get(busses, busName);
 
-	if(likely(drivers != NULL)) {
-		// Make sure we don't register the same driver twice
-		if(list_contains(drivers->drivers, driver)) {
-			return BUS_DRIVER_ALREADY_REGISTERED;
-		}
-
+	if(bus != NULL) {
 		// Insert driver into the array.
-		list_add(drivers->drivers, driver);
+		list_add(bus->drivers, driver);
+		
+		#if DEBUG_DRIVER_REG
 		klog(kLogLevelDebug, "Initialised driver '%s' for bus '%s'", driver->name, busName);
+		#endif
 
 		return 0;
 	} else {
+		#if DEBUG_DRIVER_REG
 		klog(kLogLevelError, "Attempted to register driver for bus '%s' without such a bus", busName);
+		#endif
+
 		return BUS_NOT_EXISTANT;
 	}
 }
@@ -99,40 +165,28 @@ int bus_register_driver(driver_t *driver, char* busName) {
  * Tries to find a bus with the specified name.
  */
 bus_t *bus_get_by_name(char *name) {
-	bus_drivers_t *drivers = hashmap_get(driver_array, name);
-
-	if(likely(drivers)) {
-		return drivers->bus;
-	}
-
-	return NULL;
-}
-
-/*
- * Enumerates all drivers registered for the specified bus to find one that can
- * support the device.
- */
-driver_t *bus_find_driver(device_t *device, bus_t *bus) {
-	driver_t *driver;
-
-	// Loop through all drivers for the bus
-	for(int i = 0; i < bus->drivers->num_entries; i++) {
-		driver = list_get(bus->drivers, i);
-
-		if(driver->supportsDevice(device)) {
-			return driver;
-		}
-	}
-
-	klog(kLogLevelWarning, "Couldn't find driver for '%s' on '%s'", device->node.name, bus->node.name);
-
-	// We haven't found a driver that supports it.
-	return NULL;
+	return (bus_t *) hashmap_get(busses, name);
 }
 
 /*
  * Adds a device to the specified bus.
  */
 int bus_add_device(device_t *device, bus_t *bus) {
+	if(!list_contains(bus->devices, device)) {
+		// Add to bus
+		list_add(bus->devices, device);
+
+		// Add to bus node as a child
+		list_add(bus->node.children, device);
+
+		#if DEBUG_DEVICE_REG
+		klog(kLogLevelDebug, "Registered '%s' on bus '%s'", device->node.name, bus->node.name);
+		#endif
+	} else {
+		#if DEBUG_DEVICE_REG
+		klog(kLogLevelWarning, "Bus device '%s' contains device '%s' already!", bus->node.name, device->node.name);
+		#endif
+	}
+
 	return BUS_DEVICE_REGISTERED;
 }

@@ -12,7 +12,7 @@ struct task_state {
 	 * We needn't wory about SS or CS as it's always the same and eflags will
 	 * only apply if the task was pre-empted
 	 */
-	uint32_t eip, usersp;
+	uint32_t usersp, eip;
 
 	// Pushed on the stack by the PUSHA instruction
 	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
@@ -31,7 +31,7 @@ struct task {
 	uint8_t priority; // 0-15, where 0 is least and 15 is most
 
 	// Task state
-	task_state_t state;
+	task_state_t cpu_state;
 
 	// FPU state
 	bool uses_fpu;

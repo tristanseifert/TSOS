@@ -23,13 +23,7 @@ void i8254_set_mode(uint8_t channel, i8254_mode_t mode) {
 void i8254_set_ticks(uint8_t channel, uint16_t ticks) {
 	channel &= 0x03;
 
-	// Disable timer interrupts
-	// i8259_set_mask(0);
-
 	// Set ticks
 	io_outb(PIT_IO_PORT + channel, ticks & 0xFF);
 	io_outb(PIT_IO_PORT + channel, (ticks & 0xFF00) >> 8);
-
-	// Allow timer interrupts again
-	// i8259_clear_mask(0);
 }
