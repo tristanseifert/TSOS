@@ -62,8 +62,8 @@ void main(void) {
 		}
 	} */
 
-	char *doom = "smash the stack !!!!!!!!";
-	smash_stack(doom);
+/*	char *doom = "smash the stack !!!!!!!!";
+	smash_stack(doom);*/
 
 	while(1);
 }

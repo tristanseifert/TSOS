@@ -56,13 +56,16 @@ static void* i8042_init_device(device_t *dev) {
 	info->device = dev;
 
 	// Disable output from attached devices
+	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0xAD);
+	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0xA7);
 
 	// Flush output buffer
 	io_inb(I8042_DATA_PORT);
 
 	// Read control register
+	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0x20);
 	uint8_t ctrl_reg = i8042_read_byte_polling();
 
@@ -78,6 +81,7 @@ static void* i8042_init_device(device_t *dev) {
 	}
 
 	// Perform self-test
+	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0xAA);
 	uint8_t self_test_response = i8042_read_byte_polling();
 
@@ -87,6 +91,7 @@ static void* i8042_init_device(device_t *dev) {
 	}
 
 	// Check first PS2 port
+	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0xAB);
 	self_test_response = i8042_read_byte_polling();
 
@@ -99,6 +104,7 @@ static void* i8042_init_device(device_t *dev) {
 
 	// If there's another port, check it as well
 	if(info->isDualPort) {
+		i8042_wait_input_buffer();
 		io_outb(I8042_COMMAND_PORT, 0xA9);
 		self_test_response = i8042_read_byte_polling();
 
@@ -111,26 +117,32 @@ static void* i8042_init_device(device_t *dev) {
 	}
 
 	// Enable PS2 ports
+	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0xAE);
-		klog(kLogLevelDebug, "i8042: Enabled port 1");
+	// klog(kLogLevelDebug, "i8042: Enabled port 1");
 	
 	if(info->isDualPort) {
+		// Wait for the controller to accept another command
+		i8042_wait_input_buffer();
+
 		io_outb(I8042_COMMAND_PORT, 0xA8);
-		klog(kLogLevelDebug, "i8042: Enabled port 2");		
+		// klog(kLogLevelDebug, "i8042: Enabled port 2");
 	}
 
 	// Reset device on port 0
 	int r = 0;
 	if((r = i8042_reset_device(0))) {
 		klog(kLogLevelDebug, "i8042: Error resetting device 1 (%i)", r);
+	} else {
+		klog(kLogLevelSuccess, "i8042: Port 1 Device OK");
 	}
 
 	// Reset device on port 1, if port exists
 	if(info->isDualPort) {
-		r = 0;
-
 		if((r = i8042_reset_device(1))) {
 			klog(kLogLevelDebug, "i8042: Error resetting device 2 (%i)", r);
+		} else {
+			klog(kLogLevelSuccess, "i8042: Port 2 Device OK");
 		}
 	}
 
@@ -150,32 +162,53 @@ int i8042_reset_device(uint8_t port) {
 
 	// Port 0?
 	if(port == 0) {
+		// Wait for the controller to be able to accept data
 		if(i8042_wait_input_buffer()) {
 			io_outb(I8042_DATA_PORT, 0xFF);
 
 			response = i8042_read_byte_polling();
 		} else {
-			klog(kLogLevelWarning, "i8042: Timeout waiting for input buffer to be clear (port 1)");
+			klog(kLogLevelWarning, "i8042: Timeout waiting for input buffer to clear (port 1)");
 			return -1;
 		}
 	} else { // Port 1
+		// Send to second PS2 port
+		i8042_wait_input_buffer();
 		io_outb(I8042_COMMAND_PORT, 0xD4);
 
+		// Wait for the controller to be able to accept data
 		if(i8042_wait_input_buffer()) {
 			io_outb(I8042_DATA_PORT, 0xFF);
-			
+
 			response = i8042_read_byte_polling();
 		} else {
-			klog(kLogLevelWarning, "i8042: Timeout waiting for input buffer to be clear (port 2)");
+			klog(kLogLevelWarning, "i8042: Timeout waiting for input buffer to clear (port 2)");
 			return -1;
 		}
 	}
 
 	// Process return value
 	if(response == 0xFA) {
+		unsigned int timeout = 0;
+
+		// Wait for a response from the device (up to 2 seconds)
+		while(!(io_inb(I8042_STATUS_PORT) & 0x01)) {
+			if(timeout++ > 0x1800000) {
+				PANIC("i8042 read timeout");
+			}
+		}
+
+		// Read byte from device
+		response = io_inb(I8042_DATA_PORT);
+
+		if(response != 0xAA) {
+			klog(kLogLevelWarning, "i8042: Device reset error (0x%X) on port %u", response, port);
+			return 1;
+		}
+
 		return 0;
 	} else {
-		klog(kLogLevelWarning, "i8042: Device reset error (0x%X) on port %u", response, port);
+		klog(kLogLevelWarning, "i8042: Device reset ACK failed (0x%X) on port %u", response, port);
 		return 1;
 	}
 }

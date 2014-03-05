@@ -4,7 +4,7 @@
 
 #define DEBUG_DRIVER_REG	0
 #define DEBUG_DEVICE_REG	0
-#define DEBUG_BUS_REG		1
+#define DEBUG_BUS_REG		0
 #define DEBUG_DRIVER_MATCH	0
 
 static hashmap_t *busses;
