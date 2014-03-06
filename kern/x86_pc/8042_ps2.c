@@ -3,6 +3,8 @@
 #import "8042_ps2.h"
 #import "interrupts.h"
 
+#import "ps2_kbd.h"
+
 #import "task/systimer.h"
 
 #define DRIVER_NAME "i8042 PS2 Controller"
@@ -144,14 +146,14 @@ static void* i8042_init_device(device_t *dev) {
 	// Enable PS2 ports
 	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0xAE);
-	klog(kLogLevelDebug, "i8042: Enabled port 1");
+	//  klog(kLogLevelDebug, "i8042: Enabled port 1");
 	
 	if(info->isDualPort) {
 		// Wait for the controller to accept another command
 		i8042_wait_input_buffer();
 
 		io_outb(I8042_COMMAND_PORT, 0xA8);
-		klog(kLogLevelDebug, "i8042: Enabled port 2");
+		// klog(kLogLevelDebug, "i8042: Enabled port 2");
 	}
 
 	// Enable IRQs
@@ -228,6 +230,13 @@ static bool i8042_wait_input_buffer(void) {
 }
 
 /*
+ * Sends a byte to the specified device's port: accessed by device drivers
+ */
+void i8042_send(i8042_ps2_device_t *d, uint8_t b) {
+	i8042_send_byte(d->port, b);
+}
+
+/*
  * Sends a byte to the specified PS2 port.
  */
 static bool i8042_send_byte(uint8_t port, uint8_t command) {
@@ -251,7 +260,7 @@ static bool i8042_send_byte(uint8_t port, uint8_t command) {
  */
 static void i8042_irq_port1(void) {
 	uint8_t byte = io_inb(I8042_DATA_PORT);
-	klog(kLogLevelDebug, "Received 0x%02X from PS2 port 0", byte);
+	// klog(kLogLevelDebug, "Received 0x%02X from PS2 port 0", byte);
 
 	// State machine
 	switch(shared_driver->devices[0].state) {
@@ -323,7 +332,7 @@ static void i8042_irq_port1(void) {
 				i8042_send_byte(0, 0xF4);
 			}
 
-			klog(kLogLevelDebug, "Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[0].identify_bytes_read);
+			// klog(kLogLevelDebug, "Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[0].identify_bytes_read);
 			break;
 		}
 
@@ -345,6 +354,12 @@ static void i8042_irq_port1(void) {
 
 		// Data should be forwarded to the proper device driver in this state
 		case kI8042StateReady: {
+			i8042_ps2_device_driver_t *drv = shared_driver->devices[0].device.device_info;
+
+			if(drv->byte_from_device) {
+				drv->byte_from_device(byte);
+			}
+
 			break;
 		}
 
@@ -501,7 +516,7 @@ static void i8042_flush_send_queue(void) {
 
 			// Adjust send buffer forward one byte
 			if(bytesSent) {
-				klog(kLogLevelDebug, "Sent 0x%02X to port %u", dev->sendqueue[0], port);
+				// klog(kLogLevelDebug, "Sent 0x%02X to port %u", dev->sendqueue[0], port);
 
 				// Discard the frontmost byte, and shift offsets.
 				for(int i = 0; i < I8042_SENDQUEUE_SIZE-1; i++) {
@@ -526,6 +541,8 @@ static void i8042_load_driver(i8042_ps2_device_t *device) {
 		device->type = kI8042DeviceKeyboard;
 		device->device.node.name = "Generic PS/2 Keyboard";
 
+		device->device.driver = ps2_kbd_driver();
+
 		klog(kLogLevelDebug, "i8042: keyboard on port %u", device->port);
 	} else if(device->identify[0] == 0x00 || device->identify[0] == 0x03) {
 		// Regular PS2 mouse or scrollwheel mouse
@@ -546,4 +563,9 @@ static void i8042_load_driver(i8042_ps2_device_t *device) {
 	// Parent is PS2 controller, but there may not be children on this device
 	device->device.node.parent = &shared_driver->bus_device->node;
 	device->device.node.children = NULL;
+
+	// Initialise driver, if needed
+	if(device->device.driver->getDriverData) {
+		device->device.device_info = device->device.driver->getDriverData(&device->device);
+	}
 }

@@ -4,6 +4,7 @@
 
 typedef struct i8042_ps2 i8042_ps2_t;
 typedef struct i8042_ps2_device i8042_ps2_device_t;
+typedef struct i8042_ps2_device_driver i8042_ps2_device_driver_t;
 
 // Types of devices supported
 typedef enum {
@@ -56,3 +57,11 @@ struct i8042_ps2 {
 	// Whether the controller has one or two ports
 	bool isDualPort;
 };
+
+// Struct returned by a PS2 kbd/mouse driver indicating callbacks
+struct i8042_ps2_device_driver {
+	void (*byte_from_device)(uint8_t);
+};
+
+// Used to send a byte to a specified device
+void i8042_send(i8042_ps2_device_t *, uint8_t);
