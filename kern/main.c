@@ -29,6 +29,7 @@ void main(void) {
 
 	// Initialise modules
 	modules_load();
+	klog(kLogLevelInfo, "Modules initificated!");
 
 /*	klog(kLogLevelDebug, "Debug 0x%X", 0xDEADCACA);
 	klog(kLogLevelInfo, "Info 0x%X", 0xDEADBEEF);

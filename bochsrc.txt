@@ -46,7 +46,7 @@ log: -
 
 logprefix: %t%e%d
 
-debug: action=ignore
+debug: action=ignore, keyboard=report
 info: action=report
 error: action=report
 panic: action=ask

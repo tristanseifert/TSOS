@@ -3,6 +3,8 @@
 #import "8042_ps2.h"
 #import "interrupts.h"
 
+#import "task/systimer.h"
+
 #define DRIVER_NAME "i8042 PS2 Controller"
 
 // Tuneables
@@ -21,8 +23,13 @@ static void* i8042_init_device(device_t *);
 static uint8_t i8042_read_byte_polling(void);
 static bool i8042_wait_input_buffer(void);
 
+static bool i8042_send_byte(uint8_t, uint8_t);
+static void i8042_load_driver(i8042_ps2_device_t *);
+
 static void i8042_irq_port1(void);
 static void i8042_irq_port2(void);
+
+static void i8042_flush_send_queue(void);
 
 // Driver definition
 static const driver_t driver = {
@@ -59,7 +66,7 @@ static void* i8042_init_device(device_t *dev) {
 	i8042_ps2_t *info = kmalloc(sizeof(i8042_ps2_t));
 	memclr(info, sizeof(i8042_ps2_t));
 
-	info->device = dev;
+	info->bus_device = dev;
 	shared_driver = info;
 
 	// Disable output from attached devices
@@ -81,15 +88,11 @@ static void* i8042_init_device(device_t *dev) {
 
 	// Is this controller dual-port? (bit 5 set)
 	info->isDualPort = (ctrl_reg & 0x20);
-	if(info->isDualPort) {
-		klog(kLogLevelDebug, "i8042: Dual-port controller at 0x%X", I8042_DATA_PORT);
-	} else {
-		klog(kLogLevelDebug, "i8042: Single-port controller at 0x%X", I8042_DATA_PORT);
-	}
 
 	// Write register back to controller
 	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0x60);
+	i8042_wait_input_buffer();
 	io_outb(I8042_DATA_PORT, ctrl_reg);
 
 	// Perform self-test
@@ -100,6 +103,12 @@ static void* i8042_init_device(device_t *dev) {
 	if(self_test_response != 0x55) {
 		klog(kLogLevelError, "i8042: Faulty controller (self-test response 0x%X)", self_test_response);
 		return NULL;
+	} else {
+		if(info->isDualPort) {
+			klog(kLogLevelSuccess, "i8042: Dual-port controller at 0x%X", I8042_DATA_PORT);
+		} else {
+			klog(kLogLevelSuccess, "i8042: Single-port controller at 0x%X", I8042_DATA_PORT);
+		}
 	}
 
 	// Check first PS2 port
@@ -114,6 +123,8 @@ static void* i8042_init_device(device_t *dev) {
 		info->devices[0].isUsable = true;
 	}
 
+	info->devices[0].port = 0;
+
 	// If there's another port, check it as well
 	if(info->isDualPort) {
 		i8042_wait_input_buffer();
@@ -126,24 +137,22 @@ static void* i8042_init_device(device_t *dev) {
 		} else {
 			info->devices[1].isUsable = true;
 		}
+
+		info->devices[1].port = 1;
 	}
 
 	// Enable PS2 ports
 	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0xAE);
-	// klog(kLogLevelDebug, "i8042: Enabled port 1");
+	klog(kLogLevelDebug, "i8042: Enabled port 1");
 	
 	if(info->isDualPort) {
 		// Wait for the controller to accept another command
 		i8042_wait_input_buffer();
 
 		io_outb(I8042_COMMAND_PORT, 0xA8);
-		// klog(kLogLevelDebug, "i8042: Enabled port 2");
+		klog(kLogLevelDebug, "i8042: Enabled port 2");
 	}
-
-	// Register IRQs
-	irq_register_handler(1, i8042_irq_port1);
-	irq_register_handler(12, i8042_irq_port2);
 
 	// Enable IRQs
 	i8042_wait_input_buffer();
@@ -155,30 +164,25 @@ static void* i8042_init_device(device_t *dev) {
 	// Write register back to controller
 	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0x60);
+	i8042_wait_input_buffer();
 	io_outb(I8042_DATA_PORT, ctrl_reg);
 
 	// Reset device on port 0
+	irq_register_handler(1, i8042_irq_port1);
 	info->devices[0].state = kI8042StateWaitingForResetAck;
 
-	if(i8042_wait_input_buffer()) {
-		io_outb(I8042_DATA_PORT, 0xFF);
-	} else {
-		klog(kLogLevelWarning, "i8042: Timeout waiting for input buffer to clear (port 1)");
-	}
+	i8042_send_byte(0, 0xFF);
 
 	// Reset device on port 1, if port exists
 	if(info->isDualPort) {
+		irq_register_handler(12, i8042_irq_port2);
 		info->devices[1].state = kI8042StateWaitingForResetAck;
 
-		i8042_wait_input_buffer();
-		io_outb(I8042_COMMAND_PORT, 0xD4);
-
-		if(i8042_wait_input_buffer()) {
-			io_outb(I8042_DATA_PORT, 0xFF);
-		} else {
-			klog(kLogLevelWarning, "i8042: Timeout waiting for input buffer to clear (port 2)");
-		}
+		i8042_send_byte(1, 0xFF);
 	}
+
+	// Register handler for send queue flushage
+	kern_timer_register_handler(i8042_flush_send_queue);
 
 	// Return driver struct
 	return info;
@@ -218,10 +222,30 @@ static bool i8042_wait_input_buffer(void) {
 }
 
 /*
+ * Sends a byte to the specified PS2 port.
+ */
+static bool i8042_send_byte(uint8_t port, uint8_t command) {
+	port &= 0x01;
+	i8042_ps2_device_t *dev = &shared_driver->devices[port];
+
+	// Make sure we don't write past the end of the buffer
+	if(dev->sendqueue_bytes > I8042_SENDQUEUE_SIZE) {
+		klog(kLogLevelCritical, "i8042: Send queue overflow (device %u, cmd 0x%X)", port, command);
+		return false;
+	}
+
+	// Stuff into the send queue
+	dev->sendqueue[dev->sendqueue_bytes++] = command;
+
+	return true;
+}
+
+/*
  * IRQ callback for when the first device sends a byte to the controller
  */
 static void i8042_irq_port1(void) {
 	uint8_t byte = io_inb(I8042_DATA_PORT);
+	klog(kLogLevelDebug, "Received 0x%02X from PS2 port 0", byte);
 
 	// State machine
 	switch(shared_driver->devices[0].state) {
@@ -229,6 +253,7 @@ static void i8042_irq_port1(void) {
 		case kI8042StateWaitingForResetAck: {
 			if(byte == 0xFA) {
 				shared_driver->devices[0].state = kI8042StateWaitingForPOST;
+				shared_driver->devices[0].connected = true;
 			} else {
 				shared_driver->devices[0].state = kI8042StateFailed;
 			}
@@ -239,17 +264,86 @@ static void i8042_irq_port1(void) {
 		// Waiting for POST response
 		case kI8042StateWaitingForPOST: {
 			if(byte == 0xAA) {
-				shared_driver->devices[0].state = kI8042StateWaitingReady;
-				klog(kLogLevelSuccess, "Device on port 0 successed");
+				klog(kLogLevelSuccess, "Device on port 0 reset successfully");
+
+				shared_driver->devices[0].state = kI8042StateWaitingDisableScanningAck;
+				i8042_send_byte(0, 0xF5);
 			} else {
-				klog(kLogLevelError, "Device on port 0 failed");
+				klog(kLogLevelError, "Device on port 0 failed (0x%X)", byte);
 			}
 
 			break;
 		}
 
+		// Waiting for acknowledge to "disable scanning" command
+		case kI8042StateWaitingDisableScanningAck: {
+			if(byte == 0xFA) {
+				shared_driver->devices[0].state = kI8042StateWaitingIdentifyAck;
+				i8042_send_byte(0, 0xF2);
+			}
+
+			break;
+		}
+
+		// Waiting for acknowledge to "identify" command
+		case kI8042StateWaitingIdentifyAck: {
+			if(byte == 0xFA) {
+				shared_driver->devices[0].state = kI8042StateWaitingIdentifyResponse;
+			}
+
+			break;
+		}
+
+		// Waiting for response to "identify" command, up to two bytes
+		// This will time out for the second byte after a while by registering
+		// a timer for 100ms from now
+		case kI8042StateWaitingIdentifyResponse: {
+			shared_driver->devices[0].identify[shared_driver->devices[0].identify_bytes_read] = byte;
+
+			// Increment identify response offset
+			shared_driver->devices[0].identify_bytes_read++;
+
+			// Two identify bytes have been read, so this device is ready for use now.
+			if(shared_driver->devices[0].identify_bytes_read == 2) {
+				shared_driver->devices[0].state = kI8042StateWaitingEnableScanningAck;
+
+				// Send the "enable scanning" command.
+				i8042_send_byte(0, 0xF4);
+			} else if(shared_driver->devices[0].identify_bytes_read == 1 && byte != 0xAB) {
+				// The device is NOT a keyboard, so expect only one byte.
+				shared_driver->devices[0].state = kI8042StateWaitingEnableScanningAck;
+
+				// Send the "enable scanning" command.
+				i8042_send_byte(0, 0xF4);
+			}
+
+			// klog(kLogLevelDebug, "Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[0].identify_bytes_read);
+			break;
+		}
+
+		// Acknowledge byte for "enable scanning" command
+		case kI8042StateWaitingEnableScanningAck: {
+			if(byte == 0xFA) {
+				klog(kLogLevelSuccess, "Device on port 0 initialised: 0x%02X%02X", shared_driver->devices[0].identify[0], shared_driver->devices[0].identify[1]);
+			}
+
+			// Determine driver
+			i8042_load_driver(&shared_driver->devices[0]);
+
+			// Go to ready state
+			shared_driver->devices[0].state = kI8042StateReady;
+			shared_driver->devices[0].isUsable = true;
+
+			break;
+		}
+
+		// Data should be forwarded to the proper device driver in this state
+		case kI8042StateReady: {
+			break;
+		}
+
 		default: {
-			klog(kLogLevelDebug, "Read 0x%X from port 1", byte);
+			// klog(kLogLevelDebug, "Unhandled data 0x%X from PS2 port 0", byte);
 			break;
 		}
 	}
@@ -260,6 +354,7 @@ static void i8042_irq_port1(void) {
  */
 static void i8042_irq_port2(void) {
 	uint8_t byte = io_inb(I8042_DATA_PORT);
+	klog(kLogLevelDebug, "Received 0x%02X from PS2 port 1", byte);
 
 	// State machine
 	switch(shared_driver->devices[1].state) {
@@ -267,6 +362,7 @@ static void i8042_irq_port2(void) {
 		case kI8042StateWaitingForResetAck: {
 			if(byte == 0xFA) {
 				shared_driver->devices[1].state = kI8042StateWaitingForPOST;
+				shared_driver->devices[1].connected = true;
 			} else {
 				shared_driver->devices[1].state = kI8042StateFailed;
 			}
@@ -277,8 +373,10 @@ static void i8042_irq_port2(void) {
 		// Waiting for POST response
 		case kI8042StateWaitingForPOST: {
 			if(byte == 0xAA) {
-				shared_driver->devices[1].state = kI8042StateWaitingReady;
-				klog(kLogLevelSuccess, "Device on port 1 successed");
+				klog(kLogLevelSuccess, "Device on port 1 reset successfully");
+
+				shared_driver->devices[1].state = kI8042StateWaitingDisableScanningAck;
+				i8042_send_byte(1, 0xF5);
 			} else {
 				klog(kLogLevelError, "Device on port 1 failed");
 			}
@@ -286,9 +384,158 @@ static void i8042_irq_port2(void) {
 			break;
 		}
 
+		// Waiting for acknowledge to "disable scanning" command
+		case kI8042StateWaitingDisableScanningAck: {
+			if(byte == 0xFA) {
+				shared_driver->devices[1].state = kI8042StateWaitingIdentifyAck;
+				i8042_send_byte(1, 0xF2);
+			}
+
+			break;
+		}
+
+		// Waiting for acknowledge to "identify" command
+		case kI8042StateWaitingIdentifyAck: {
+			if(byte == 0xFA) {
+				shared_driver->devices[1].state = kI8042StateWaitingIdentifyResponse;
+			}
+
+			break;
+		}
+
+		// Waiting for response to "identify" command, up to two bytes
+		// This will time out for the second byte after a while by registering
+		// a timer for 100ms from now
+		case kI8042StateWaitingIdentifyResponse: {
+			shared_driver->devices[1].identify[shared_driver->devices[1].identify_bytes_read] = byte;
+
+			// Increment identify response offset
+			shared_driver->devices[1].identify_bytes_read++;
+
+			// Two identify bytes have been read, so this device is ready for use now.
+			if(shared_driver->devices[1].identify_bytes_read == 2) {
+				shared_driver->devices[1].state = kI8042StateWaitingEnableScanningAck;
+
+				// Send the "enable scanning" command.
+				i8042_send_byte(1, 0xF4);
+			} else if(shared_driver->devices[1].identify_bytes_read == 1 && byte != 0xAB) {
+				// The device is NOT a keyboard, so expect only one byte.
+				shared_driver->devices[1].state = kI8042StateWaitingEnableScanningAck;
+
+				// Send the "enable scanning" command.
+				i8042_send_byte(1, 0xF4);
+			}
+
+			// klog(kLogLevelDebug, "Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[1].identify_bytes_read);
+			break;
+		}
+
+		// Acknowledge byte for "enable scanning" command
+		case kI8042StateWaitingEnableScanningAck: {
+			if(byte == 0xFA) {
+				klog(kLogLevelSuccess, "Device on port 0 initialised: 0x%02X%02X", shared_driver->devices[1].identify[0], shared_driver->devices[1].identify[1]);
+			}
+
+			// Load driver
+			i8042_load_driver(&shared_driver->devices[1]);
+
+			// Go to ready state
+			shared_driver->devices[1].state = kI8042StateReady;
+			shared_driver->devices[1].isUsable = true;
+
+			break;
+		}
+
+		// Data should be forwarded to the proper device driver in this state
+		case kI8042StateReady: {
+			break;
+		}
+
 		default: {
-			klog(kLogLevelDebug, "Read 0x%X from port 2", byte);
+			// klog(kLogLevelDebug, "Unhandled data 0x%X from PS2 port 1", byte);
 			break;
 		}
 	}
+}
+
+/*
+ * Flush each device's send queue. Note that this gives priority to bytes being
+ * sent to the devie on port 0.
+ */
+static void i8042_flush_send_queue(void) {
+	bool bytesSent = false;
+
+	// Is there a byte waiting?
+/*	if(io_inb(I8042_STATUS_PORT) & 0x01) {
+		i8042_irq_port1();
+	}*/
+
+	// First, ensure that the i8042 can even accept bytes at this time.
+	if(io_inb(I8042_STATUS_PORT) & 0x02) return;
+
+	// See if each port has a byte to send.
+	for(int port = 0; port < 2; port++) {
+		i8042_ps2_device_t *dev = &shared_driver->devices[port];
+
+		// Yes, we have a byte to send.
+		if(dev->sendqueue_bytes != 0) {
+			if(port == 0) {
+				io_outb(I8042_DATA_PORT, dev->sendqueue[0]);
+				dev->sendqueue_bytes--;
+				bytesSent = true;
+			} else {
+				io_outb(I8042_COMMAND_PORT, 0xD4);
+				i8042_wait_input_buffer();
+
+				io_outb(I8042_DATA_PORT, dev->sendqueue[0]);
+				dev->sendqueue_bytes--;
+				bytesSent = true;
+			}
+
+			if(bytesSent) {
+				klog(kLogLevelDebug, "Sent 0x%02X to port %u", dev->sendqueue[0], port);
+
+				// Discard the frontmost byte, and shift offsets.
+				for(int i = 0; i < I8042_SENDQUEUE_SIZE-1; i++) {
+					dev->sendqueue[i] = dev->sendqueue[i+1];
+				}
+
+				// Clear the last byte.
+				dev->sendqueue[I8042_SENDQUEUE_SIZE] = 0;
+				return;
+			}
+		}
+	}
+}
+
+/*
+ * Determines the type of device and loads the appropriate driver. Also adds
+ * the device as a child of the i8042 controller.
+ */
+static void i8042_load_driver(i8042_ps2_device_t *device) {
+	if(device->identify[0] == 0xAB) {
+		// PS2 keyboard
+		device->type = kI8042DeviceKeyboard;
+		device->device.node.name = "Generic PS/2 Keyboard";
+
+		klog(kLogLevelDebug, "i8042: keyboard on port %u", device->port);
+	} else if(device->identify[0] == 0x00 || device->identify[0] == 0x03) {
+		// Regular PS2 mouse or scrollwheel mouse
+		device->type = kI8042DeviceMouse;
+		device->device.node.name = "Generic PS/2 Mouse";
+
+		klog(kLogLevelDebug, "i8042: mouse on port %u", device->port);
+	} else {
+		// All other kinds of devices
+		device->type = kI8042DeviceUnknown;
+		return;
+	}
+
+	// Configure device object
+	device->device.connection = kDeviceConnectionOther;
+	device->device.bus_info = device;
+
+	// Parent is PS2 controller, but there may not be children on this device
+	device->device.node.parent = &shared_driver->bus_device->node;
+	device->device.node.children = NULL;
 }

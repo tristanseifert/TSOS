@@ -76,6 +76,11 @@ void i8259_remap(uint8_t offset1, uint8_t offset2) {
 	// Restore masks
 	io_outb(PIC1_DATA, a1);
 	io_outb(PIC2_DATA, a2);
+
+	// Send bogus EOIs to fix GRUB "PIC jamming"
+	for(int i = 0; i < 16; i++) {
+		i8259_eoi(i);
+	}
 }
 
 /*

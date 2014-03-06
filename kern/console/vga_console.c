@@ -6,6 +6,8 @@ static unsigned int vga_x, vga_y;
 static uint16_t *video_memory;
 static uint16_t space;
 
+static unsigned int tempx, tempy;
+
 static enum vga_colour fg_colour;
 static enum vga_colour bg_colour;
 
@@ -138,4 +140,17 @@ enum vga_colour vga_get_bg_colour(void) {
  */
 void vga_set_bg_colour(enum vga_colour colour) {
 	bg_colour = colour;
+}
+
+void vga_save_position(void) {
+	tempx = vga_x;
+	tempy = vga_y;
+
+	vga_x = 80-10;
+	vga_y = 0;
+}
+
+void vga_restore_position(void) {
+	vga_x = tempx;
+	vga_y = tempy;
 }
