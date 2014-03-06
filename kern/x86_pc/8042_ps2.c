@@ -167,19 +167,25 @@ static void* i8042_init_device(device_t *dev) {
 	i8042_wait_input_buffer();
 	io_outb(I8042_DATA_PORT, ctrl_reg);
 
+	// Flush output buffer
+	io_inb(I8042_DATA_PORT);
+	io_inb(I8042_DATA_PORT);
+
 	// Reset device on port 0
-	irq_register_handler(1, i8042_irq_port1);
+//	irq_register_handler(1, i8042_irq_port1);
 	info->devices[0].state = kI8042StateWaitingForResetAck;
 
 	i8042_send_byte(0, 0xFF);
+	io_inb(I8042_DATA_PORT);
 
 	// Reset device on port 1, if port exists
-	if(info->isDualPort) {
+/*	if(info->isDualPort) {
 		irq_register_handler(12, i8042_irq_port2);
 		info->devices[1].state = kI8042StateWaitingForResetAck;
 
 		i8042_send_byte(1, 0xFF);
-	}
+		io_inb(I8042_DATA_PORT);
+	}*/
 
 	// Register handler for send queue flushage
 	kern_timer_register_handler(i8042_flush_send_queue);
@@ -317,7 +323,7 @@ static void i8042_irq_port1(void) {
 				i8042_send_byte(0, 0xF4);
 			}
 
-			// klog(kLogLevelDebug, "Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[0].identify_bytes_read);
+			klog(kLogLevelDebug, "Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[0].identify_bytes_read);
 			break;
 		}
 
@@ -466,18 +472,19 @@ static void i8042_flush_send_queue(void) {
 	bool bytesSent = false;
 
 	// Is there a byte waiting?
-/*	if(io_inb(I8042_STATUS_PORT) & 0x01) {
+	// XXX: GIANT FUCKING HACK
+	if(io_inb(I8042_STATUS_PORT) & 0x01) {
 		i8042_irq_port1();
-	}*/
+	}
 
-	// First, ensure that the i8042 can even accept bytes at this time.
+	// First, ensure that the i8042 can accept bytes at this time
 	if(io_inb(I8042_STATUS_PORT) & 0x02) return;
 
 	// See if each port has a byte to send.
 	for(int port = 0; port < 2; port++) {
 		i8042_ps2_device_t *dev = &shared_driver->devices[port];
 
-		// Yes, we have a byte to send.
+		// There's bytes to send on this port
 		if(dev->sendqueue_bytes != 0) {
 			if(port == 0) {
 				io_outb(I8042_DATA_PORT, dev->sendqueue[0]);
@@ -492,6 +499,7 @@ static void i8042_flush_send_queue(void) {
 				bytesSent = true;
 			}
 
+			// Adjust send buffer forward one byte
 			if(bytesSent) {
 				klog(kLogLevelDebug, "Sent 0x%02X to port %u", dev->sendqueue[0], port);
 

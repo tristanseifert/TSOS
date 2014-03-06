@@ -103,11 +103,9 @@ int irq_register_handler(uint8_t irq, irq_callback_t callback) {
 		if(!irq_callbacks[irq][i]) {
 			irq_callbacks[irq][i] = callback;
 
-			// Set up an IDT entry, if needed
-			if(i == 0) {
-				idt_set_gate(irq+0x20, asm_irq_handlers[irq], 0x08, 0x8E);
-				idt_flush_cache();
-			}
+			// Set up an IDT entry
+			idt_set_gate(irq+0x20, asm_irq_handlers[irq], 0x08, 0x8E);
+			idt_flush_cache();
 
 			klog(kLogLevelDebug, "Added IRQ %u (Cb %u) *0x%X", (unsigned int) irq, (unsigned int) i, (unsigned int) callback);
 
