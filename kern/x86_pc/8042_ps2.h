@@ -1,6 +1,6 @@
 #import <types.h>
 
-#define I8042_SENDQUEUE_SIZE	32
+#define I8042_SENDQUEUE_SIZE	16
 
 typedef struct i8042_ps2 i8042_ps2_t;
 typedef struct i8042_ps2_device i8042_ps2_device_t;
@@ -46,7 +46,9 @@ struct i8042_ps2_device {
 
 	// Send queue
 	uint8_t sendqueue[I8042_SENDQUEUE_SIZE];
-	uint8_t sendqueue_bytes;
+	uint8_t sendqueue_writeoff;
+	uint8_t sendqueue_readoff;
+	uint8_t sendqueue_bytes_waiting;
 };
 
 // Driver struct

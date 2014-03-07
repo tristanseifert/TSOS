@@ -15,6 +15,11 @@ CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -std=c99 -nostartfiles -nodefaultlib
 LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,kern.ld -lgcc $(LIBGCC_PATH)
 ASFLAGS =
 
+# Build number
+BUILD_NUMBER_FILE=buildnum.txt
+BUILD_NUMBER_LDFLAGS=-Xlinker --defsym -Xlinker BUILD_NUMBER=$$(cat $(BUILD_NUMBER_FILE))
+LDFLAGS+= $(BUILD_NUMBER_LDFLAGS)
+
 # Export compilers and flags
 export CC
 export AS
@@ -26,7 +31,7 @@ export ASFLAGS
 export MAKE=$(shell pwd)/pretty_make.py
 
 # Subdirectories with makefiles
-SUBDIRS=paging console runtime x86_pc driver_support task bus
+SUBDIRS=paging console runtime x86_pc driver_support task bus hal
 .PHONY: subdirs $(SUBDIRS)
 
 SUBDIRS_CLEAN=$(addsuffix _clean, $(SUBDIRS))
@@ -45,6 +50,9 @@ print:
 
 $(EXECUTABLE): $(OBJECTS)
 	@echo "\n\n[3;32;40m***** Linking kernel *****[0;37;49m"
+
+	@if ! test -f $(BUILD_NUMBER_FILE); then echo 0 > $(BUILD_NUMBER_FILE); fi
+	@echo $$(($$(cat $(BUILD_NUMBER_FILE)) + 1)) > $(BUILD_NUMBER_FILE)
 
 	$(CC) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
 

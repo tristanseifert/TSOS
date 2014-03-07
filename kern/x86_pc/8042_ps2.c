@@ -65,11 +65,20 @@ static bool i8042_match(device_t *dev) {
  * Initialises an 8042 KBC.
  */
 static void* i8042_init_device(device_t *dev) {
+	// Install IRQs
+	irq_register_handler(1, i8042_irq_port1);
+	irq_register_handler(12, i8042_irq_port2);
+
+	// Set up memory for the structs
 	i8042_ps2_t *info = kmalloc(sizeof(i8042_ps2_t));
 	memclr(info, sizeof(i8042_ps2_t));
 
 	info->bus_device = dev;
 	shared_driver = info;
+
+	// Device states
+	info->devices[0].state = kI8042StateNone;
+	info->devices[1].state = kI8042StateNone;
 
 	// Disable output from attached devices
 	i8042_wait_input_buffer();
@@ -80,22 +89,14 @@ static void* i8042_init_device(device_t *dev) {
 	// Flush output buffer
 	io_inb(I8042_DATA_PORT);
 
-	// Read control register
-	i8042_wait_input_buffer();
-	io_outb(I8042_COMMAND_PORT, 0x20);
-	uint8_t ctrl_reg = i8042_read_byte_polling();
+	// Assume dual-port controller (all supported machines should have one)
+	info->isDualPort = true;
 
 	// Disable IRQs and translation
-	ctrl_reg &= ~(0x43);
-
-	// Is this controller dual-port? (bit 5 set)
-	info->isDualPort = (ctrl_reg & 0x20);
-
-	// Write register back to controller
 	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0x60);
 	i8042_wait_input_buffer();
-	io_outb(I8042_DATA_PORT, ctrl_reg);
+	io_outb(I8042_DATA_PORT, 0x00);
 
 	// Perform self-test
 	i8042_wait_input_buffer();
@@ -151,15 +152,14 @@ static void* i8042_init_device(device_t *dev) {
 	if(info->isDualPort) {
 		// Wait for the controller to accept another command
 		i8042_wait_input_buffer();
-
 		io_outb(I8042_COMMAND_PORT, 0xA8);
-		// klog(kLogLevelDebug, "i8042: Enabled port 2");
+		klog(kLogLevelDebug, "i8042: Enabled port 2");
 	}
 
 	// Enable IRQs
 	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0x20);
-	ctrl_reg = i8042_read_byte_polling();
+	uint8_t ctrl_reg = i8042_read_byte_polling();
 
 	ctrl_reg |= 0x03;
 
@@ -169,25 +169,12 @@ static void* i8042_init_device(device_t *dev) {
 	i8042_wait_input_buffer();
 	io_outb(I8042_DATA_PORT, ctrl_reg);
 
-	// Flush output buffer
-	io_inb(I8042_DATA_PORT);
-	io_inb(I8042_DATA_PORT);
-
-	// Reset device on port 0
-//	irq_register_handler(1, i8042_irq_port1);
-	info->devices[0].state = kI8042StateWaitingForResetAck;
-
 	i8042_send_byte(0, 0xFF);
-	io_inb(I8042_DATA_PORT);
 
 	// Reset device on port 1, if port exists
-/*	if(info->isDualPort) {
-		irq_register_handler(12, i8042_irq_port2);
-		info->devices[1].state = kI8042StateWaitingForResetAck;
-
+	if(info->isDualPort) {
 		i8042_send_byte(1, 0xFF);
-		io_inb(I8042_DATA_PORT);
-	}*/
+	}
 
 	// Register handler for send queue flushage
 	kern_timer_register_handler(i8042_flush_send_queue);
@@ -243,14 +230,14 @@ static bool i8042_send_byte(uint8_t port, uint8_t command) {
 	port &= 0x01;
 	i8042_ps2_device_t *dev = &shared_driver->devices[port];
 
-	// Make sure we don't write past the end of the buffer
-	if(dev->sendqueue_bytes > I8042_SENDQUEUE_SIZE) {
-		klog(kLogLevelCritical, "i8042: Send queue overflow (device %u, cmd 0x%X)", port, command);
-		return false;
+	// Don't write past the end of the buffer
+	if(dev->sendqueue_writeoff == I8042_SENDQUEUE_SIZE) {
+		dev->sendqueue_writeoff = 0;
 	}
 
 	// Stuff into the send queue
-	dev->sendqueue[dev->sendqueue_bytes++] = command;
+	dev->sendqueue[dev->sendqueue_writeoff++] = command;
+	dev->sendqueue_bytes_waiting++;
 
 	return true;
 }
@@ -279,7 +266,7 @@ static void i8042_irq_port1(void) {
 		// Waiting for POST response
 		case kI8042StateWaitingForPOST: {
 			if(byte == 0xAA) {
-				klog(kLogLevelSuccess, "Device on port 0 reset successfully");
+				// klog(kLogLevelSuccess, "Device on port 0 reset successfully");
 
 				shared_driver->devices[0].state = kI8042StateWaitingDisableScanningAck;
 				i8042_send_byte(0, 0xF5);
@@ -364,7 +351,7 @@ static void i8042_irq_port1(void) {
 		}
 
 		default: {
-			// klog(kLogLevelDebug, "Unhandled data 0x%X from PS2 port 0", byte);
+			klog(kLogLevelDebug, "Unhandled data 0x%X from PS2 port 0", byte);
 			break;
 		}
 	}
@@ -375,7 +362,7 @@ static void i8042_irq_port1(void) {
  */
 static void i8042_irq_port2(void) {
 	uint8_t byte = io_inb(I8042_DATA_PORT);
-	klog(kLogLevelDebug, "Received 0x%02X from PS2 port 1", byte);
+	// klog(kLogLevelDebug, "Received 0x%02X from PS2 port 1", byte);
 
 	// State machine
 	switch(shared_driver->devices[1].state) {
@@ -394,7 +381,7 @@ static void i8042_irq_port2(void) {
 		// Waiting for POST response
 		case kI8042StateWaitingForPOST: {
 			if(byte == 0xAA) {
-				klog(kLogLevelSuccess, "Device on port 1 reset successfully");
+				// klog(kLogLevelSuccess, "Device on port 1 reset successfully");
 
 				shared_driver->devices[1].state = kI8042StateWaitingDisableScanningAck;
 				i8042_send_byte(1, 0xF5);
@@ -486,12 +473,6 @@ static void i8042_irq_port2(void) {
 static void i8042_flush_send_queue(void) {
 	bool bytesSent = false;
 
-	// Is there a byte waiting?
-	// XXX: GIANT FUCKING HACK
-	if(io_inb(I8042_STATUS_PORT) & 0x01) {
-		i8042_irq_port1();
-	}
-
 	// First, ensure that the i8042 can accept bytes at this time
 	if(io_inb(I8042_STATUS_PORT) & 0x02) return;
 
@@ -500,31 +481,41 @@ static void i8042_flush_send_queue(void) {
 		i8042_ps2_device_t *dev = &shared_driver->devices[port];
 
 		// There's bytes to send on this port
-		if(dev->sendqueue_bytes != 0) {
+		if(dev->sendqueue_bytes_waiting != 0 && dev->isUsable) {
 			if(port == 0) {
-				io_outb(I8042_DATA_PORT, dev->sendqueue[0]);
-				dev->sendqueue_bytes--;
+				// Device being reset?
+				if(dev->sendqueue[dev->sendqueue_readoff] == 0xFF) {
+					dev->state = kI8042StateWaitingForResetAck;
+					klog(kLogLevelDebug, "i8042: Resetting device %u", port);
+				}
+
+				io_outb(I8042_DATA_PORT, dev->sendqueue[dev->sendqueue_readoff]);
+
+				// Increment read pointer
+				dev->sendqueue_bytes_waiting--;
 				bytesSent = true;
-			} else {
+			} else { // port 2
+				// SEND TO SECOND PORT command
 				io_outb(I8042_COMMAND_PORT, 0xD4);
 				i8042_wait_input_buffer();
 
-				io_outb(I8042_DATA_PORT, dev->sendqueue[0]);
-				dev->sendqueue_bytes--;
+				io_outb(I8042_DATA_PORT, dev->sendqueue[dev->sendqueue_readoff]);
+
+				// Increment read pointer
+				dev->sendqueue_bytes_waiting--;
 				bytesSent = true;
 			}
 
-			// Adjust send buffer forward one byte
+			// Send next byte on the next loop
 			if(bytesSent) {
-				// klog(kLogLevelDebug, "Sent 0x%02X to port %u", dev->sendqueue[0], port);
+				// klog(kLogLevelDebug, "Sent 0x%02X to port %u", dev->sendqueue[dev->sendqueue_readoff], port);
 
-				// Discard the frontmost byte, and shift offsets.
-				for(int i = 0; i < I8042_SENDQUEUE_SIZE-1; i++) {
-					dev->sendqueue[i] = dev->sendqueue[i+1];
+				// Read the next byte
+				if(dev->sendqueue_readoff++ == I8042_SENDQUEUE_SIZE) {
+					dev->sendqueue_readoff = 0;
+					dev->sendqueue_bytes_waiting--;
 				}
 
-				// Clear the last byte.
-				dev->sendqueue[I8042_SENDQUEUE_SIZE] = 0;
 				return;
 			}
 		}

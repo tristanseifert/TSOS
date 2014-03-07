@@ -5,6 +5,8 @@
 
 void __stack_chk_guard_setup(void);
 
+extern uint32_t BUILD_NUMBER;
+
 void smash_stack(char *input) {
 	char buf[16];
 
@@ -14,6 +16,7 @@ void smash_stack(char *input) {
 void main(void) {
 	// Console
 	vga_init();
+	klog(kLogLevelInfo, "TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
 
 	// Copy multiboot
 	x86_pc_init_multiboot();
@@ -29,7 +32,7 @@ void main(void) {
 
 	// Initialise modules
 	modules_load();
-	klog(kLogLevelInfo, "Modules initificated!");
+	klog(kLogLevelInfo, "Modules initialised");
 
 /*	klog(kLogLevelDebug, "Debug 0x%X", 0xDEADCACA);
 	klog(kLogLevelInfo, "Info 0x%X", 0xDEADBEEF);

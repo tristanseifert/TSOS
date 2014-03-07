@@ -7,36 +7,6 @@
 #define MAX_IRQ 16
 #define MAX_IRQ_CALLBACK 16
 
-// Assembly IRQ handlers
-extern void irq_0(void); 
-extern void irq_1(void); 
-extern void irq_2(void); 
-extern void irq_3(void); 
-extern void irq_4(void); 
-extern void irq_5(void); 
-extern void irq_6(void); 
-extern void irq_7(void); 
-extern void irq_8(void); 
-extern void irq_9(void); 
-extern void irq_10(void); 
-extern void irq_11(void); 
-extern void irq_12(void); 
-extern void irq_13(void); 
-extern void irq_14(void); 
-extern void irq_15(void); 
-
-// Assembly IRQ handlers
-static const uint32_t asm_irq_handlers[MAX_IRQ] = {
-	(uint32_t) irq_0, (uint32_t) irq_1,
-	(uint32_t) irq_2, (uint32_t) irq_3,
-	(uint32_t) irq_4, (uint32_t) irq_5,
-	(uint32_t) irq_6, (uint32_t) irq_7,
-	(uint32_t) irq_8, (uint32_t) irq_9,
-	(uint32_t) irq_10, (uint32_t) irq_11,
-	(uint32_t) irq_12, (uint32_t) irq_13,
-	(uint32_t) irq_14, (uint32_t) irq_15,
-};
-
 // IRQs that have gotten a handler associated
 static bool irqs_handled[MAX_IRQ];
 
@@ -102,10 +72,6 @@ int irq_register_handler(uint8_t irq, irq_callback_t callback) {
 		// Is this IRQ slot empty?
 		if(!irq_callbacks[irq][i]) {
 			irq_callbacks[irq][i] = callback;
-
-			// Set up an IDT entry
-			idt_set_gate(irq+0x20, asm_irq_handlers[irq], 0x08, 0x8E);
-			idt_flush_cache();
 
 			klog(kLogLevelDebug, "Added IRQ %u (Cb %u) *0x%X", (unsigned int) irq, (unsigned int) i, (unsigned int) callback);
 

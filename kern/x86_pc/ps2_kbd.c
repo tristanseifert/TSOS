@@ -1,6 +1,7 @@
 #import <types.h>
 #import "ps2_kbd.h"
 #import "8042_ps2.h"
+#import "hal/keyboard.h"
 
 // Private functions
 static void *ps2_kbd_init(device_t *);
@@ -83,6 +84,10 @@ static void ps2_kbd_byte_received(uint8_t b) {
 	// Ignore ACK packet
 	if(b == 0xFA) {
 		return;
+	} else if(b == 0xFE) {
+		// the keyboard sucks balls and wants resend of the LED SET
+		ps2_kbd_update_leds();
+		return;
 	}
 
 	// Check state
@@ -103,7 +108,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				lastKey = b;
 
 				if(!ps2_kbd_special_key_down(lastKey)) {
-					klog(kLogLevelDebug, "Key down: 0x%04X", lastKey);
+					klog(kLogLevelDebug, "Key down: 0x%04X", (unsigned int) lastKey);
 				}
 			}
 
@@ -134,7 +139,12 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				state = kStateWaitingForKey;
 
 				if(!ps2_kbd_special_key_down(lastKey)) {
-					klog(kLogLevelDebug, "Extended key down: 0x%04X", lastKey);
+					klog(kLogLevelDebug, "Extended key down: 0x%04X", (unsigned int) lastKey);
+
+					// Handle Ctrl+Alt+Del
+					if(modifier_state.ctrl_l && modifier_state.alt_l && lastKey == 0xE071) {
+						hid_keyboard_sas();
+					}
 				}
 			}
 
@@ -154,7 +164,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 					lastKey = 0xE000 | b;
 					
 					if(!ps2_kbd_special_key_up(lastKey)) {
-						klog(kLogLevelDebug, "Extended key up: 0x%X", b);
+						klog(kLogLevelDebug, "Extended key up: 0x%04X", (unsigned int) lastKey);
 					}
 				}
 			} else {
@@ -162,7 +172,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				lastKey = b;
 
 				if(!ps2_kbd_special_key_up(lastKey)) {
-					klog(kLogLevelDebug, "Regular key up: 0x%X", b);
+					klog(kLogLevelDebug, "Regular key up: 0x%04X", (unsigned int) lastKey);
 				}
 			}
 
@@ -210,6 +220,17 @@ static bool ps2_kbd_special_key_down(uint32_t key) {
 		// Right alt
 		case 0xE011:
 			modifier_state.alt_r = true;
+			ps2_kbd_debug_modifiers();
+			return true;
+
+		// Left meta
+		case 0xE01F:
+			modifier_state.meta_l = true;
+			ps2_kbd_debug_modifiers();
+			return true;
+		// Right meta
+		case 0xE027:
+			modifier_state.meta_r = true;
 			ps2_kbd_debug_modifiers();
 			return true;
 
@@ -270,6 +291,18 @@ static bool ps2_kbd_special_key_up(uint32_t key) {
 			ps2_kbd_debug_modifiers();
 			return true;
 
+		// Left meta
+		case 0xE01F:
+			modifier_state.meta_l = false;
+			ps2_kbd_debug_modifiers();
+			return true;
+		// Right meta
+		case 0xE027:
+			modifier_state.meta_r = false;
+			ps2_kbd_debug_modifiers();
+			return true;
+
+
 		// Caps lock or numlock
 		case 0x58:
 		case 0x77:
@@ -284,14 +317,22 @@ static bool ps2_kbd_special_key_up(uint32_t key) {
  * Debug: print modifier key state
  */
 static void ps2_kbd_debug_modifiers(void) {
-	klog(kLogLevelDebug, "Shift: %u %u, Ctrl: %u %u, Alt: %u %u, Caps: %u, Num: %u", modifier_state.shift_l, modifier_state.shift_r, modifier_state.ctrl_l, modifier_state.ctrl_r, modifier_state.alt_l, modifier_state.alt_r, modifier_state.capslock, modifier_state.numlock);
+	klog(kLogLevelDebug, "Shift: %u %u, Ctrl: %u %u, Alt: %u %u, Meta: %u %u, Caps: %u, Num: %u", modifier_state.shift_l, modifier_state.shift_r, modifier_state.ctrl_l, modifier_state.ctrl_r, modifier_state.alt_l, modifier_state.alt_r, modifier_state.meta_l, modifier_state.meta_r, modifier_state.capslock, modifier_state.numlock);
 }
 
 /*
  * Updates the state of the LEDs.
  */
 static void ps2_kbd_update_leds(void) {
-	uint8_t ledState = ((modifier_state.capslock & 0x01) << 2) | ((modifier_state.numlock & 0x01) << 1);
+	uint8_t ledState = 0;
+
+	// Apply required bits
+	if(modifier_state.capslock) {
+		ledState |= (1 << 2);
+	} if(modifier_state.numlock) {
+		ledState |= (1 << 1);
+	}
+
 	i8042_send(ps2_dev, 0xED);
 	i8042_send(ps2_dev, ledState);
 }

@@ -32,4 +32,13 @@ if [ "$1" == "qemu" ]; then
 elif [ "$1" == "bochs" ]; then
 	echo "\n[3;32;40m***** Running Bochs *****[0;37;49m"
 	bochs -f bochsrc.txt -q
+elif [ "$1" == "vbox" ]; then
+	echo "\n[3;32;40m***** Running VirtualBox *****[0;37;49m"
+	VBoxManage controlvm TSOS poweroff
+
+	rm -rf hdd.vdi
+	VBoxManage convertfromraw hdd.img hdd.vdi --format VHD
+	VBoxManage internalcommands sethduuid hdd.vdi 51f1a393-1c6e-49dc-816f-f83c430f5fe5
+
+	VBoxManage startvm TSOS
 fi

@@ -1,5 +1,6 @@
 kern/kernel.elf
 kern/kernel.elf_symbols.txt
+*.vdi
 *.o
 *.oa
 .DS_Store
