@@ -1,5 +1,5 @@
 MODULE=driver_support
-SOURCES=module.c
+SOURCES=module.c ramdisk.c ramdisk_compression.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)

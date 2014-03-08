@@ -139,7 +139,7 @@ void hal_bus_register(bus_t *bus, char *name) {
 /*
  * Registers a driver for a certain bus.
  */
-int hal_bus_register_driver(driver_t *driver, char* busName) {
+bus_error_t hal_bus_register_driver(driver_t *driver, char* busName) {
 	bus_t *bus = hashmap_get(busses, busName);
 
 	if(bus != NULL) {
@@ -150,13 +150,13 @@ int hal_bus_register_driver(driver_t *driver, char* busName) {
 		KDEBUG("Initialised driver '%s' for bus '%s'", driver->name, busName);
 		#endif
 
-		return 0;
+		return kHALBusNoError;
 	} else {
 		#if DEBUG_DRIVER_REG
 		KERROR("Attempted to register driver for bus '%s' without such a bus", busName);
 		#endif
 
-		return BUS_NOT_EXISTANT;
+		return kHALBusNotExistant;
 	}
 }
 
@@ -170,7 +170,7 @@ bus_t *hal_bus_get_by_name(char *name) {
 /*
  * Adds a device to the specified bus.
  */
-int hal_bus_add_device(device_t *device, bus_t *bus) {
+bus_error_t hal_bus_add_device(device_t *device, bus_t *bus) {
 	// Ensure the device doesn't already exist
 	if(!list_contains(bus->devices, device)) {
 		// Add to bus
@@ -186,7 +186,9 @@ int hal_bus_add_device(device_t *device, bus_t *bus) {
 		#if DEBUG_DEVICE_REG
 		KERROR("Bus device '%s' contains device '%s' already!", bus->node.name, device->node.name);
 		#endif
+
+		return kHALDeviceAlreadyRegistered;
 	}
 
-	return BUS_DEVICE_REGISTERED;
+	return kHALBusNoError;
 }

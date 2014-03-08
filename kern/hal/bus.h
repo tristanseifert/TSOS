@@ -5,9 +5,12 @@
 #define PLATFORM_BUS_NAME "platform"
 
 // Error codes
-#define BUS_NOT_EXISTANT -1
-#define BUS_DRIVER_ALREADY_REGISTERED -2
-#define BUS_DEVICE_REGISTERED -3
+typedef enum {
+	kHALBusNoError,
+	kHALBusNotExistant,
+	kHALDriverAlreadyRegistered,
+	kHALDeviceAlreadyRegistered,
+} bus_error_t;
 
 // Types
 typedef struct node node_t;
@@ -66,10 +69,10 @@ void hal_bus_register(bus_t*, char*);
 bus_t *hal_bus_get_by_name(char*);
 
 // Adds a device to a bus
-int hal_bus_add_device(device_t*, bus_t*);
+bus_error_t hal_bus_add_device(device_t*, bus_t*);
 
 // Registers a driver with a named bus
-int hal_bus_register_driver(driver_t*, char*);
+bus_error_t hal_bus_register_driver(driver_t*, char*);
 
 // Tries to load drivers for devices on a bus that lack them
 void hal_bus_load_drivers(char *);
