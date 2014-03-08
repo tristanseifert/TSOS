@@ -1,22 +1,31 @@
 #import <types.h>
 #import "x86_pc/x86_pc.h"
+#import "task/task.h"
 #import "paging/paging.h"
 #import "console/vga_console.h"
 
-void __stack_chk_guard_setup(void);
+// External functions
+extern void __stack_chk_guard_setup(void);
+extern void srand(uint32_t);
 
+void kern_idle(void);
+
+// Linker defines
 extern uint32_t BUILD_NUMBER;
 
-void smash_stack(char *input) {
-	char buf[16];
+// Idle task
+task_t *idle_task;
 
-	strcpy(buf, input);
-}
-
+/*
+ * Kernel entry point
+ */
 void main(void) {
 	// Console
 	vga_init();
 	klog(kLogLevelInfo, "TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
+
+	// Seed the rng
+	srand(0xDEADBEEF);
 
 	// Copy multiboot
 	x86_pc_init_multiboot();
@@ -34,48 +43,35 @@ void main(void) {
 	modules_load();
 	klog(kLogLevelInfo, "Modules initialised");
 
-/*	klog(kLogLevelDebug, "Debug 0x%X", 0xDEADCACA);
-	klog(kLogLevelInfo, "Info 0x%X", 0xDEADBEEF);
-	klog(kLogLevelSuccess, "Success 0x%X", 0xCAFEBABE);
-	klog(kLogLevelWarning, "Warning 0x%X", 0x80808080);
-	klog(kLogLevelError, "Error 0x%X", 0x12345678);
-	klog(kLogLevelCritical, "Critical 0x%X", 0xD00D);*/
-	
-/*	klog(kLogLevelDebug, "Begin memory test.\n");
+	// Allocate idle task
+	idle_task = task_new(kTaskPriorityIdle, false);
+	idle_task->cpu_state.kernel_mode = 1;
+	strncpy((char *) &idle_task->name, "Kernel Idle Task", 64);
 
-	int numChunks = 32;
-	int sizes[8] = {16, 32, 64, 128, 256, 512, 1024, 2048};
-	void *memories[numChunks];
-	int currentSize = 0;
-	uint32_t phys;
+	// Allocate stack
+	void *idle_stack = kmalloc(1024*32);
 
-	for(int i = 0; i < 8; i++) {
-		currentSize = sizes[i];
-		klog(kLogLevelDebug, "Allocating %u %u byte chunks", numChunks, currentSize);
+	// Set up initial state (%esp and %eip)
+	idle_task->cpu_state.eip = (uint32_t) &kern_idle;
+	idle_task->cpu_state.usersp = (uint32_t) idle_stack;
+	idle_task->cpu_state.eax = 0xDEADBEEF;
 
-		for(int x = 0; x < numChunks; x++) {
-			memories[x] = (void *) kmalloc_p(currentSize, &phys);
-		}
+	klog(kLogLevelDebug, "much switch, very task");
 
-		klog(kLogLevelWarning, "NIEDERKLATSCHEN SCHREIBKUGELN 0x%X", phys);
-
-		klog(kLogLevelDebug, "Freeing chunks");
-
-		for(int x = 0; x < numChunks; x++) {
-			kfree(memories[x]);
-		}
-	} */
-
-/*	char *doom = "smash the stack !!!!!!!!";
-	smash_stack(doom);*/
+	// Switch to the idle task.
+	// task_switch(idle_task);
 
 	while(1);
 }
 
-
-void test_pagefault(void) {
-	uint32_t *ptr = (uint32_t *) 0xA0000000;
-	uint32_t do_page_fault = *ptr;
-
-	kprintf("deather 0x%X\n", (unsigned int) do_page_fault);
+/*
+ * Idle thread: runs in kernel space.
+ */
+void kern_idle(void) {
+	// Infinite idling loop
+	int i = 0;
+	for(;;) {
+		klog(kLogLevelDebug + (i & 0x03), "doom");
+		i++;
+	}
 }

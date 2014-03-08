@@ -67,7 +67,7 @@ static void *ps2_kbd_init(device_t *dev) {
 	ps2_dev = dev->bus_info;
 	i8042_ps2_device_driver_t *ret = kmalloc(sizeof(i8042_ps2_device_driver_t));
 
-	klog(kLogLevelDebug, "Initialising PS2 keyboard driver for '%s'", dev->node.name);
+	// klog(kLogLevelDebug, "Initialising PS2 keyboard driver for '%s'", dev->node.name);
 
 	// Assign byte handler
 	ret->byte_from_device = ps2_kbd_byte_received;
@@ -108,7 +108,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				lastKey = b;
 
 				if(!ps2_kbd_special_key_down(lastKey)) {
-					klog(kLogLevelDebug, "Key down: 0x%04X", (unsigned int) lastKey);
+					// klog(kLogLevelDebug, "Key down: 0x%04X", (unsigned int) lastKey);
 				}
 			}
 
@@ -139,7 +139,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				state = kStateWaitingForKey;
 
 				if(!ps2_kbd_special_key_down(lastKey)) {
-					klog(kLogLevelDebug, "Extended key down: 0x%04X", (unsigned int) lastKey);
+					// klog(kLogLevelDebug, "Extended key down: 0x%04X", (unsigned int) lastKey);
 
 					// Handle Ctrl+Alt+Del
 					if(modifier_state.ctrl_l && modifier_state.alt_l && lastKey == 0xE071) {
@@ -164,7 +164,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 					lastKey = 0xE000 | b;
 					
 					if(!ps2_kbd_special_key_up(lastKey)) {
-						klog(kLogLevelDebug, "Extended key up: 0x%04X", (unsigned int) lastKey);
+						// klog(kLogLevelDebug, "Extended key up: 0x%04X", (unsigned int) lastKey);
 					}
 				}
 			} else {
@@ -172,7 +172,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				lastKey = b;
 
 				if(!ps2_kbd_special_key_up(lastKey)) {
-					klog(kLogLevelDebug, "Regular key up: 0x%04X", (unsigned int) lastKey);
+					// klog(kLogLevelDebug, "Regular key up: 0x%04X", (unsigned int) lastKey);
 				}
 			}
 
@@ -193,59 +193,49 @@ static bool ps2_kbd_special_key_down(uint32_t key) {
 		// Left shift
 		case 0x12:
 			modifier_state.shift_l = true;
-			ps2_kbd_debug_modifiers();
 			return true;
 		// Right shift
 		case 0x59:
 			modifier_state.shift_r = true;
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		// Left ctrl
 		case 0x14:
 			modifier_state.ctrl_l = true;
-			ps2_kbd_debug_modifiers();
 			return true;
 		// Right ctrl
 		case 0xE014:
 			modifier_state.ctrl_r = true;
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		// Left alt
 		case 0x11:
 			modifier_state.alt_l = true;
-			ps2_kbd_debug_modifiers();
 			return true;
 		// Right alt
 		case 0xE011:
 			modifier_state.alt_r = true;
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		// Left meta
 		case 0xE01F:
 			modifier_state.meta_l = true;
-			ps2_kbd_debug_modifiers();
 			return true;
 		// Right meta
 		case 0xE027:
 			modifier_state.meta_r = true;
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		// Caps lock
 		case 0x58:
 			modifier_state.capslock = !modifier_state.capslock;
 			ps2_kbd_update_leds();
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		// Numlock
 		case 0x77:
 			modifier_state.numlock = !modifier_state.numlock;
 			ps2_kbd_update_leds();
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		default:
@@ -261,45 +251,37 @@ static bool ps2_kbd_special_key_up(uint32_t key) {
 		// Left shift
 		case 0x12:
 			modifier_state.shift_l = false;
-			ps2_kbd_debug_modifiers();
 			return true;
 		// Right shift
 		case 0x59:
 			modifier_state.shift_r = false;
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		// Left ctrl
 		case 0x14:
 			modifier_state.ctrl_l = false;
-			ps2_kbd_debug_modifiers();
 			return true;
 		// Right ctrl
 		case 0xE014:
 			modifier_state.ctrl_r = false;
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		// Left alt
 		case 0x11:
 			modifier_state.alt_l = false;
-			ps2_kbd_debug_modifiers();
 			return true;
 		// Right alt
 		case 0xE011:
 			modifier_state.alt_r = false;
-			ps2_kbd_debug_modifiers();
 			return true;
 
 		// Left meta
 		case 0xE01F:
 			modifier_state.meta_l = false;
-			ps2_kbd_debug_modifiers();
 			return true;
 		// Right meta
 		case 0xE027:
 			modifier_state.meta_r = false;
-			ps2_kbd_debug_modifiers();
 			return true;
 
 

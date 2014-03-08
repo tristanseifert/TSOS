@@ -96,7 +96,7 @@ static void* i8042_init_device(device_t *dev) {
 	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0x60);
 	i8042_wait_input_buffer();
-	io_outb(I8042_DATA_PORT, 0x00);
+	io_outb(I8042_DATA_PORT, 0x30);
 
 	// Perform self-test
 	i8042_wait_input_buffer();
@@ -107,11 +107,11 @@ static void* i8042_init_device(device_t *dev) {
 		klog(kLogLevelError, "i8042: Faulty controller (self-test response 0x%X)", self_test_response);
 		return NULL;
 	} else {
-		if(info->isDualPort) {
+		/*if(info->isDualPort) {
 			klog(kLogLevelSuccess, "i8042: Dual-port controller at 0x%X", I8042_DATA_PORT);
 		} else {
 			klog(kLogLevelSuccess, "i8042: Single-port controller at 0x%X", I8042_DATA_PORT);
-		}
+		}*/
 	}
 
 	// Check first PS2 port
@@ -128,33 +128,27 @@ static void* i8042_init_device(device_t *dev) {
 
 	info->devices[0].port = 0;
 
-	// If there's another port, check it as well
-	if(info->isDualPort) {
-		i8042_wait_input_buffer();
-		io_outb(I8042_COMMAND_PORT, 0xA9);
-		self_test_response = i8042_read_byte_polling();
+	// Enable second port
+	i8042_wait_input_buffer();
+	io_outb(I8042_COMMAND_PORT, 0xA9);
+	self_test_response = i8042_read_byte_polling();
 
-		if(self_test_response != 0x00) {
-			klog(kLogLevelError, "i8042: Port 2 failed (0x%X)", self_test_response);
-			info->devices[1].isUsable = false;
-		} else {
-			info->devices[1].isUsable = true;
-		}
-
-		info->devices[1].port = 1;
+	if(self_test_response != 0x00) {
+		klog(kLogLevelError, "i8042: Port 2 failed (0x%X)", self_test_response);
+		info->devices[1].isUsable = false;
+	} else {
+		info->devices[1].isUsable = true;
 	}
+
+	info->devices[1].port = 1;
 
 	// Enable PS2 ports
 	i8042_wait_input_buffer();
 	io_outb(I8042_COMMAND_PORT, 0xAE);
-	//  klog(kLogLevelDebug, "i8042: Enabled port 1");
 	
-	if(info->isDualPort) {
-		// Wait for the controller to accept another command
-		i8042_wait_input_buffer();
-		io_outb(I8042_COMMAND_PORT, 0xA8);
-		klog(kLogLevelDebug, "i8042: Enabled port 2");
-	}
+	// Enable second port
+	i8042_wait_input_buffer();
+	io_outb(I8042_COMMAND_PORT, 0xA8);
 
 	// Enable IRQs
 	i8042_wait_input_buffer();
@@ -171,10 +165,8 @@ static void* i8042_init_device(device_t *dev) {
 
 	i8042_send_byte(0, 0xFF);
 
-	// Reset device on port 1, if port exists
-	if(info->isDualPort) {
-		i8042_send_byte(1, 0xFF);
-	}
+	// Reset device on second port
+	i8042_send_byte(1, 0xFF);
 
 	// Register handler for send queue flushage
 	kern_timer_register_handler(i8042_flush_send_queue);
@@ -326,15 +318,17 @@ static void i8042_irq_port1(void) {
 		// Acknowledge byte for "enable scanning" command
 		case kI8042StateWaitingEnableScanningAck: {
 			if(byte == 0xFA) {
-				klog(kLogLevelSuccess, "Device on port 0 initialised: 0x%02X%02X", shared_driver->devices[0].identify[0], shared_driver->devices[0].identify[1]);
+				// klog(kLogLevelSuccess, "i8042: device on port 0 initialised: 0x%02X%02X", shared_driver->devices[0].identify[0], shared_driver->devices[0].identify[1]);
+
+				// Determine driver
+				i8042_load_driver(&shared_driver->devices[0]);
+
+				// Go to ready state
+				shared_driver->devices[0].state = kI8042StateReady;
+				shared_driver->devices[0].isUsable = true;
+			} else {
+				klog(kLogLevelError, "i8042: device on port 0 failed to enable");
 			}
-
-			// Determine driver
-			i8042_load_driver(&shared_driver->devices[0]);
-
-			// Go to ready state
-			shared_driver->devices[0].state = kI8042StateReady;
-			shared_driver->devices[0].isUsable = true;
 
 			break;
 		}
@@ -441,15 +435,17 @@ static void i8042_irq_port2(void) {
 		// Acknowledge byte for "enable scanning" command
 		case kI8042StateWaitingEnableScanningAck: {
 			if(byte == 0xFA) {
-				klog(kLogLevelSuccess, "Device on port 0 initialised: 0x%02X%02X", shared_driver->devices[1].identify[0], shared_driver->devices[1].identify[1]);
+				// klog(kLogLevelSuccess, "i8042: device on port 1 initialised: 0x%02X%02X", shared_driver->devices[1].identify[0], shared_driver->devices[1].identify[1]);
+
+				// Load driver
+				i8042_load_driver(&shared_driver->devices[1]);
+
+				// Go to ready state
+				shared_driver->devices[1].state = kI8042StateReady;
+				shared_driver->devices[1].isUsable = true;
+			} else {
+				klog(kLogLevelError, "i8042: device on port 1 failed to enable");
 			}
-
-			// Load driver
-			i8042_load_driver(&shared_driver->devices[1]);
-
-			// Go to ready state
-			shared_driver->devices[1].state = kI8042StateReady;
-			shared_driver->devices[1].isUsable = true;
 
 			break;
 		}
@@ -482,13 +478,15 @@ static void i8042_flush_send_queue(void) {
 
 		// There's bytes to send on this port
 		if(dev->sendqueue_bytes_waiting != 0 && dev->isUsable) {
-			if(port == 0) {
-				// Device being reset?
-				if(dev->sendqueue[dev->sendqueue_readoff] == 0xFF) {
-					dev->state = kI8042StateWaitingForResetAck;
-					klog(kLogLevelDebug, "i8042: Resetting device %u", port);
-				}
+			// Is the device being reset?
+			if(dev->sendqueue[dev->sendqueue_readoff] == 0xFF) {
+				// Update state machine
+				dev->state = kI8042StateWaitingForResetAck;
+				// klog(kLogLevelDebug, "i8042: Resetting device %u", port);
+			}
 
+			// Each port has a different send procedure
+			if(port == 0) {
 				io_outb(I8042_DATA_PORT, dev->sendqueue[dev->sendqueue_readoff]);
 
 				// Increment read pointer
@@ -534,13 +532,13 @@ static void i8042_load_driver(i8042_ps2_device_t *device) {
 
 		device->device.driver = ps2_kbd_driver();
 
-		klog(kLogLevelDebug, "i8042: keyboard on port %u", device->port);
+		// klog(kLogLevelDebug, "i8042: keyboard on port %u", device->port);
 	} else if(device->identify[0] == 0x00 || device->identify[0] == 0x03) {
 		// Regular PS2 mouse or scrollwheel mouse
 		device->type = kI8042DeviceMouse;
 		device->device.node.name = "Generic PS/2 Mouse";
 
-		klog(kLogLevelDebug, "i8042: mouse on port %u", device->port);
+		// klog(kLogLevelDebug, "i8042: mouse on port %u", device->port);
 	} else {
 		// All other kinds of devices
 		device->type = kI8042DeviceUnknown;
@@ -556,7 +554,7 @@ static void i8042_load_driver(i8042_ps2_device_t *device) {
 	device->device.node.children = NULL;
 
 	// Initialise driver, if needed
-	if(device->device.driver->getDriverData) {
+	if(device->device.driver) {
 		device->device.device_info = device->device.driver->getDriverData(&device->device);
 	}
 }

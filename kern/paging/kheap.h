@@ -23,29 +23,12 @@ typedef struct heap {
 	 * code of ENOMEM will be set.
 	 */
 	unsigned int end_address;
-
-	/*
-	 * Whether allocated pages are supervisor only or readonly.
-	 */
-	bool is_supervisor, is_readonly;
-
-	/*
-	 * A bitmap of pages that have been allocated physical memory throughout
-	 * the memory range allocated to the kernel heap. Used to find places
-	 * where to map stuff.
-	 */
-	unsigned int *bitmap;
 } heap_t;
 
 /*
  * Creates the kernel heap.
- *
- * @param start Starting address
- * @param end End address of the heap
- * @param supervisor When set, mapped pages are only accessible by supervisor.
- * @param readonly Causes mapped pages to be readonly to lower priv levels.
  */
-void kheap_install(unsigned int start, unsigned int end, bool supervisor, bool readonly);
+void kheap_install();
 
 
 // !Heap accessing functions

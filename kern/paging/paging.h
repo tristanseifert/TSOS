@@ -13,13 +13,17 @@ typedef enum {
  * Contains functions to set up and deal with paging.
  */
 typedef struct page {
-	int present:1;	// Page present in memory
-	int rw:1;		// Read-only if clear, readwrite if set
-	int user:1;		// Supervisor level only if clear
-	int accessed:1;	// Has the page been accessed since last refresh?
-	int dirty:1;	// Has the page been written to since last refresh?
-	int unused:7;	// Amalgamation of unused and reserved bits
-	int frame:20;	// Frame address (shifted right 12 bits)
+	int present:1;		// Page present in memory
+	int rw:1;			// Read-only if clear, readwrite if set
+	int user:1;			// Supervisor level only if clear
+	int writethrough:1; // When set, writethrough caching is enabled
+	int cache:1;		// Disables caching of the page when set
+	int accessed:1;		// Has the page been accessed since last refresh?
+	int dirty:1;		// Has the page been written to since last refresh?
+	int unused:1;		// Ignored bits
+	int global:1;		// When set, not evicted from TLB on pagetable switch
+	int unused2:3;		// More ignored bits
+	int frame:20;		// Frame address (shifted right 12 bits)
 } page_t;
 
 typedef struct page_table {
@@ -49,8 +53,9 @@ paging_stats_t paging_get_stats();
 
 void paging_init();
 void paging_switch_directory(page_directory_t*);
-page_directory_t *paging_new_directory();
+
 page_t* paging_get_page(unsigned int, bool, page_directory_t*);
+page_t* paging_get_user_page(unsigned int address, bool make, page_directory_t* dir);
 
 unsigned int paging_map_section(unsigned int, unsigned int, page_directory_t*, paging_memory_section_t);
 void paging_unmap_section(unsigned int, unsigned int, page_directory_t*);

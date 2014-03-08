@@ -1,5 +1,5 @@
 MODULE=runtime
-SOURCES=std.c error.c ordered_array.c hashmap.c list.c
+SOURCES=std.c error.c ordered_array.c hashmap.c list.c rand.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)

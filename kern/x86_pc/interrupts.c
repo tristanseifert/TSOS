@@ -13,6 +13,7 @@ static bool irqs_handled[MAX_IRQ];
 // IRQ counters
 static uint32_t irq_counter[MAX_IRQ];
 static uint32_t irqs_spurious;
+static uint32_t irq_count_total;
 
 // IRQ callbacks
 static irq_callback_t irq_callbacks[MAX_IRQ][MAX_IRQ_CALLBACK];
@@ -29,6 +30,7 @@ static void irq_eoi(uint8_t irq);
  */
 void irq_handler(uint32_t irq) {
 	irq &= 0x1F;
+	irq_count_total++;
 
 	// IRQs 7 and 15 can be spurious
 	if(irq == 7 || irq == 15) {
@@ -114,4 +116,11 @@ static void irq_eoi(uint8_t irq) {
 	} else {
 
 	}
+}
+
+/*
+ * Return IRQ counter
+ */
+uint32_t irq_count(void) {
+	return irq_count_total;
 }

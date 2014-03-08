@@ -16,7 +16,7 @@ static int platform_init(void) {
 	// Register bus
 	bus_register(platform_bus, PLATFORM_BUS_NAME);
 
-	// Register the devices
+	// Register PS2 Controller
 	device_t *ps2 = kmalloc(sizeof(device_t));
 	memclr(ps2, sizeof(device_t));
 
@@ -24,6 +24,15 @@ static int platform_init(void) {
 	ps2->node.name = "i8042 PS2 Controller";
 
 	bus_add_device(ps2, platform_bus);
+
+	// Register RTC
+	device_t *rtc = kmalloc(sizeof(device_t));
+	memclr(rtc, sizeof(device_t));
+
+	rtc->connection = kDeviceConnectionInternal;
+	rtc->node.name = "CMOS Clock";
+
+	bus_add_device(rtc, platform_bus);
 
 	return 0;
 }

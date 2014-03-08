@@ -6,7 +6,6 @@
 #define DEBUG_PAGE_ALLOCATION 0
 
 // Config options for allocator
-
 // Alignment enforced for memory
 #define ALIGNMENT		16ul
 #define ALIGN_TYPE		char
@@ -100,36 +99,30 @@ static void lalloc_free(void *);
 // Kernel heap and pagetables
 heap_t *kernel_heap = NULL;
 extern page_directory_t *kernel_directory;
+
 static unsigned int nframes;
+static uint32_t *heap_frames;
 
 /*
- * Set a bit in the kernel_heap->bitmap bitset
+ * Set a bit in the heap_frames bitset
  */
 static void set_frame(unsigned int frame_addr) {
+	// kprintf("set_frame 0x%08X ", frame_addr);
+
 	unsigned int frame = frame_addr / 0x1000;
 	unsigned int idx = INDEX_FROM_BIT(frame);
 	unsigned int off = OFFSET_FROM_BIT(frame);
-	kernel_heap->bitmap[idx] |= (0x1 << off);
+	heap_frames[idx] |= (0x1 << off);
 }
 
 /*
- * Clear a bit in the kernel_heap->bitmap bitset
+ * Clear a bit in the heap_frames bitset
  */
 static void clear_frame(unsigned int frame_addr) {
 	unsigned int frame = frame_addr / 0x1000;
 	unsigned int idx = INDEX_FROM_BIT(frame);
 	unsigned int off = OFFSET_FROM_BIT(frame);
-	kernel_heap->bitmap[idx] &= ~(0x1 << off);
-}
-
-/*
- * Check if a certain page is allocated.
- */
-static unsigned int test_frame(unsigned int frame_addr) {
-	unsigned int frame = frame_addr / 0x1000;
-	unsigned int idx = INDEX_FROM_BIT(frame);
-	unsigned int off = OFFSET_FROM_BIT(frame);
-	return (kernel_heap->bitmap[idx] & (0x1 << off));
+	heap_frames[idx] &= ~(0x1 << off);
 }
 
 /*
@@ -140,34 +133,24 @@ static unsigned int test_frame(unsigned int frame_addr) {
  * @param supervisor When set, mapped pages are only accessible by supervisor.
  * @param readonly Causes mapped pages to be readonly to lower priv levels.
  */
-void kheap_install(unsigned int start, unsigned int end, bool supervisor, bool readonly) {
-	// Allocate memory for pages
-	for(int i = start; i < end; i += 0x1000) {
-		paging_get_page(i, true, kernel_directory);
-	}
-
+void kheap_install() {
 	// Allocate memory and set it to zero.
 	heap_t *heap = (heap_t *) kmalloc(sizeof(heap_t));
 	ASSERT(heap);
-
 	memclr(heap, sizeof(heap_t));
 
 	// Allocate memory for the bitmap
-	unsigned int size = end - start;
+	unsigned int size = 0x8000000;
 	nframes = size / 0x1000;
 
-	heap->bitmap = kmalloc(INDEX_FROM_BIT(nframes));
-	memclr(heap->bitmap, INDEX_FROM_BIT(nframes));
+	heap_frames = kmalloc(INDEX_FROM_BIT(nframes));
+	memclr(heap_frames, INDEX_FROM_BIT(nframes));
 
 	// Start address
-	heap->start_address = start;
+	heap->start_address = 0xC8000000;
 
 	// End address
-	heap->end_address = end;
-
-	// Set up protection attributes
-	heap->is_supervisor = supervisor;
-	heap->is_readonly = readonly;
+	heap->end_address = 0xCFFFF000;
 
 	// Finish.
 	kernel_heap = heap;
@@ -182,20 +165,35 @@ void kheap_install(unsigned int start, unsigned int end, bool supervisor, bool r
  * @return Pointer to memory, or NULL if error.
  */
 void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys) {
-	unsigned int ptr = (unsigned int) lalloc_malloc(size);
+	unsigned int ptr;
 
-	// Handle an out of memory condition
-	if(!ptr) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	// Handle unaligned memory accesses
+	if(likely(!aligned)) {
+		ptr = (unsigned int) lalloc_malloc(size);
 
-	// klog(kLogLevelWarning, "SCHREIBKUGEL ALLOC sized 0x%08X at 0x%08X", size, ptr);
+		// Handle an out of memory condition
+		if(!ptr) {
+			errno = ENOMEM;
+			return NULL;
+		}
 
-	// Do we want the physical address?
-	if(phys) {
-		page_t *page = paging_get_page(ptr & 0xFFFFF000, false, kernel_directory);
-		*phys = (page->frame << 12) | (ptr & 0x00000FFF);
+		// klog(kLogLevelWarning, "SCHREIBKUGEL ALLOC sized 0x%08X at 0x%08X", size, ptr);
+
+		// Do we want the physical address?
+		if(phys) {
+			page_t *page = paging_get_page(ptr & 0xFFFFF000, false, kernel_directory);
+			*phys = (page->frame << 12) | (ptr & 0x00000FFF);
+		}
+	} else { // This allocation must be aligned
+		// First, try to see if the allocation we get back is already page aligned
+		ptr = (unsigned int) lalloc_malloc(size);
+
+		// If it isn't, re-allocate it plus 0x1000
+		if(likely(ptr & 0x00000FFF)) {
+			krealloc((void *) ptr, size + 0x1000);
+			ptr += 0x1000;
+			ptr &= 0xFFFFF000;
+		}
 	}
 
 	return (void *) ptr;
@@ -226,7 +224,7 @@ static void free(void *address) {
  * @param address Address of memory on kernel heap
  */
 void kfree(void* address) {
-	if(kernel_heap) {
+	if(likely(kernel_heap)) {
 		free(address);
 	} else {
 		klog(kLogLevelWarning, "Tried to free 0x%X on dumb heap", (unsigned int) address);
@@ -277,13 +275,13 @@ static void* allocator_alloc(size_t pages) {
 
 	for (i = 0; i < INDEX_FROM_BIT(nframes); i++) {
 		// Skip if all 32 frames are filled
-		if (kernel_heap->bitmap[i] != 0xFFFFFFFF) {
+		if (likely(heap_frames[i] != 0xFFFFFFFF)) {
 			// Check which one of the 32 frames are filled
 			for (j = 0; j < 32; j++) {
 				unsigned int toTest = 0x1 << j;
 
 				// If this frame is free, increment a counter
-				if (!(kernel_heap->bitmap[i] & toTest)) {
+				if (!(heap_frames[i] & toTest)) {
 					// If no previous pages match, set starting one
 					if(!l) {
 						first_free_page = i*4*8+j;
@@ -293,7 +291,7 @@ static void* allocator_alloc(size_t pages) {
 					l++;
 
 					// If the count matches the number of pages we want, allocate pages
-					if(l == pages) {
+					if(unlikely(l == pages)) {
 						goto pagesFound;
 					}
 				} else {
@@ -312,8 +310,8 @@ static void* allocator_alloc(size_t pages) {
 	// klog(kLogLevelDebug, "Allocated 0x%X pages (page 0x%X)", pages, first_free_page);
 	start = (void *) (first_free_page * 0x1000) + kernel_heap->start_address;
 
+	// Starting address
 	unsigned int address = (first_free_page * 0x1000) + kernel_heap->start_address;
-
 	page_t *page;
 
 #if DEBUG_PAGE_ALLOCATION
@@ -323,10 +321,11 @@ static void* allocator_alloc(size_t pages) {
 	// Allocate requested pages some physical memory
 	for(int p = 0; p < pages; p++) {
 		page = paging_get_page(address, false, kernel_directory);
-		alloc_frame(page, kernel_heap->is_supervisor, !kernel_heap->is_readonly);
+		alloc_frame(page, true, true);
 
 		// Mark this frame as set
 		set_frame(address - kernel_heap->start_address);
+		// kprintf("virt 0x%08X\n", address);
 
 		// Advance allocation pointer
 		address += 0x1000;
@@ -389,7 +388,7 @@ static struct allocator_major *allocate_new_page(unsigned int size) {
 	// Make sure it's  the minimum size.
 	if (st < l_pageCount) st = l_pageCount;
 	
-	maj = (struct allocator_major*)allocator_alloc(st);
+	maj = (struct allocator_major *) allocator_alloc(st);
 
 	if (maj == NULL)  {
 		l_warningCount += 1;

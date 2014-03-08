@@ -114,7 +114,7 @@ void alloc_frame(page_t* page, bool is_kernel, bool is_writeable) {
 		unsigned int idx = first_frame();
 
 		if (idx == (unsigned int) -1) {
-			PANIC("No Free Frames");
+			PANIC("Out of memory");
 		}
 
 		set_frame(idx * 0x1000);
@@ -156,7 +156,7 @@ void paging_init() {
 	nframes += 0x100; // lowmem
 	pages_total = nframes;
 
-	klog(kLogLevelInfo, "%u pages available", pages_total);
+	// klog(kLogLevelInfo, "%u pages available", pages_total);
 
 	// Allocate page frame table
 	frames = (unsigned int *) kmalloc(INDEX_FROM_BIT(nframes));
@@ -190,21 +190,33 @@ void paging_init() {
 		page->frame = ((i & 0x0FFFF000) >> 12);
 	}
 
+	for(int i = 0xC8000000; i < 0xCFFFF000; i += 0x1000) {
+		paging_get_page(i, true, kernel_directory);
+	}
 
 	// Create the kernel heap
-	kheap_install(0xC8000000, 0xCFFFF000, true, true);
+	kheap_install();
 
 	// Mark frames as in-use from 0x00000000 to the end of the dumb heap
 	unsigned int kern_end_phys = ((dumb_heap_address - 0xC0000000) & 0xFFFFF000) + 0x1000;
 	for(int i = 0; i < kern_end_phys; i += 0x1000) {
 		set_frame(i);
 	}
-	klog(kLogLevelDebug, "Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
+	
+	// klog(kLogLevelDebug, "Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
 
 	// Convert kernel directory address to physical and save it
 	kern_dir_phys = (unsigned int) &kernel_directory->tablesPhysical;
 	kern_dir_phys -= 0xC0000000;
 	kernel_directory->physicalAddr = kern_dir_phys;
+
+	// Enable global addresses
+	uint32_t cr4;
+	__asm__ volatile("mov %%cr4, %0" : "=r" (cr4));
+
+	cr4 |= (1 << 7);
+
+	__asm__ volatile("mov %0, %%cr4" : : "r"(cr4));
 
 	// Enable paging
 	paging_switch_directory(kernel_directory);
@@ -219,30 +231,6 @@ void paging_switch_directory(page_directory_t* new) {
 	unsigned int tables_phys_ptr = (unsigned int) new->physicalAddr;
 	current_directory = new;
 	__asm__ volatile("mov %0, %%cr3" : : "r"(tables_phys_ptr));
-}
-
-/*
- * Creates a new page directory with 0xC0000000 to 0xC7FFFFFF mapped as kernel
- * data. Heap and friends are not mapped as this pagetable merely needs to map
- * code so IRQ handlers won't triple-fault the machine.
- */
-page_directory_t *paging_new_directory() {
-	unsigned int phys_loc;
-
-	// Allocate a page-aligned block of memory, put physical address in phys_loc
-	page_directory_t* directory = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t), &phys_loc);
-	ASSERT(directory != NULL);
-	memclr(directory, sizeof(page_directory_t));
-
-	// We need to copy entries 0x300 to 0x31F in the directory.
-	for(int i = 0x300; i < 0x320; i++) {
-		directory->tables[i] = kernel_directory->tables[i];
-		directory->tablesPhysical[i] = kernel_directory->tablesPhysical[i];
-	}
-
-	directory->physicalAddr = phys_loc + offsetof(page_directory_t, tablesPhysical);
-	
-	return directory;
 }
 
 /*
@@ -396,7 +384,52 @@ page_t* paging_get_page(unsigned int address, bool make, page_directory_t* dir) 
 
 		// update physical address
 		unsigned int phys_ptr = tmp | 0x7;
-		phys_ptr &= 0x0FFFFFFF; // get rid of high nybble
+
+		// Ensure that kernel code and data is global
+		if(unlikely(table_idx >= 0x300 && table_idx < 0x320)) {
+			phys_ptr |= 0x100;
+			dir->tables[table_idx]->pages[address % 0x400].global = 1;
+		}
+
+		dir->tablesPhysical[table_idx] = phys_ptr;
+		dir->tables[table_idx]->pages[address % 0x400].present = 0;
+
+		return &dir->tables[table_idx]->pages[address % 0x400];
+	} else {
+		return 0;
+	}
+}
+
+/*
+ * Returns pointer to the specified page, and if not present and make = true,
+ * creates it. When a pagetable is created through this mechanism, its entry in
+ * the page directory marks it as a user page.
+ *
+ * Note that address = the logical address we wish to map.
+ */
+page_t* paging_get_user_page(unsigned int address, bool make, page_directory_t* dir) {
+	// Turn the address into an index.
+	address /= 0x1000;
+
+	// Find the page table containing this address.
+	unsigned int table_idx = address / 1024;
+
+	if (dir->tables[table_idx]) { // If this table is already assigned
+		return &dir->tables[table_idx]->pages[address % 0x400];
+	} else if(make == true) {
+		unsigned int tmp;
+		dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &tmp);
+
+		// update physical address
+		unsigned int phys_ptr = tmp | 0x3;
+
+		// Ensure that kernel code and data is global
+		if(unlikely(table_idx >= 0x300 && table_idx < 0x320)) {
+			phys_ptr |= 0x100;
+			dir->tables[table_idx]->pages[address % 0x400].global = 1;
+		}
+
+		// Update page
 		dir->tablesPhysical[table_idx] = phys_ptr;
 		dir->tables[table_idx]->pages[address % 0x400].present = 0;
 

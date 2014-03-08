@@ -26,7 +26,7 @@ static int bus_sys_init(void) {
 	bus_names = list_allocate();
 	busses = hashmap_allocate();
 
-	klog(kLogLevelDebug, "Bus subsystem initialised");
+	// klog(kLogLevelSuccess, "Bus subsystem initialised");
 
 	return 0;
 }

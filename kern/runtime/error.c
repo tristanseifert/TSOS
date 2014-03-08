@@ -1,5 +1,6 @@
 #import <types.h>
 #import "error.h"
+#import "runtime/rand.h"
 #import "x86_pc/binfmt_elf.h"
 
 // ELF sections useful for stack dumps
@@ -204,7 +205,7 @@ void *__stack_chk_guard = NULL;
 
 void __stack_chk_guard_setup(void) {
 	unsigned int *p = (unsigned int *) __stack_chk_guard;
-	*p = 0xDEADBEEF;
+	*p = rand_32();
 	
 	klog(kLogLevelDebug, "Stack guards initialised");
 }

@@ -6,7 +6,7 @@ LIBGCC_PATH=$(dir $(shell which $(CC)))../lib/gcc/i686-pc-elf/4.6.2/libgcc.a
 
 CURRENT_DIR=$(shell pwd)
 
-ARCH_ARGS=-march=i686 -mtune=pentium3 -mmmx -msse -mfpmath=387+sse
+ARCH_ARGS=-march=i686 -mtune=pentium3 -msoft-float -mno-sse
 WARNINGS=-Wall -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-deprecated -Wformat -Wno-format-extra-args -Wformat-security -Wformat-nonliteral -Wformat=2
 INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/
 OPTIONS=-falign-functions=16 -fstack-protector-all -fno-exceptions -ftree-vectorize -ffast-math -fno-builtin -fno-omit-frame-pointer
