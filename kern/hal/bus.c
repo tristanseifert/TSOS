@@ -20,21 +20,21 @@ static node_t root = {
 /*
  * Initialises the bus subsystem.
  */
-static int bus_sys_init(void) {
+static int hal_bus_sys_init(void) {
 	root.children = list_allocate();
 	bus_names = list_allocate();
 	busses = hashmap_allocate();
 
-	klog(kLogLevelSuccess, "Bus subsystem initialised");
+	KSUCCESS("Bus subsystem initialised");
 
 	return 0;
 }
-module_early_init(bus_sys_init);
+module_early_init(hal_bus_sys_init);
 
 /*
  * Called once all drivers are loaded to match them to a device.
  */
-static int bus_match_devices(void) {
+static int hal_bus_match_devices(void) {
 	char *name;
 	bus_t *bus;
 	device_t *device;
@@ -44,24 +44,24 @@ static int bus_match_devices(void) {
 	for(int i = 0; i < bus_names->num_entries; i++) {
 		// Get name and bus
 		name = list_get(bus_names, i);
-		bus_load_drivers(name);
+		hal_bus_load_drivers(name);
 	}
 
 	return 0;
 }
-module_post_driver_init(bus_match_devices);
+module_post_driver_init(hal_bus_match_devices);
 
 /*
  * Tries to match devices that haven't got a loaded driver with a driver. This
  * is useful for hotplug events and whatnot.
  */
-void bus_load_drivers(char *name) {
+void hal_bus_load_drivers(char *name) {
 	bus_t *bus = hashmap_get(busses, name);
 	driver_t *driver;
 	device_t *device;
 
 	#if DEBUG_DRIVER_MATCH
-	klog(kLogLevelDebug, "Matching drivers on bus '%s'", name);
+	KDEBUG("Matching drivers on bus '%s'", name);
 	#endif
 
 	// make sure the bus exists
@@ -70,7 +70,7 @@ void bus_load_drivers(char *name) {
 		for(int j = 0; j < bus->devices->num_entries; j++) {
 			device = list_get(bus->devices, j);
 			#if DEBUG_DRIVER_MATCH
-			klog(kLogLevelDebug, " Device '%s'", device->node.name);
+			KDEBUG(" Device '%s'", device->node.name);
 			#endif
 
 			// Does this device have a driver loaded?
@@ -89,7 +89,7 @@ void bus_load_drivers(char *name) {
 						}
 
 						#if DEBUG_DRIVER_MATCH
-						klog(kLogLevelDebug, "  Found driver '%s': 0x%X 0x%X", driver->name, driver, device->device_info);
+						KDEBUG("  Found driver '%s': 0x%X 0x%X", driver->name, driver, device->device_info);
 						#endif
 					}
 				}
@@ -101,11 +101,11 @@ void bus_load_drivers(char *name) {
 /*
  * Registers a bus with the system.
  */
-void bus_register(bus_t *bus, char *name) {
+void hal_bus_register(bus_t *bus, char *name) {
 	// Check if name is used already
 	if(hashmap_get(busses, name) != NULL) {
 		#if DEBUG_BUS_REG
-		klog(kLogLevelError, "A bus named '%s' is already registered!", name);
+		KERROR("A bus named '%s' is already registered!", name);
 		#endif
 
 		return;
@@ -132,14 +132,14 @@ void bus_register(bus_t *bus, char *name) {
 	bus->drivers = list_allocate();
 
 	#if DEBUG_BUS_REG
-	klog(kLogLevelDebug, "Registered bus '%s'", name);
+	KDEBUG("Registered bus '%s'", name);
 	#endif
 }
 
 /*
  * Registers a driver for a certain bus.
  */
-int bus_register_driver(driver_t *driver, char* busName) {
+int hal_bus_register_driver(driver_t *driver, char* busName) {
 	bus_t *bus = hashmap_get(busses, busName);
 
 	if(bus != NULL) {
@@ -147,13 +147,13 @@ int bus_register_driver(driver_t *driver, char* busName) {
 		list_add(bus->drivers, driver);
 		
 		#if DEBUG_DRIVER_REG
-		klog(kLogLevelDebug, "Initialised driver '%s' for bus '%s'", driver->name, busName);
+		KDEBUG("Initialised driver '%s' for bus '%s'", driver->name, busName);
 		#endif
 
 		return 0;
 	} else {
 		#if DEBUG_DRIVER_REG
-		klog(kLogLevelError, "Attempted to register driver for bus '%s' without such a bus", busName);
+		KERROR("Attempted to register driver for bus '%s' without such a bus", busName);
 		#endif
 
 		return BUS_NOT_EXISTANT;
@@ -163,15 +163,16 @@ int bus_register_driver(driver_t *driver, char* busName) {
 /*
  * Tries to find a bus with the specified name.
  */
-bus_t *bus_get_by_name(char *name) {
+bus_t *hal_bus_get_by_name(char *name) {
 	return (bus_t *) hashmap_get(busses, name);
 }
 
 /*
  * Adds a device to the specified bus.
  */
-int bus_add_device(device_t *device, bus_t *bus) {
-//	if(!list_contains(bus->devices, device)) {
+int hal_bus_add_device(device_t *device, bus_t *bus) {
+	// Ensure the device doesn't already exist
+	if(!list_contains(bus->devices, device)) {
 		// Add to bus
 		list_add(bus->devices, device);
 
@@ -179,13 +180,13 @@ int bus_add_device(device_t *device, bus_t *bus) {
 		list_add(bus->node.children, device);
 
 		#if DEBUG_DEVICE_REG
-		klog(kLogLevelDebug, "Registered '%s' on bus '%s'", device->node.name, bus->node.name);
+		KDEBUG("Registered '%s' on bus '%s'", device->node.name, bus->node.name);
 		#endif
-/*	} else {
+	} else {
 		#if DEBUG_DEVICE_REG
-		klog(kLogLevelWarning, "Bus device '%s' contains device '%s' already!", bus->node.name, device->node.name);
+		KERROR("Bus device '%s' contains device '%s' already!", bus->node.name, device->node.name);
 		#endif
-	}*/
+	}
 
 	return BUS_DEVICE_REGISTERED;
 }

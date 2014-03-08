@@ -32,7 +32,7 @@ void main(void) {
 
 	// Console
 	vga_init();
-	klog(kLogLevelInfo, "TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
+	KINFO("TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
 
 	// Seed the rng
 	srand(0xDEADBEEF);
@@ -42,7 +42,7 @@ void main(void) {
 
 	// Initialise modules
 	modules_load();
-	klog(kLogLevelSuccess, "Modules initialised");
+	KSUCCESS("Modules initialised");
 
 	// Allocate idle task
 	idle_task = task_new(kTaskPriorityIdle, true);
@@ -63,7 +63,7 @@ void main(void) {
 void kern_idle(void) {
 	uint32_t temp;
 	__asm__ volatile("mov %%esp, %0" : "=r" (temp));
-	klog(kLogLevelWarning, "I am the kernel idle task! (%%esp = 0x%08X)", temp);
+	KWARNING("I am the kernel idle task! (%%esp = 0x%08X)", temp);
 	
 	// Sleeping until an IRQ comes in lets the CPU possibly sleep
 	for(;;) {

@@ -1,5 +1,5 @@
 #import <types.h>
-#import "bus/bus.h"
+#import "hal/bus.h"
 #import "runtime/rand.h"
 
 #import "cmos_rtc.h"
@@ -48,7 +48,7 @@ static struct {
  * Register the driver.
  */
 static int rtc_driver_register(void) {
-	bus_register_driver((driver_t *) &driver, PLATFORM_BUS_NAME);
+	hal_bus_register_driver((driver_t *) &driver, PLATFORM_BUS_NAME);
 	return 0;
 }
 
@@ -216,5 +216,5 @@ static void rtc_sys_tick(void* ctx) {
 	// Reseed PRNG
 	srand(irq_count());
 
-	// klog(kLogLevelDebug, "%02u:%02u:%02u (%02u-%02u-%04u)", time.hour, time.minute, time.second, time.day, time.month, time.year);
+	// KDEBUG("%02u:%02u:%02u (%02u-%02u-%04u)", time.hour, time.minute, time.second, time.day, time.month, time.year);
 }

@@ -207,7 +207,7 @@ void __stack_chk_guard_setup(void) {
 	unsigned int *p = (unsigned int *) __stack_chk_guard;
 	*p = rand_32();
 	
-	klog(kLogLevelSuccess, "Stack guards initialised");
+	KSUCCESS("Stack guards initialised");
 }
  
 void __attribute__((noreturn)) __stack_chk_fail() { 

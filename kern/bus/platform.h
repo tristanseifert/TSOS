@@ -6,6 +6,5 @@
  * Note that matches on drivers are based on the devices' names.
  */
 #import <types.h>
-#import "bus.h"
+#import "hal/bus.h"
 
-extern bus_t *platform_bus;

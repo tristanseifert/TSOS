@@ -1,4 +1,4 @@
 #import <types.h>
-#import "bus/bus.h"
+#import "hal/bus.h"
 
 driver_t *ps2_kbd_driver(void);

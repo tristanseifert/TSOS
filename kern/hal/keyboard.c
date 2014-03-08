@@ -3,7 +3,7 @@
 
 // Called by keyboard driver when Ctrl+Alt+Del is pressed
 void hid_keyboard_sas(void) {
-	klog(kLogLevelWarning, "Ctrl+Alt+Del triggered");
+	KWARNING("Ctrl+Alt+Del triggered");
 
 	uint8_t good = 0x02;
 	while (good & 0x02) {

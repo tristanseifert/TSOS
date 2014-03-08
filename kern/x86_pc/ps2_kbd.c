@@ -67,7 +67,7 @@ static void *ps2_kbd_init(device_t *dev) {
 	ps2_dev = dev->bus_info;
 	i8042_ps2_device_driver_t *ret = kmalloc(sizeof(i8042_ps2_device_driver_t));
 
-	// klog(kLogLevelDebug, "Initialising PS2 keyboard driver for '%s'", dev->node.name);
+	// KDEBUG("Initialising PS2 keyboard driver for '%s'", dev->node.name);
 
 	// Assign byte handler
 	ret->byte_from_device = ps2_kbd_byte_received;
@@ -108,7 +108,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				lastKey = b;
 
 				if(!ps2_kbd_special_key_down(lastKey)) {
-					// klog(kLogLevelDebug, "Key down: 0x%04X", (unsigned int) lastKey);
+					// KDEBUG("Key down: 0x%04X", (unsigned int) lastKey);
 				}
 			}
 
@@ -130,7 +130,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				printscr = false;
 				state = kStateWaitingForKey;
 
-				klog(kLogLevelDebug, "PrintScr pressed");
+				KDEBUG("PrintScr pressed");
 			} 
 
 			// Other keys
@@ -139,7 +139,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				state = kStateWaitingForKey;
 
 				if(!ps2_kbd_special_key_down(lastKey)) {
-					// klog(kLogLevelDebug, "Extended key down: 0x%04X", (unsigned int) lastKey);
+					// KDEBUG("Extended key down: 0x%04X", (unsigned int) lastKey);
 
 					// Handle Ctrl+Alt+Del
 					if(modifier_state.ctrl_l && modifier_state.alt_l && lastKey == 0xE071) {
@@ -158,13 +158,13 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				if(b == 0x7C) {
 					state = kStateWaitingForKey;
 				} else if(b == 0x12) {
-					klog(kLogLevelDebug, "PrintScr released");
+					KDEBUG("PrintScr released");
 				} else {
 					state = kStateWaitingForKey;
 					lastKey = 0xE000 | b;
 					
 					if(!ps2_kbd_special_key_up(lastKey)) {
-						// klog(kLogLevelDebug, "Extended key up: 0x%04X", (unsigned int) lastKey);
+						// KDEBUG("Extended key up: 0x%04X", (unsigned int) lastKey);
 					}
 				}
 			} else {
@@ -172,7 +172,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				lastKey = b;
 
 				if(!ps2_kbd_special_key_up(lastKey)) {
-					// klog(kLogLevelDebug, "Regular key up: 0x%04X", (unsigned int) lastKey);
+					// KDEBUG("Regular key up: 0x%04X", (unsigned int) lastKey);
 				}
 			}
 
@@ -180,7 +180,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 		}
 
 		default:
-			klog(kLogLevelWarning, "Unhandled byte received from keyboard: 0x%02X", b);
+			KWARNING("Unhandled byte received from keyboard: 0x%02X", b);
 			break;
 	}
 }
@@ -299,7 +299,7 @@ static bool ps2_kbd_special_key_up(uint32_t key) {
  * Debug: print modifier key state
  */
 static void ps2_kbd_debug_modifiers(void) {
-	klog(kLogLevelDebug, "Shift: %u %u, Ctrl: %u %u, Alt: %u %u, Meta: %u %u, Caps: %u, Num: %u", modifier_state.shift_l, modifier_state.shift_r, modifier_state.ctrl_l, modifier_state.ctrl_r, modifier_state.alt_l, modifier_state.alt_r, modifier_state.meta_l, modifier_state.meta_r, modifier_state.capslock, modifier_state.numlock);
+	KDEBUG("Shift: %u %u, Ctrl: %u %u, Alt: %u %u, Meta: %u %u, Caps: %u, Num: %u", modifier_state.shift_l, modifier_state.shift_r, modifier_state.ctrl_l, modifier_state.ctrl_r, modifier_state.alt_l, modifier_state.alt_r, modifier_state.meta_l, modifier_state.meta_r, modifier_state.capslock, modifier_state.numlock);
 }
 
 /*

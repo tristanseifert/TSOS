@@ -42,7 +42,7 @@ void kern_timer_register_handler(kern_timer_callback_t callback) {
 	// Ensure we don't register the same callback twice
 	for(int i = 0; i < NUM_TIMER_CALLBACKS; i++) {
 		if(callbacks[i] == callback) {
-			klog(kLogLevelError, "Attempted to register timer handler 0x%X again", (unsigned int) callback);
+			KERROR("Attempted to register timer handler 0x%X again", (unsigned int) callback);
 		}
 	}
 
@@ -55,5 +55,5 @@ void kern_timer_register_handler(kern_timer_callback_t callback) {
 	}
 
 	// No timer slots available :(
-	klog(kLogLevelError, "No timer handler slots available!");
+	KERROR("No timer handler slots available!");
 }

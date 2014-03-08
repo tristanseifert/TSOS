@@ -1,5 +1,5 @@
 #import <types.h>
-#import "bus/bus.h"
+#import "hal/bus.h"
 #import "8042_ps2.h"
 #import "interrupts.h"
 
@@ -46,7 +46,7 @@ static i8042_ps2_t *shared_driver;
  * Register the driver.
  */
 static int i8042_ps2_init(void) {
-	bus_register_driver((driver_t *) &driver, PLATFORM_BUS_NAME);
+	hal_bus_register_driver((driver_t *) &driver, PLATFORM_BUS_NAME);
 	return 0;
 }
 
@@ -104,13 +104,13 @@ static void* i8042_init_device(device_t *dev) {
 	uint8_t self_test_response = i8042_read_byte_polling();
 
 	if(self_test_response != 0x55) {
-		klog(kLogLevelError, "i8042: Faulty controller (self-test response 0x%X)", self_test_response);
+		KERROR("i8042: Faulty controller (self-test response 0x%X)", self_test_response);
 		return NULL;
 	} else {
 		/*if(info->isDualPort) {
-			klog(kLogLevelSuccess, "i8042: Dual-port controller at 0x%X", I8042_DATA_PORT);
+			KSUCCESS("i8042: Dual-port controller at 0x%X", I8042_DATA_PORT);
 		} else {
-			klog(kLogLevelSuccess, "i8042: Single-port controller at 0x%X", I8042_DATA_PORT);
+			KSUCCESS("i8042: Single-port controller at 0x%X", I8042_DATA_PORT);
 		}*/
 	}
 
@@ -120,7 +120,7 @@ static void* i8042_init_device(device_t *dev) {
 	self_test_response = i8042_read_byte_polling();
 
 	if(self_test_response != 0x00) {
-		klog(kLogLevelError, "i8042: Port 1 failed (0x%X)", self_test_response);
+		KERROR("i8042: Port 1 failed (0x%X)", self_test_response);
 		info->devices[0].isUsable = false;
 	} else {
 		info->devices[0].isUsable = true;
@@ -134,7 +134,7 @@ static void* i8042_init_device(device_t *dev) {
 	self_test_response = i8042_read_byte_polling();
 
 	if(self_test_response != 0x00) {
-		klog(kLogLevelError, "i8042: Port 2 failed (0x%X)", self_test_response);
+		KERROR("i8042: Port 2 failed (0x%X)", self_test_response);
 		info->devices[1].isUsable = false;
 	} else {
 		info->devices[1].isUsable = true;
@@ -239,7 +239,7 @@ static bool i8042_send_byte(uint8_t port, uint8_t command) {
  */
 static void i8042_irq_port1(void* ctx) {
 	uint8_t byte = io_inb(I8042_DATA_PORT);
-	// klog(kLogLevelDebug, "Received 0x%02X from PS2 port 0", byte);
+	// KDEBUG("Received 0x%02X from PS2 port 0", byte);
 
 	// State machine
 	switch(shared_driver->devices[0].state) {
@@ -258,12 +258,12 @@ static void i8042_irq_port1(void* ctx) {
 		// Waiting for POST response
 		case kI8042StateWaitingForPOST: {
 			if(byte == 0xAA) {
-				// klog(kLogLevelSuccess, "Device on port 0 reset successfully");
+				// KSUCCESS("Device on port 0 reset successfully");
 
 				shared_driver->devices[0].state = kI8042StateWaitingDisableScanningAck;
 				i8042_send_byte(0, 0xF5);
 			} else {
-				klog(kLogLevelError, "Device on port 0 failed (0x%X)", byte);
+				KERROR("Device on port 0 failed (0x%X)", byte);
 			}
 
 			break;
@@ -311,14 +311,14 @@ static void i8042_irq_port1(void* ctx) {
 				i8042_send_byte(0, 0xF4);
 			}
 
-			// klog(kLogLevelDebug, "Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[0].identify_bytes_read);
+			// KDEBUG("Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[0].identify_bytes_read);
 			break;
 		}
 
 		// Acknowledge byte for "enable scanning" command
 		case kI8042StateWaitingEnableScanningAck: {
 			if(byte == 0xFA) {
-				// klog(kLogLevelSuccess, "i8042: device on port 0 initialised: 0x%02X%02X", shared_driver->devices[0].identify[0], shared_driver->devices[0].identify[1]);
+				// KSUCCESS("i8042: device on port 0 initialised: 0x%02X%02X", shared_driver->devices[0].identify[0], shared_driver->devices[0].identify[1]);
 
 				// Determine driver
 				i8042_load_driver(&shared_driver->devices[0]);
@@ -327,7 +327,7 @@ static void i8042_irq_port1(void* ctx) {
 				shared_driver->devices[0].state = kI8042StateReady;
 				shared_driver->devices[0].isUsable = true;
 			} else {
-				klog(kLogLevelError, "i8042: device on port 0 failed to enable");
+				KERROR("i8042: device on port 0 failed to enable");
 			}
 
 			break;
@@ -345,7 +345,7 @@ static void i8042_irq_port1(void* ctx) {
 		}
 
 		default: {
-			klog(kLogLevelDebug, "Unhandled data 0x%X from PS2 port 0", byte);
+			KDEBUG("Unhandled data 0x%X from PS2 port 0", byte);
 			break;
 		}
 	}
@@ -356,7 +356,7 @@ static void i8042_irq_port1(void* ctx) {
  */
 static void i8042_irq_port2(void* ctx) {
 	uint8_t byte = io_inb(I8042_DATA_PORT);
-	// klog(kLogLevelDebug, "Received 0x%02X from PS2 port 1", byte);
+	// KDEBUG("Received 0x%02X from PS2 port 1", byte);
 
 	// State machine
 	switch(shared_driver->devices[1].state) {
@@ -375,12 +375,12 @@ static void i8042_irq_port2(void* ctx) {
 		// Waiting for POST response
 		case kI8042StateWaitingForPOST: {
 			if(byte == 0xAA) {
-				// klog(kLogLevelSuccess, "Device on port 1 reset successfully");
+				// KSUCCESS("Device on port 1 reset successfully");
 
 				shared_driver->devices[1].state = kI8042StateWaitingDisableScanningAck;
 				i8042_send_byte(1, 0xF5);
 			} else {
-				klog(kLogLevelError, "Device on port 1 failed");
+				KERROR("Device on port 1 failed");
 			}
 
 			break;
@@ -428,14 +428,14 @@ static void i8042_irq_port2(void* ctx) {
 				i8042_send_byte(1, 0xF4);
 			}
 
-			// klog(kLogLevelDebug, "Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[1].identify_bytes_read);
+			// KDEBUG("Identify response byte: 0x%X (byte %u)", byte, shared_driver->devices[1].identify_bytes_read);
 			break;
 		}
 
 		// Acknowledge byte for "enable scanning" command
 		case kI8042StateWaitingEnableScanningAck: {
 			if(byte == 0xFA) {
-				// klog(kLogLevelSuccess, "i8042: device on port 1 initialised: 0x%02X%02X", shared_driver->devices[1].identify[0], shared_driver->devices[1].identify[1]);
+				// KSUCCESS("i8042: device on port 1 initialised: 0x%02X%02X", shared_driver->devices[1].identify[0], shared_driver->devices[1].identify[1]);
 
 				// Load driver
 				i8042_load_driver(&shared_driver->devices[1]);
@@ -444,7 +444,7 @@ static void i8042_irq_port2(void* ctx) {
 				shared_driver->devices[1].state = kI8042StateReady;
 				shared_driver->devices[1].isUsable = true;
 			} else {
-				klog(kLogLevelError, "i8042: device on port 1 failed to enable");
+				KERROR("i8042: device on port 1 failed to enable");
 			}
 
 			break;
@@ -456,7 +456,7 @@ static void i8042_irq_port2(void* ctx) {
 		}
 
 		default: {
-			// klog(kLogLevelDebug, "Unhandled data 0x%X from PS2 port 1", byte);
+			// KDEBUG("Unhandled data 0x%X from PS2 port 1", byte);
 			break;
 		}
 	}
@@ -482,7 +482,7 @@ static void i8042_flush_send_queue(void) {
 			if(dev->sendqueue[dev->sendqueue_readoff] == 0xFF) {
 				// Update state machine
 				dev->state = kI8042StateWaitingForResetAck;
-				// klog(kLogLevelDebug, "i8042: Resetting device %u", port);
+				// KDEBUG("i8042: Resetting device %u", port);
 			}
 
 			// Each port has a different send procedure
@@ -506,7 +506,7 @@ static void i8042_flush_send_queue(void) {
 
 			// Send next byte on the next loop
 			if(bytesSent) {
-				// klog(kLogLevelDebug, "Sent 0x%02X to port %u", dev->sendqueue[dev->sendqueue_readoff], port);
+				// KDEBUG("Sent 0x%02X to port %u", dev->sendqueue[dev->sendqueue_readoff], port);
 
 				// Read the next byte
 				if(dev->sendqueue_readoff++ == I8042_SENDQUEUE_SIZE) {
@@ -532,13 +532,13 @@ static void i8042_load_driver(i8042_ps2_device_t *device) {
 
 		device->device.driver = ps2_kbd_driver();
 
-		// klog(kLogLevelDebug, "i8042: keyboard on port %u", device->port);
+		// KDEBUG("i8042: keyboard on port %u", device->port);
 	} else if(device->identify[0] == 0x00 || device->identify[0] == 0x03) {
 		// Regular PS2 mouse or scrollwheel mouse
 		device->type = kI8042DeviceMouse;
 		device->device.node.name = "Generic PS/2 Mouse";
 
-		// klog(kLogLevelDebug, "i8042: mouse on port %u", device->port);
+		// KDEBUG("i8042: mouse on port %u", device->port);
 	} else {
 		// All other kinds of devices
 		device->type = kI8042DeviceUnknown;

@@ -170,6 +170,7 @@ void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys) {
 	// Handle unaligned memory accesses
 	if(likely(!aligned)) {
 		ptr = (unsigned int) lalloc_malloc(size);
+		memclr((void *) ptr, size);
 
 		// Handle an out of memory condition
 		if(!ptr) {
@@ -177,10 +178,11 @@ void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys) {
 			return NULL;
 		}
 
-		// klog(kLogLevelWarning, "SCHREIBKUGEL ALLOC sized 0x%08X at 0x%08X", size, ptr);
+		// KWARNING("SCHREIBKUGEL ALLOC sized 0x%08X at 0x%08X", size, ptr);
 	} else { // This allocation must be aligned
 		// First, try to see if the allocation we get back is already page aligned
 		ptr = (unsigned int) lalloc_malloc(size);
+		memclr((void *) ptr, size);
 
 		// If it isn't, re-allocate it plus 0x1000
 		if(likely(ptr & 0x00000FFF)) {
@@ -207,7 +209,7 @@ void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys) {
 static void free(void *address) {
 #if DEBUG_NULL_FREE
 	if(!address) {
-		klog(kLogLevelError, "Tried to deallocate NULL address");
+		KERROR("Tried to deallocate NULL address");
 		dump_stack_here();
 		return;
 	}
@@ -215,7 +217,7 @@ static void free(void *address) {
 
 	// liballoc
 	lalloc_free(address);
-	// klog(kLogLevelError, "SCHREIBKUGEL DEALLOC at 0x%08X", address);
+	// KERROR("SCHREIBKUGEL DEALLOC at 0x%08X", address);
 }
 
 /*
@@ -227,7 +229,7 @@ void kfree(void* address) {
 	if(likely(kernel_heap)) {
 		free(address);
 	} else {
-		klog(kLogLevelWarning, "Tried to free 0x%X on dumb heap", (unsigned int) address);
+		KWARNING("Tried to free 0x%X on dumb heap", (unsigned int) address);
 	}
 }
 
@@ -302,12 +304,12 @@ static void* allocator_alloc(size_t pages) {
 	}
 
 	// We drop down here if there wasn't enough pages
-	klog(kLogLevelError, "Could not allocate 0x%X pages (last checked page is 0x%X)", (unsigned int) pages, first_free_page);
+	KERROR("Could not allocate 0x%X pages (last checked page is 0x%X)", (unsigned int) pages, first_free_page);
 	return NULL;
 
 	// Enough free pages were found
 	pagesFound:;
-	// klog(kLogLevelDebug, "Allocated 0x%X pages (page 0x%X)", pages, first_free_page);
+	// KDEBUG("Allocated 0x%X pages (page 0x%X)", pages, first_free_page);
 	start = (void *) (first_free_page * 0x1000) + kernel_heap->start_address;
 
 	// Starting address
@@ -315,7 +317,7 @@ static void* allocator_alloc(size_t pages) {
 	page_t *page;
 
 #if DEBUG_PAGE_ALLOCATION
-	klog(kLogLevelDebug, "Allocated 0x%X pages (virt 0x%X)", pages, address);
+	KDEBUG("Allocated 0x%X pages (virt 0x%X)", pages, address);
 #endif
 
 	// Allocate requested pages some physical memory
@@ -345,7 +347,7 @@ static int allocator_free(void *mem, size_t pages) {
 	unsigned int address = (unsigned int) mem;
 
 #if DEBUG_PAGE_ALLOCATION
-	klog(kLogLevelDebug, "Freed 0x%X pages (virt 0x%X)", pages, address);
+	KDEBUG("Freed 0x%X pages (virt 0x%X)", pages, address);
 #endif
 
 	// Loop through all the pages
@@ -393,7 +395,7 @@ static struct allocator_major *allocate_new_page(unsigned int size) {
 	if (maj == NULL)  {
 		l_warningCount += 1;
 		#if defined DEBUG || defined INFO
-		klog(kLogLevelDebug, "liballoc: WARNING: allocator_alloc(%i) return NULL", st);
+		KDEBUG("liballoc: WARNING: allocator_alloc(%i) return NULL", st);
 		#endif
 
 		// We ran out of memory
@@ -410,8 +412,8 @@ static struct allocator_major *allocate_new_page(unsigned int size) {
 	l_allocated += maj->size;
 
 	#ifdef DEBUG
-	klog(kLogLevelDebug, "liballoc: Resource allocated %x of %i pages (%i bytes) for %i size.", maj, st, maj->size, size);
-	klog(kLogLevelDebug, "liballoc: Total memory usage = %i KB",  (int)((l_allocated / (1024))));
+	KDEBUG("liballoc: Resource allocated %x of %i pages (%i bytes) for %i size.", maj, st, maj->size, size);
+	KDEBUG("liballoc: Total memory usage = %i KB",  (int)((l_allocated / (1024))));
 	#endif
 	
 	return maj;
@@ -441,16 +443,16 @@ static void *lalloc_malloc(size_t req_size) {
 	if (size == 0) {
 		l_warningCount += 1;
 		#if defined DEBUG || defined INFO
-		klog(kLogLevelDebug, "liballoc: WARNING: alloc(0) called from %x", __builtin_return_address(0));
+		KDEBUG("liballoc: WARNING: alloc(0) called from %x", __builtin_return_address(0));
 		#endif
 		allocator_unlock();
-		return lalloc_malloc(1);
+		return NULL;
 	}
 	
 
 	if (l_memRoot == NULL) {
 		#ifdef DEBUG
-		klog(kLogLevelDebug, "liballoc: initialization of liballoc " VERSION "");
+		KDEBUG("liballoc: initialization of liballoc " VERSION "");
 		#endif
 			
 		// First run of allocator
@@ -459,7 +461,7 @@ static void *lalloc_malloc(size_t req_size) {
 			allocator_unlock();
 
 			#ifdef DEBUG
-			klog(kLogLevelDebug, "liballoc: initial l_memRoot initialization failed", p); 
+			KDEBUG("liballoc: initial l_memRoot initialization failed", p); 
 			FLUSH();
 			#endif
 
@@ -467,14 +469,14 @@ static void *lalloc_malloc(size_t req_size) {
 		}
 
 		#ifdef DEBUG
-		klog(kLogLevelDebug, "liballoc: set up first memory major %x", l_memRoot);
+		KDEBUG("liballoc: set up first memory major %x", l_memRoot);
 		FLUSH();
 		#endif
 	}
 
 
 	#ifdef DEBUG
-	klog(kLogLevelDebug, "liballoc: %x lalloc_malloc(%i): ", __builtin_return_address(0), size);
+	KDEBUG("liballoc: %x lalloc_malloc(%i): ", __builtin_return_address(0), size);
 	FLUSH();
 	#endif
 
@@ -505,7 +507,7 @@ static void *lalloc_malloc(size_t req_size) {
 		// CASE 1:  There is not enough space in this major block.
 		if (diff < (size + sizeof(struct allocator_minor))) {
 			#ifdef DEBUG
-			klog(kLogLevelDebug, "Insufficient space in block %x", maj);
+			KDEBUG("Insufficient space in block %x", maj);
 			#endif
 				
 			// Another major block next to this one?
@@ -550,7 +552,7 @@ static void *lalloc_malloc(size_t req_size) {
 			ALIGN(p);
 			
 			#ifdef DEBUG
-			klog(kLogLevelDebug, "returning %x", p); 
+			KDEBUG("returning %x", p); 
 			#endif
 
 			allocator_unlock();		// release the lock
@@ -581,7 +583,7 @@ static void *lalloc_malloc(size_t req_size) {
 			ALIGN(p);
 
 			#ifdef DEBUG
-			klog(kLogLevelDebug, "returning %x", p); 
+			KDEBUG("returning %x", p); 
 			#endif
 
 			allocator_unlock();		// release the lock
@@ -619,7 +621,7 @@ static void *lalloc_malloc(size_t req_size) {
 						ALIGN(p);
 
 						#ifdef DEBUG
-						klog(kLogLevelDebug, "returning %x", p); 
+						KDEBUG("returning %x", p); 
 						#endif
 
 						allocator_unlock();		// release the lock
@@ -656,7 +658,7 @@ static void *lalloc_malloc(size_t req_size) {
 
 
 						#ifdef DEBUG
-						klog(kLogLevelDebug, "returning %x", p); 
+						KDEBUG("returning %x", p); 
 						#endif
 						
 						allocator_unlock();
@@ -670,7 +672,7 @@ static void *lalloc_malloc(size_t req_size) {
 		// Block full! Ensure next block and loop.
 		if (maj->next == NULL) {
 			#ifdef DEBUG
-			klog(kLogLevelDebug, "block full");
+			KDEBUG("block full");
 			#endif
 
 			if (startedBet == 1) {
@@ -692,11 +694,11 @@ static void *lalloc_malloc(size_t req_size) {
 	allocator_unlock();
 
 	#ifdef DEBUG
-	klog(kLogLevelDebug, "All cases exhausted. No memory available.");
+	KDEBUG("All cases exhausted. No memory available.");
 	#endif
 
 	#if defined DEBUG || defined INFO
-	klog(kLogLevelDebug, "liballoc: WARNING: lalloc_malloc(%i) returning NULL.", size);
+	KDEBUG("liballoc: WARNING: lalloc_malloc(%i) returning NULL.", size);
 	#endif
 
 	return NULL;
@@ -709,7 +711,7 @@ static void lalloc_free(void *ptr) {
 	if (ptr == NULL) {
 		l_warningCount += 1;
 		#if defined DEBUG || defined INFO
-		klog(kLogLevelDebug, "liballoc: WARNING: lalloc_free)(NULL) called from %x", __builtin_return_address(0));
+		KDEBUG("liballoc: WARNING: lalloc_free)(NULL) called from %x", __builtin_return_address(0));
 		FLUSH();
 		#endif
 		return;
@@ -733,19 +735,19 @@ static void lalloc_free(void *ptr) {
 			l_possibleOverruns += 1;
 
 			#if defined DEBUG || defined INFO
-			klog(kLogLevelDebug, "liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x", min->magic, LIBALLOC_MAGIC);
+			KDEBUG("liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x", min->magic, LIBALLOC_MAGIC);
 			#endif
 		}
 						
 						
 		if (min->magic == LIBALLOC_DEAD) {
 			#if defined DEBUG || defined INFO
-			klog(kLogLevelDebug, "liballoc: ERROR: multiple lalloc_free)() attempt on %x from %x.", ptr, __builtin_return_address(0));
+			KDEBUG("liballoc: ERROR: multiple lalloc_free)() attempt on %x from %x.", ptr, __builtin_return_address(0));
 			#endif
 
 		} else {
 			#if defined DEBUG || defined INFO
-			klog(kLogLevelDebug, "liballoc: ERROR: Bad lalloc_free)(%x) called from %x", ptr, __builtin_return_address(0));
+			KDEBUG("liballoc: ERROR: Bad lalloc_free)(%x) called from %x", ptr, __builtin_return_address(0));
 			#endif
 		}
 			
@@ -754,7 +756,7 @@ static void lalloc_free(void *ptr) {
 	}
 
 	#ifdef DEBUG
-	klog(kLogLevelDebug, "liballoc: %x lalloc_free)(%x): ", __builtin_return_address(0), ptr);
+	KDEBUG("liballoc: %x lalloc_free)(%x): ", __builtin_return_address(0), ptr);
 	#endif
 	
 	maj = min->block;
@@ -840,18 +842,18 @@ static void* lalloc_realloc(void *p, size_t size) {
 		  ) {
 			l_possibleOverruns += 1;
 			#if defined DEBUG || defined INFO
-			klog(kLogLevelDebug, "liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x", min->magic, LIBALLOC_MAGIC);
+			KDEBUG("liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x", min->magic, LIBALLOC_MAGIC);
 			#endif
 		}
 						
 						
 		if (min->magic == LIBALLOC_DEAD) {
 			#if defined DEBUG || defined INFO
-			klog(kLogLevelDebug, "liballoc: ERROR: multiple lalloc_free() attempt on %x from %x.", ptr, __builtin_return_address(0));
+			KDEBUG("liballoc: ERROR: multiple lalloc_free() attempt on %x from %x.", ptr, __builtin_return_address(0));
 			#endif
 		} else {
 			#if defined DEBUG || defined INFO
-			klog(kLogLevelDebug, "liballoc: ERROR: Bad lalloc_free(%x) called from %x", ptr, __builtin_return_address(0));
+			KDEBUG("liballoc: ERROR: Bad lalloc_free(%x) called from %x", ptr, __builtin_return_address(0));
 			#endif
 		}
 		

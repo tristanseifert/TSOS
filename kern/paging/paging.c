@@ -156,7 +156,7 @@ void paging_init() {
 	nframes += 0x100; // lowmem
 	pages_total = nframes;
 
-	// klog(kLogLevelInfo, "%u pages available", pages_total);
+	// KINFO("%u pages available", pages_total);
 
 	// Allocate page frame table
 	frames = (unsigned int *) kmalloc(INDEX_FROM_BIT(nframes));
@@ -203,7 +203,7 @@ void paging_init() {
 		set_frame(i);
 	}
 	
-	// klog(kLogLevelDebug, "Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
+	// KDEBUG("Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
 
 	// Convert kernel directory address to physical and save it
 	kern_dir_phys = (unsigned int) &kernel_directory->tablesPhysical;

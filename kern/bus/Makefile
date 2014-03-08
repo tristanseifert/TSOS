@@ -1,5 +1,5 @@
 MODULE=bus
-SOURCES=bus.c platform.c
+SOURCES=platform.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)

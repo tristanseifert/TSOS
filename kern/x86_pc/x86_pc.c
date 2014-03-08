@@ -63,9 +63,9 @@ void x86_pc_init_multiboot(void) {
 
 						symbol_string_table = ent->sh_link;
 
-						// klog(kLogLevelDebug, "Symbol table copied from 0x%X to 0x%X, link 0x%X", ent->sh_addr, kern_elf_symtab, ent->sh_link);
+						// KDEBUG("Symbol table copied from 0x%X to 0x%X, link 0x%X", ent->sh_addr, kern_elf_symtab, ent->sh_link);
 					} /*else { // other kind of section
-						klog(kLogLevelWarning, "Section %s, addr 0x%x, sz 0x%X, type 0x%X, idx 0x%X\n", name, ent->sh_addr, ent->sh_size, ent->sh_type, i);
+						KWARNING("Section %s, addr 0x%x, sz 0x%X, type 0x%X, idx 0x%X\n", name, ent->sh_addr, ent->sh_size, ent->sh_type, i);
 					}*/
 				}
 			}
@@ -75,12 +75,12 @@ void x86_pc_init_multiboot(void) {
 				elf_section_entry_t *ent = &entries[symbol_string_table];
 				kern_elf_strtab = (char *) kmalloc(ent->sh_size);
 				memmove(kern_elf_strtab, (void *) ent->sh_addr, ent->sh_size);
-				// klog(kLogLevelDebug, "String table copied from 0x%X to 0x%X, size 0x%X", ent->sh_addr, kern_elf_strtab, ent->sh_size);
+				// KDEBUG("String table copied from 0x%X to 0x%X, size 0x%X", ent->sh_addr, kern_elf_strtab, ent->sh_size);
 			} else {
-				klog(kLogLevelWarning, "Couldn't find symbol string table");
+				KWARNING("Couldn't find symbol string table");
 			}
 
-			// klog(kLogLevelWarning, "'%s' at 0x%X\n", kern_elf_strtab + kern_elf_symtab[96].st_name, kern_elf_symtab[96].st_address);
+			// KWARNING("'%s' at 0x%X\n", kern_elf_strtab + kern_elf_symtab[96].st_name, kern_elf_symtab[96].st_address);
 		}
 
 		// Copy memory map
@@ -91,9 +91,9 @@ void x86_pc_init_multiboot(void) {
 			himemStruct->mmap_addr = (uint32_t) new;
 		}
 
-		klog(kLogLevelInfo, "%uKB low memory, %uKB high memory", (unsigned int) x86_multiboot_info->mem_lower, (unsigned int) x86_multiboot_info->mem_upper);
+		KINFO("%uKB low memory, %uKB high memory", (unsigned int) x86_multiboot_info->mem_lower, (unsigned int) x86_multiboot_info->mem_upper);
 	} else {
-		klog(kLogLevelWarning, "No multiboot info!");
+		KWARNING("No multiboot info!");
 	}	
 }
 

@@ -366,7 +366,7 @@ ata_driver_t* ata_init_pci(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t
 
 	for (int i = 0; i < 4; i++) {
 		if (driver->devices[i].drive_exists == true) {
-			klog(kLogLevelDebug, "Found %s drive (%s) of %u sectors (Multiword DMA %u, UDMA %u, PIO %u)", ((driver->devices[i].type == ATA_DEVICE_TYPE_ATA) ? "ATA" : "ATAPI"), driver->devices[i].model, (unsigned int)(driver->devices[i].size & 0xFFFFFFFF), driver->devices[i].mwdma_supported, driver->devices[i].udma_supported, driver->devices[count].pio_supported);
+			KDEBUG("Found %s drive (%s) of %u sectors (Multiword DMA %u, UDMA %u, PIO %u)", ((driver->devices[i].type == ATA_DEVICE_TYPE_ATA) ? "ATA" : "ATAPI"), driver->devices[i].model, (unsigned int)(driver->devices[i].size & 0xFFFFFFFF), driver->devices[i].mwdma_supported, driver->devices[i].udma_supported, driver->devices[count].pio_supported);
 		}
 	}
 
@@ -516,7 +516,7 @@ int ata_poll_ready(ata_driver_t *drv, uint8_t channel, bool advanced_check) {
 		} else if(state & ATA_SR_DF) { // Device fault
 			return 1;
 		} else if(!(state & ATA_SR_DRQ)) { // BSY = 0; DF = 0; ERR = 0; DRQ = 0
-			klog(kLogLevelError, "IDE: No data after %u cycles", waitCycles);
+			KERROR("IDE: No data after %u cycles", waitCycles);
 			return 3;
 		}
 	}
@@ -531,7 +531,7 @@ int ata_poll_ready(ata_driver_t *drv, uint8_t channel, bool advanced_check) {
  */
 static int ata_post_driver_load(void) {
 	if(ata_drivers_loaded == 0) {
-		klog(kLogLevelWarning, "No ATA drivers loaded, trying legacy detection");
+		KWARNING("No ATA drivers loaded, trying legacy detection");
 
 		// Set up ATA driver (this will probe for devices)
 		ata_driver_t *ata = ata_init_pci(0, 0, 0, 0, 0);
@@ -738,7 +738,7 @@ static int ata_access_pio(ata_driver_t *drv, uint8_t rw, uint8_t drive, uint32_t
 		for (uint8_t s = 0; s < numsects; s++) {
 			// Wait for drive to have a sector available
 			if ((err = ata_poll_ready(drv, channel, true))) {
-				klog(kLogLevelError, "IDE: Device read error (disk %u on channel %u, LBA 0x%X size 0x%X)", slavebit, channel, (unsigned int) lba, numsects);
+				KERROR("IDE: Device read error (disk %u on channel %u, LBA 0x%X size 0x%X)", slavebit, channel, (unsigned int) lba, numsects);
 				return ata_convert_error(drv, drive, err);
 			}
 

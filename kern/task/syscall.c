@@ -36,5 +36,5 @@ module_early_init(syscall_init);
  * Called if a process attempts an invalid syscall.
  */
 void syscall_invalid(uint32_t num) {
-	klog(kLogLevelInfo, "Invalid syscall 0x%X attempted", (unsigned int) num);
+	KINFO("Invalid syscall 0x%X attempted", (unsigned int) num);
 }

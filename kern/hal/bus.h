@@ -61,15 +61,15 @@ struct bus {
 };
 
 // Registers a bus with the driver
-void bus_register(bus_t*, char*);
+void hal_bus_register(bus_t*, char*);
 // Gets a bus object from a name
-bus_t *bus_get_by_name(char*);
+bus_t *hal_bus_get_by_name(char*);
 
 // Adds a device to a bus
-int bus_add_device(device_t*, bus_t*);
+int hal_bus_add_device(device_t*, bus_t*);
 
 // Registers a driver with a named bus
-int bus_register_driver(driver_t*, char*);
+int hal_bus_register_driver(driver_t*, char*);
 
 // Tries to load drivers for devices on a bus that lack them
-void bus_load_drivers(char *);
+void hal_bus_load_drivers(char *);
