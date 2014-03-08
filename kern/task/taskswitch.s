@@ -19,15 +19,16 @@ task_context_switch:
 	test	%eax, %eax
 	jnz		task_switch_kernel
 
-	# Userspace context switch
-	mov		$task_new_tempstack, %ecx
+	# Reserve 16 bytes on the process stack frame
+	movl	4(%edi), %ecx
+	sub		$0x10, %ecx
 
 	# Set the ring this program will execute in into %ebx
 	movl	$0x03, %ebx
 
 	# set userspace %esp
 	movl	4(%edi), %eax
-	mov		%eax, 12(%ecx)
+	movl	%eax, 12(%ecx)
 
 	# Set data segment (with correct ring mask applied)
 	movl	$GDT_USER_DATA, %eax
@@ -36,7 +37,7 @@ task_context_switch:
 
 	# set userspace %eip
 	movl	8(%edi), %eax
-	mov		%eax, 0(%ecx)
+	movl	%eax, 0(%ecx)
 
 	# Set code segment
 	movl	$GDT_USER_CODE, %eax
@@ -47,20 +48,17 @@ task_context_switch:
 	pushf
 	pop		%eax
 	or		$0x200, %eax
-	mov		%eax, 8(%ecx)
+	movl	%eax, 8(%ecx)
 
 	# Reset data segments
-	mov		$GDT_USER_DATA, %ax
-	mov		%ax, %ds
-	mov		%ax, %es
-	mov		%ax, %fs
-	mov		%ax, %gs
+	movw	$GDT_USER_DATA, %ax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %gs
 
 	# Pop the remaining userspace registers
 	popa
-
-	# Set the stack pointer to a special area we prepared so IRET works
-	mov		$task_new_tempstack, %esp
 
 	# Return to ring 3
 	iret
@@ -69,19 +67,15 @@ task_context_switch:
 # Performs a task switch, but without leaving ring 0.
 ###############################################################################
 task_switch_kernel:
-	mov		$task_new_tempstack, %ecx
-
-	# set userspace %esp
-	movl	4(%edi), %eax
-	mov		%eax, 0x0C(%ecx)
-
-	# Set data segment (with correct ring mask applied)
-	movl	$GDT_KERN_DATA, %eax
-	movl	%eax, 0x10(%ecx)
+	# Reserve 12 bytes on the process stack frame
+	xchg	%bx, %bx
+	movl	4(%edi), %ecx
+	lea		-0xC(%ecx), %ecx
+	movl	%ecx, task_iretd_stack_ptr
 
 	# set %eip
 	movl	8(%edi), %eax
-	mov		%eax, 0x00(%ecx)
+	movl	%eax, 0x00(%ecx)
 
 	# Set code segment
 	movl	$GDT_KERN_CODE, %eax
@@ -89,29 +83,28 @@ task_switch_kernel:
 
 	# Get current flags (and re-enable IRQs in the flags)
 	pushf
-	pop		%eax
+	popl	%eax
 	or		$0x200, %eax
-	mov		%eax, 0x08(%ecx)
+	movl	%eax, 0x08(%ecx)
+
+	# popal should restore that fabricated stack pointer
+	movl	%ecx, 0x18(%edi)
 
 	# Reset data segments
-	mov		$GDT_KERN_DATA, %ax
-	mov		%ax, %ds
-	mov		%ax, %es
-	mov		%ax, %fs
-	mov		%ax, %gs
+	movw	$GDT_KERN_DATA, %ax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %gs
 
 	# Pop the remaining userspace registers
 	lea		0xC(%edi), %esp
-	popa
-
-	# Set the stack pointer to a special area we prepared so IRET works
-	mov		$task_new_tempstack, %esp
-	xchg	%bx, %bx
+	popal
 
 	# Continue execution of the task
+	movl	task_iretd_stack_ptr, %esp
 	iret
 
 .section .bss
-	.align	0x10
-task_new_tempstack:
-	.skip	4*8
+task_iretd_stack_ptr:
+	.long	0

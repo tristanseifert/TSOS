@@ -12,6 +12,7 @@ void kern_idle(void);
 
 // Linker defines
 extern uint32_t BUILD_NUMBER;
+extern uint32_t stack_top;
 
 // Idle task
 task_t *idle_task;
@@ -20,6 +21,15 @@ task_t *idle_task;
  * Kernel entry point
  */
 void main(void) {
+	// Copy multiboot
+	x86_pc_init_multiboot();
+
+	// Paging and VM
+	paging_init();
+
+	// Set up platform
+	x86_pc_init();
+
 	// Console
 	vga_init();
 	klog(kLogLevelInfo, "TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
@@ -27,51 +37,38 @@ void main(void) {
 	// Seed the rng
 	srand(0xDEADBEEF);
 
-	// Copy multiboot
-	x86_pc_init_multiboot();
-
-	// Paging and VM
-	paging_init();
-
 	// Set up stack guard
 	__stack_chk_guard_setup();
-
-	// Set up platform
-	x86_pc_init();
 
 	// Initialise modules
 	modules_load();
 	klog(kLogLevelInfo, "Modules initialised");
 
 	// Allocate idle task
-	idle_task = task_new(kTaskPriorityIdle, false);
-	idle_task->cpu_state.kernel_mode = 1;
+	idle_task = task_new(kTaskPriorityIdle, true);
 	strncpy((char *) &idle_task->name, "Kernel Idle Task", 64);
-
-	// Allocate stack
-	void *idle_stack = kmalloc(1024*32);
 
 	// Set up initial state (%esp and %eip)
 	idle_task->cpu_state.eip = (uint32_t) &kern_idle;
-	idle_task->cpu_state.usersp = (uint32_t) idle_stack;
+	idle_task->cpu_state.usersp = (uint32_t) stack_top;
 	idle_task->cpu_state.eax = 0xDEADBEEF;
 
-	klog(kLogLevelDebug, "much switch, very task");
+	klog(kLogLevelDebug, "much switch, very task (esp = 0x%08X, eip = 0x%08X)", idle_task->cpu_state.usersp, idle_task->cpu_state.eip);
 
 	// Switch to the idle task.
-	// task_switch(idle_task);
-
-	while(1);
+	task_switch(idle_task);
 }
 
 /*
  * Idle thread: runs in kernel space.
  */
 void kern_idle(void) {
-	// Infinite idling loop
-	int i = 0;
+	uint32_t temp;
+	__asm__ volatile("mov %%esp, %0" : "=r" (temp));
+	klog(kLogLevelWarning, "I am the kernel idle task! (%%esp = 0x%08X)", temp);
+	
+	// Sleeping until an IRQ comes in lets the CPU possibly sleep
 	for(;;) {
-		klog(kLogLevelDebug + (i & 0x03), "doom");
-		i++;
+		__asm__ volatile("hlt");
 	}
 }

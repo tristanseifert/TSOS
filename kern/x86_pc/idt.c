@@ -1,5 +1,6 @@
 #import <types.h>
 #import "idt.h"
+#import "x86_pc.h"
 
 // Exception handlers
 extern void isr0(void);
@@ -72,33 +73,33 @@ void idt_init(void) {
 	memclr(idt, sizeof(idt_entry_t) * 256);
 
 	for(int i = 0; i < 256; i++) {
-		idt_set_gate(i, (uint32_t) irq_dummy, 0x08, 0x8E);
+		idt_set_gate(i, (uint32_t) irq_dummy, GDT_KERNEL_CODE, 0x8E);
 	}
 
-	// Install exception handlers (BSOD)
-	idt_set_gate(0, (uint32_t) isr0, 0x08, 0x8E);
-	idt_set_gate(1, (uint32_t) isr1, 0x08, 0x8E);
-	idt_set_gate(2, (uint32_t) isr2, 0x08, 0x8E);
-	idt_set_gate(3, (uint32_t) isr3, 0x08, 0x8E);
-	idt_set_gate(4, (uint32_t) isr4, 0x08, 0x8E);
-	idt_set_gate(5, (uint32_t) isr5, 0x08, 0x8E);
-	idt_set_gate(6, (uint32_t) isr6, 0x08, 0x8E);
-	idt_set_gate(7, (uint32_t) isr7, 0x08, 0x8E);
-	idt_set_gate(8, (uint32_t) isr8, 0x08, 0x8E);
-	idt_set_gate(9, (uint32_t) isr9, 0x08, 0x8E);
-	idt_set_gate(10, (uint32_t) isr10, 0x08, 0x8E);
-	idt_set_gate(11, (uint32_t) isr11, 0x08, 0x8E);
-	idt_set_gate(12, (uint32_t) isr12, 0x08, 0x8E);
-	idt_set_gate(13, (uint32_t) isr13, 0x08, 0x8E);
-	idt_set_gate(14, (uint32_t) isr14, 0x08, 0x8E); // page fault
-	idt_set_gate(15, (uint32_t) isr15, 0x08, 0x8E);
-	idt_set_gate(16, (uint32_t) isr16, 0x08, 0x8E);
-	idt_set_gate(17, (uint32_t) isr17, 0x08, 0x8E);
-	idt_set_gate(18, (uint32_t) isr18, 0x08, 0x8E);
+	// Install exception handlers
+	idt_set_gate(0, (uint32_t) isr0, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(1, (uint32_t) isr1, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(2, (uint32_t) isr2, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(3, (uint32_t) isr3, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(4, (uint32_t) isr4, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(5, (uint32_t) isr5, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(6, (uint32_t) isr6, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(7, (uint32_t) isr7, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(8, (uint32_t) isr8, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(9, (uint32_t) isr9, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(10, (uint32_t) isr10, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(11, (uint32_t) isr11, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(12, (uint32_t) isr12, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(13, (uint32_t) isr13, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(14, (uint32_t) isr14, GDT_KERNEL_CODE, 0x8E); // page fault
+	idt_set_gate(15, (uint32_t) isr15, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(16, (uint32_t) isr16, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(17, (uint32_t) isr17, GDT_KERNEL_CODE, 0x8E);
+	idt_set_gate(18, (uint32_t) isr18, GDT_KERNEL_CODE, 0x8E);
 
 	// Set up IRQ gates
 	for(int irq = 0; irq < 16; irq++) {
-		idt_set_gate(irq+0x20, asm_irq_handlers[irq], 0x08, 0x8E);
+		idt_set_gate(irq+0x20, asm_irq_handlers[irq], GDT_KERNEL_CODE, 0x8E);
 	}
 
 	// Install IDT (LIDT instruction)

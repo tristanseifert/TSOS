@@ -100,6 +100,12 @@ void task_switch(task_t *task) {
 	IRQ_OFF();
 	current_task = task;
 
+	// Switch pagetable, if needed
+	if(!task->cpu_state.kernel_mode) {
+		klog(kLogLevelDebug, "doomers");
+		paging_switch_directory(task->pagetable);
+	}
+
 	// Restore FPU state, if needed
 	if(task->uses_fpu) {
 		__asm__ volatile("fxrstor %0" : "=m" (task->fpu_state));

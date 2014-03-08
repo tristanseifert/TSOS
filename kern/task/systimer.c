@@ -18,9 +18,6 @@ void kern_timer_tick_init(void) {
  * derive other timers from.
  */
 void kern_timer_tick(void) {
-	vga_save_position();
-	kprintf("0x%08X", ticks);
-	vga_restore_position();
 	ticks++;
 
 	// Execute callbacks
