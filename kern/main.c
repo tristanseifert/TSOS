@@ -42,7 +42,7 @@ void main(void) {
 
 	// Initialise modules
 	modules_load();
-	klog(kLogLevelInfo, "Modules initialised");
+	klog(kLogLevelSuccess, "Modules initialised");
 
 	// Allocate idle task
 	idle_task = task_new(kTaskPriorityIdle, true);
@@ -52,8 +52,6 @@ void main(void) {
 	idle_task->cpu_state.eip = (uint32_t) &kern_idle;
 	idle_task->cpu_state.usersp = (uint32_t) stack_top;
 	idle_task->cpu_state.eax = 0xDEADBEEF;
-
-	klog(kLogLevelDebug, "much switch, very task (esp = 0x%08X, eip = 0x%08X)", idle_task->cpu_state.usersp, idle_task->cpu_state.eip);
 
 	// Switch to the idle task.
 	task_switch(idle_task);

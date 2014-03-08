@@ -42,17 +42,17 @@ static void *kmalloc_int(size_t sz, bool align, unsigned int *phys) {
 }
 
 void *kmalloc_a(size_t sz) {
-	return kmalloc_int(sz, 1, 0);
+	return kmalloc_int(sz, true, NULL);
 }
 
 void *kmalloc_p(size_t sz, unsigned int *phys) {
-	return kmalloc_int(sz, 0, phys);
+	return kmalloc_int(sz, false, phys);
 }
 
 void *kmalloc_ap(size_t sz, unsigned int *phys) {
-	return kmalloc_int(sz, 1, phys);
+	return kmalloc_int(sz, true, phys);
 }
 
 void *kmalloc(size_t sz) {
-	return kmalloc_int(sz, 0, 0);
+	return kmalloc_int(sz, false, NULL);
 }

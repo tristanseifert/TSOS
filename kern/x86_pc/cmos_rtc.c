@@ -13,7 +13,7 @@
 // Private functions
 static void* rtc_init(device_t *dev);
 static bool rtc_match(device_t *dev);
-static void rtc_sys_tick(void);
+static void rtc_sys_tick(void* ctx);
 
 static void rtc_read(void);
 
@@ -87,7 +87,7 @@ static void* rtc_init(device_t *dev) {
 	io_outb(CMOS_DATA_PORT, (reg & 0xF0) | 0x0F);
 
 	// Install IRQ handler
-	irq_register_handler(8, rtc_sys_tick);
+	irq_register_handler(8, rtc_sys_tick, NULL);
 
 	// Re-enable IRQs
 	IRQ_RES();
@@ -188,7 +188,7 @@ static uint8_t rtc_read_reg(uint8_t reg) {
 /*
  * IRQ handler for the RTC (called twice a second)
  */
-static void rtc_sys_tick(void) {
+static void rtc_sys_tick(void* ctx) {
 	// Read the RTC register so IRQ will happen again
 	io_outb(0x70, 0x0C);
 	io_inb(0x71);

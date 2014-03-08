@@ -17,7 +17,7 @@ void kern_timer_tick_init(void) {
  * Timer callback that should be called every 10 ms: used to preempt tasks and
  * derive other timers from.
  */
-void kern_timer_tick(void) {
+void kern_timer_tick(void* ctx) {
 	ticks++;
 
 	// Execute callbacks

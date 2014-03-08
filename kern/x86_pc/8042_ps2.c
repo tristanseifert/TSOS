@@ -28,8 +28,8 @@ static bool i8042_wait_input_buffer(void);
 static bool i8042_send_byte(uint8_t, uint8_t);
 static void i8042_load_driver(i8042_ps2_device_t *);
 
-static void i8042_irq_port1(void);
-static void i8042_irq_port2(void);
+static void i8042_irq_port1(void* ctx);
+static void i8042_irq_port2(void* ctx);
 
 static void i8042_flush_send_queue(void);
 
@@ -66,8 +66,8 @@ static bool i8042_match(device_t *dev) {
  */
 static void* i8042_init_device(device_t *dev) {
 	// Install IRQs
-	irq_register_handler(1, i8042_irq_port1);
-	irq_register_handler(12, i8042_irq_port2);
+	irq_register_handler(1, i8042_irq_port1, NULL);
+	irq_register_handler(12, i8042_irq_port2, NULL);
 
 	// Set up memory for the structs
 	i8042_ps2_t *info = kmalloc(sizeof(i8042_ps2_t));
@@ -237,7 +237,7 @@ static bool i8042_send_byte(uint8_t port, uint8_t command) {
 /*
  * IRQ callback for when the first device sends a byte to the controller
  */
-static void i8042_irq_port1(void) {
+static void i8042_irq_port1(void* ctx) {
 	uint8_t byte = io_inb(I8042_DATA_PORT);
 	// klog(kLogLevelDebug, "Received 0x%02X from PS2 port 0", byte);
 
@@ -354,7 +354,7 @@ static void i8042_irq_port1(void) {
 /*
  * Called when the device on the second port sends a message to the controller.
  */
-static void i8042_irq_port2(void) {
+static void i8042_irq_port2(void* ctx) {
 	uint8_t byte = io_inb(I8042_DATA_PORT);
 	// klog(kLogLevelDebug, "Received 0x%02X from PS2 port 1", byte);
 

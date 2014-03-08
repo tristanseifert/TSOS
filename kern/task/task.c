@@ -39,15 +39,25 @@ task_t *task_new(task_priority_t pri, bool isKernel) {
 		task->cpu_state.kernel_mode = 1;
 		task->pagetable = kernel_directory;
 	} else {
+		uint32_t i;
+
 		// Create pagetable
 		unsigned int phys;
 		task->pagetable = kmalloc_ap(sizeof(page_directory_t), &phys);
 		task->pagetable->physicalAddr = phys;
 
+		klog(kLogLevelDebug, "Task 0x%08X pagetable at phys 0x%08X", task->pagetable, phys);
+
 		// Map 0xC0000000 to 0xFFFFFFFF in userspace (but inaccessible to users)
-		for(int i = 0x300; i < 0x400; i++) {
+		for(i = 0x300; i < 0x400; i++) {
 			task->pagetable->tables[i] = kernel_directory->tables[i];
 			task->pagetable->tablesPhysical[i] = kernel_directory->tablesPhysical[i];
+		}
+
+		// Allocate 64KB for a stack
+		for(i = 0xBFFF0000; i < 0xBFFFF000; i += 0x1000) {
+			page_t *page = paging_get_user_page(i, true, task->pagetable);
+			alloc_frame(page, false, true);
 		}
 	}
 
@@ -102,8 +112,10 @@ void task_switch(task_t *task) {
 
 	// Switch pagetable, if needed
 	if(!task->cpu_state.kernel_mode) {
-		klog(kLogLevelDebug, "doomers");
 		paging_switch_directory(task->pagetable);
+	} else {
+		// Ensure kernel-mode threads get the kernel directory
+		paging_switch_directory(kernel_directory);
 	}
 
 	// Restore FPU state, if needed

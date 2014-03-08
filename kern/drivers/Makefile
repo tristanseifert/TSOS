@@ -1,5 +1,5 @@
-MODULE=hal
-SOURCES=keyboard.c disk.c
+MODULE=drivers
+SOURCES=ata.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)

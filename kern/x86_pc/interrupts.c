@@ -17,6 +17,7 @@ static uint32_t irq_count_total;
 
 // IRQ callbacks
 static irq_callback_t irq_callbacks[MAX_IRQ][MAX_IRQ_CALLBACK];
+static void* irq_callback_ctx[MAX_IRQ][MAX_IRQ_CALLBACK];
 
 // Whether the old PIC is used, or if the APIC is used
 extern bool pic_enabled;
@@ -51,7 +52,7 @@ void irq_handler(uint32_t irq) {
 		for(int i = 0; i < MAX_IRQ_CALLBACK; i++) {
 			// If this slot has an IRQ handler, run it
 			if(irq_callbacks[irq][i]) {
-				irq_callbacks[irq][i]();
+				irq_callbacks[irq][i](irq_callback_ctx[irq][i]);
 			}
 		}
 	} else {
@@ -62,9 +63,9 @@ void irq_handler(uint32_t irq) {
 }
 
 /*
- * Registers an IRQ handler.
+ * Registers an IRQ handler and saves the context.
  */
-int irq_register_handler(uint8_t irq, irq_callback_t callback) {
+int irq_register_handler(uint8_t irq, irq_callback_t callback, void* ctx) {
 	// Unmask IRQ
 	irq_unmask(irq);
 	irqs_handled[irq] = true;
@@ -74,8 +75,9 @@ int irq_register_handler(uint8_t irq, irq_callback_t callback) {
 		// Is this IRQ slot empty?
 		if(!irq_callbacks[irq][i]) {
 			irq_callbacks[irq][i] = callback;
+			irq_callback_ctx[irq][i] = ctx;
 
-			klog(kLogLevelDebug, "Added IRQ %u (Cb %u) *0x%X", (unsigned int) irq, (unsigned int) i, (unsigned int) callback);
+			klog(kLogLevelDebug, "Added IRQ %02u (Cb %02u) *0x%08X", (unsigned int) irq, (unsigned int) i, (unsigned int) callback);
 
 			return 0;
 		}

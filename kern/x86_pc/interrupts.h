@@ -1,8 +1,8 @@
 #import <types.h>
 
-typedef void (*irq_callback_t)();
+typedef void (*irq_callback_t)(void*);
 
-int irq_register_handler(uint8_t irq, irq_callback_t callback);
+int irq_register_handler(uint8_t irq, irq_callback_t callback, void* ctx);
 
 // Mask or unmask an IRQ
 void irq_mask(uint8_t irq);

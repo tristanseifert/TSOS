@@ -3,7 +3,7 @@
 typedef void (*kern_timer_callback_t)();
 
 void kern_timer_tick_init(void);
-void kern_timer_tick(void);
+void kern_timer_tick(void* ctx);
 
 uint32_t kern_get_ticks(void);
 

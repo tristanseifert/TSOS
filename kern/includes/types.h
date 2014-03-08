@@ -13,7 +13,17 @@
 // Console support (printing, panic, etc)
 #import "console/console.h"
 #import "console/panic.h"
+
+// Memory allocation
 #import "paging/kheap.h"
+
+// Object types
+#import "runtime/hashmap.h"
+#import "runtime/list.h"
+#import "runtime/ordered_array.h"
+#import "runtime/rand.h"
+
+// Miscellaneous
 #import "driver_support/module.h"
 
 // X86 intrinsic macros (SSE)

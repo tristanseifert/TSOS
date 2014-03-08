@@ -1,6 +1,5 @@
 #import <types.h>
 #import "bus.h"
-#import "runtime/hashmap.h"
 
 #define DEBUG_DRIVER_REG	0
 #define DEBUG_DEVICE_REG	0
@@ -26,7 +25,7 @@ static int bus_sys_init(void) {
 	bus_names = list_allocate();
 	busses = hashmap_allocate();
 
-	// klog(kLogLevelSuccess, "Bus subsystem initialised");
+	klog(kLogLevelSuccess, "Bus subsystem initialised");
 
 	return 0;
 }
@@ -172,7 +171,7 @@ bus_t *bus_get_by_name(char *name) {
  * Adds a device to the specified bus.
  */
 int bus_add_device(device_t *device, bus_t *bus) {
-	if(!list_contains(bus->devices, device)) {
+//	if(!list_contains(bus->devices, device)) {
 		// Add to bus
 		list_add(bus->devices, device);
 
@@ -182,11 +181,11 @@ int bus_add_device(device_t *device, bus_t *bus) {
 		#if DEBUG_DEVICE_REG
 		klog(kLogLevelDebug, "Registered '%s' on bus '%s'", device->node.name, bus->node.name);
 		#endif
-	} else {
+/*	} else {
 		#if DEBUG_DEVICE_REG
 		klog(kLogLevelWarning, "Bus device '%s' contains device '%s' already!", bus->node.name, device->node.name);
 		#endif
-	}
+	}*/
 
 	return BUS_DEVICE_REGISTERED;
 }

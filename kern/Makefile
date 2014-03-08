@@ -31,7 +31,7 @@ export ASFLAGS
 export MAKE=$(shell pwd)/pretty_make.py
 
 # Subdirectories with makefiles
-SUBDIRS=paging console runtime x86_pc driver_support task bus hal
+SUBDIRS=paging console runtime x86_pc driver_support task bus hal drivers
 .PHONY: subdirs $(SUBDIRS)
 
 SUBDIRS_CLEAN=$(addsuffix _clean, $(SUBDIRS))

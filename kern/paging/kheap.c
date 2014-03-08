@@ -178,12 +178,6 @@ void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys) {
 		}
 
 		// klog(kLogLevelWarning, "SCHREIBKUGEL ALLOC sized 0x%08X at 0x%08X", size, ptr);
-
-		// Do we want the physical address?
-		if(phys) {
-			page_t *page = paging_get_page(ptr & 0xFFFFF000, false, kernel_directory);
-			*phys = (page->frame << 12) | (ptr & 0x00000FFF);
-		}
 	} else { // This allocation must be aligned
 		// First, try to see if the allocation we get back is already page aligned
 		ptr = (unsigned int) lalloc_malloc(size);
@@ -194,6 +188,12 @@ void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys) {
 			ptr += 0x1000;
 			ptr &= 0xFFFFF000;
 		}
+	}
+
+	// Do we want the physical address?
+	if(phys) {
+		page_t *page = paging_get_page(ptr & 0xFFFFF000, false, kernel_directory);
+		*phys = (page->frame << 12) | (ptr & 0x00000FFF);
 	}
 
 	return (void *) ptr;

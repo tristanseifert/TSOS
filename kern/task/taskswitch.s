@@ -19,48 +19,47 @@ task_context_switch:
 	test	%eax, %eax
 	jnz		task_switch_kernel
 
-	# Reserve 16 bytes on the process stack frame
+	# Reserve 12 bytes on the process stack frame
+	xchg	%bx, %bx
 	movl	4(%edi), %ecx
-	sub		$0x10, %ecx
+	lea		-0xC(%ecx), %ecx
+	movl	%ecx, task_iretd_stack_ptr
+
+	# set %eip
+	movl	8(%edi), %eax
+	movl	%eax, 0x00(%ecx)
 
 	# Set the ring this program will execute in into %ebx
 	movl	$0x03, %ebx
 
-	# set userspace %esp
-	movl	4(%edi), %eax
-	movl	%eax, 12(%ecx)
-
-	# Set data segment (with correct ring mask applied)
-	movl	$GDT_USER_DATA, %eax
-	or		%ebx, %eax
-	movl	%eax, 16(%ecx)
-
-	# set userspace %eip
-	movl	8(%edi), %eax
-	movl	%eax, 0(%ecx)
-
 	# Set code segment
 	movl	$GDT_USER_CODE, %eax
 	or		%ebx, %eax
-	movl	%eax, 4(%ecx)
+	movl	%eax, 0x04(%ecx)
 
 	# Get current flags (and re-enable IRQs in the flags)
 	pushf
-	pop		%eax
+	popl	%eax
 	or		$0x200, %eax
-	movl	%eax, 8(%ecx)
+	movl	%eax, 0x08(%ecx)
+
+	# Restore registers the process expects
+	movl	%ecx, 0x18(%edi)
 
 	# Reset data segments
 	movw	$GDT_USER_DATA, %ax
+	or		%ebx, %eax
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %fs
 	movw	%ax, %gs
 
 	# Pop the remaining userspace registers
-	popa
+	lea		0xC(%edi), %esp
+	popal
 
-	# Return to ring 3
+	# Continue execution of the task
+	movl	task_iretd_stack_ptr, %esp
 	iret
 
 ###############################################################################
@@ -68,7 +67,6 @@ task_context_switch:
 ###############################################################################
 task_switch_kernel:
 	# Reserve 12 bytes on the process stack frame
-	xchg	%bx, %bx
 	movl	4(%edi), %ecx
 	lea		-0xC(%ecx), %ecx
 	movl	%ecx, task_iretd_stack_ptr
@@ -87,7 +85,7 @@ task_switch_kernel:
 	or		$0x200, %eax
 	movl	%eax, 0x08(%ecx)
 
-	# popal should restore that fabricated stack pointer
+	# Restore registers the process expects
 	movl	%ecx, 0x18(%edi)
 
 	# Reset data segments

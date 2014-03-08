@@ -106,6 +106,11 @@ void x86_pc_init(void) {
 
 	// Remap PICs
 	i8259_remap(0x20, 0x28);
+	
+	// Mask all IRQs
+	for(int i = 0; i < 16; i++) {
+		i8259_set_mask(i);
+	}
 
 	// Set up system timer
 	x86_pc_init_timer();
@@ -125,7 +130,7 @@ static void x86_pc_init_timer(void) {
 	i8254_set_ticks(0, 11932);
 
 	// Set up the system timer
-	irq_register_handler(0, kern_timer_tick);
+	irq_register_handler(0, kern_timer_tick, NULL);
 }
 
 /*
