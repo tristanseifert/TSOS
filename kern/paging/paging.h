@@ -2,11 +2,12 @@
 
 typedef enum {
 	kMemorySectionNone = 0,
-	kMemorySectionProcess = 1, // 0x00000000 to 0x7FFFFFFF
-	kMemorySectionSharedLibraries = 2, // 0x80000000 to 0xBFFFFFFF
-	kMemorySectionKernel = 3, // 0xC0000000 to 0xC7FFFFFF
-	kMemorySectionKernelHeap = 4, // 0xC8000000 to 0xCFFFFFFF
-	kMemorySectionHardware = 5 // 0xD0000000 and above
+	kMemorySectionProcess = 1,
+	kMemorySectionSharedLibraries = 2,
+	kMemorySectionKernel = 3,			// kernel code and data
+	kMemorySectionDrivers = 4,			// dynamically loaded drivers
+	kMemorySectionKernelHeap = 5,		// heap (duh)
+	kMemorySectionHardware = 6			// MMIO and such
 } paging_memory_section_t;
 
 /*
@@ -62,3 +63,5 @@ void paging_unmap_section(unsigned int, unsigned int, page_directory_t*);
 
 void paging_page_fault_handler();
 void paging_flush_tlb(unsigned int);
+
+unsigned int *paging_get_memrange(paging_memory_section_t section);

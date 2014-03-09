@@ -30,7 +30,7 @@ static void irq_eoi(uint8_t irq);
  * appropriate callbacks.
  */
 void irq_handler(uint32_t irq) {
-	irq &= 0x1F;
+	irq &= 0x0F;
 	irq_count_total++;
 
 	// IRQs 7 and 15 can be spurious
@@ -66,14 +66,11 @@ void irq_handler(uint32_t irq) {
  * Registers an IRQ handler and saves the context.
  */
 int irq_register_handler(uint8_t irq, irq_callback_t callback, void* ctx) {
-	// Clear any pending interrupts, if this IRQ has no handlers
-	if(!irqs_handled[irq]) {
-		irq_eoi(irq);
-	}
+	irq &= 0x0F;
 
 	// Unmask IRQ
-	irq_unmask(irq);
 	irqs_handled[irq] = true;
+	irq_unmask(irq);
 
 	// Find an IRQ callback slot
 	for(int i = 0; i < MAX_IRQ_CALLBACK; i++) {
@@ -82,7 +79,9 @@ int irq_register_handler(uint8_t irq, irq_callback_t callback, void* ctx) {
 			irq_callbacks[irq][i] = callback;
 			irq_callback_ctx[irq][i] = ctx;
 
+#if DEBUG_IRQ_REG
 			KDEBUG("Added IRQ %02u (Cb %02u) *0x%08X", (unsigned int) irq, (unsigned int) i, (unsigned int) callback);
+#endif
 
 			return 0;
 		}

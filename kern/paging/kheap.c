@@ -147,10 +147,8 @@ void kheap_install() {
 	memclr(heap_frames, INDEX_FROM_BIT(nframes));
 
 	// Start address
-	heap->start_address = 0xC8000000;
-
-	// End address
-	heap->end_address = 0xCFFFF000;
+	heap->start_address = paging_get_memrange(kMemorySectionKernelHeap)[0];
+	heap->end_address = paging_get_memrange(kMemorySectionKernelHeap)[1];
 
 	// Finish.
 	kernel_heap = heap;
@@ -309,7 +307,7 @@ static void* allocator_alloc(size_t pages) {
 
 	// Enough free pages were found
 	pagesFound:;
-	// KDEBUG("Allocated 0x%X pages (page 0x%X)", pages, first_free_page);
+	// KDEBUG("Allocated 0x%X pages (page 0x%X)", (unsigned int) pages, first_free_page);
 	start = (void *) (first_free_page * 0x1000) + kernel_heap->start_address;
 
 	// Starting address
@@ -317,7 +315,7 @@ static void* allocator_alloc(size_t pages) {
 	page_t *page;
 
 #if DEBUG_PAGE_ALLOCATION
-	KDEBUG("Allocated 0x%X pages (virt 0x%X)", pages, address);
+	KDEBUG("Allocated 0x%X pages (virt 0x%X)", (unsigned int) pages, address);
 #endif
 
 	// Allocate requested pages some physical memory
@@ -353,13 +351,15 @@ static int allocator_free(void *mem, size_t pages) {
 	// Loop through all the pages
 	for(int i = 0; i < pages; i++) {
 		page = paging_get_page(address, false, kernel_directory);
-		free_frame(page);
+		if(page) {
+			free_frame(page);
 
-		// Mark this page as unused
-		clear_frame(address - kernel_heap->start_address);
+			// Mark this page as unused
+			clear_frame(address - kernel_heap->start_address);
 
-		// Advance pointer
-		address += 0x1000;
+			// Advance pointer
+			address += 0x1000;
+		}
 	}
 
 	// Stats

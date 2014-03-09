@@ -13,13 +13,31 @@ static unsigned int previous_directory;
 extern multiboot_info_t *x86_multiboot_info;
 
 // Maps a memory section enum entry to a range
-static unsigned int section_to_memrange[6][2] = {
+static unsigned int section_to_memrange[7][2] = {
 	{0x00000000, 0x00000000}, // kMemorySectionNone
+	
 	{0x00800000, 0x7FFFFFFF}, // kMemorySectionProcess
 	{0x80000000, 0xBFFFFFFF}, // kMemorySectionSharedLibraries
+
 	{0xC0000000, 0xC7FFFFFF}, // kMemorySectionKernel
-	{0xC8000000, 0xCFFFFFFF}, // kMemorySectionKernelHeap
+	{0xC8000000, 0xCFFFFFFF}, // kMemorySectionDrivers
+	
+	{0xD0000000, 0xDFFFFFFF}, // kMemorySectionKernelHeap
+	
 	{0xD0000000, 0xFFFFFFFF}  // kMemorySectionHardware
+};
+
+static const char* section_name_table[7] = {
+	"kMemorySectionNone",
+
+	"Process Memory",
+	"Shared Library Memory",
+
+	"Kernel Code/Data",
+	"Driver Code/Data",
+
+	"Kernel Heap",
+	"Hardware I/O"
 };
 
 // The kernel's page directory
@@ -153,10 +171,8 @@ void paging_init() {
 	// Highmem is allocated only, so we ignore lowmem
 	unsigned int mem_end_page = (x86_multiboot_info->mem_upper * 1024);
 	nframes = mem_end_page / 0x1000;
-	nframes += 0x100; // lowmem
+	nframes += 0x100; // take lowmem into account
 	pages_total = nframes;
-
-	// KINFO("%u pages available", pages_total);
 
 	// Allocate page frame table
 	frames = (unsigned int *) kmalloc(INDEX_FROM_BIT(nframes));
@@ -168,10 +184,10 @@ void paging_init() {
 	memclr(kernel_directory, sizeof(page_directory_t));
 	current_directory = kernel_directory;
 
-	// Map kernel itself
-	for(i = 0xC0000000; i < 0xC7FFF000; i += 0x1000) {
+
+	// Identity map from 0x00000000 to 0x000FF000 (legacy lowmem)
+	for(i = 0; i < 0x00100000; i += 0x1000) {
 		page_t* page = paging_get_page(i, true, kernel_directory);
-		memclr(page, sizeof(page_t));
 
 		page->present = 1;
 		page->rw = 1;
@@ -179,43 +195,62 @@ void paging_init() {
 		page->frame = ((i & 0x0FFFF000) >> 12);
 	}
 
-	// Identity map from 0x00000000 to 0x001F0000
-	for(i = 0; i < 0x00200000; i += 0x1000) {
-		page_t* page = paging_get_page(i, true, kernel_directory);
-		memclr(page, sizeof(page_t));
 
-		page->present = 1;
-		page->rw = 1;
-		page->user = 0;
-		page->frame = ((i & 0x0FFFF000) >> 12);
-	}
+	// Create pages for the kernel
+	unsigned int kern_start = paging_get_memrange(kMemorySectionKernel)[0];
+	unsigned int kern_end = paging_get_memrange(kMemorySectionKernel)[1];
 
-	for(int i = 0xC8000000; i < 0xCFFFF000; i += 0x1000) {
+	for(i = kern_start; i < (kern_end & 0xFFFFF000); i += 0x1000) {
 		paging_get_page(i, true, kernel_directory);
 	}
+
+
+	// Create pages for kernel heap
+	unsigned int kheap_start = paging_get_memrange(kMemorySectionKernelHeap)[0];
+	unsigned int kheap_end = paging_get_memrange(kMemorySectionKernelHeap)[1];
+	for(i = kheap_start; i < (kheap_end & 0xFFFFF000); i += 0x1000) {
+		paging_get_page(i, true, kernel_directory);
+	}
+
 
 	// Create the kernel heap
 	kheap_install();
 
+
 	// Mark frames as in-use from 0x00000000 to the end of the dumb heap
 	unsigned int kern_end_phys = ((dumb_heap_address - 0xC0000000) & 0xFFFFF000) + 0x1000;
-	for(int i = 0; i < kern_end_phys; i += 0x1000) {
+	for(i = 0; i < kern_end_phys; i += 0x1000) {
 		set_frame(i);
 	}
-	
 	// KDEBUG("Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
 
-	// Convert kernel directory address to physical and save it
+
+	// Mark kernel data as present
+	unsigned int kern_heap_end = (dumb_heap_address & 0xFFFFF000) + 0x1000;
+	for(i = kern_start; i < (kern_end & 0xFFFFF000); i += 0x1000) {
+		page_t* page = paging_get_page(i, false, kernel_directory);
+
+		page->present = 1;
+		page->rw = 1;
+		page->user = 0;
+		page->frame = ((i & 0x0FFFF000) >> 12);
+	}
+
+
+	// Convert kernel directory address to physical
 	kern_dir_phys = (unsigned int) &kernel_directory->tablesPhysical;
 	kern_dir_phys -= 0xC0000000;
 	kernel_directory->physicalAddr = kern_dir_phys;
 
-	// Enable global addresses
+
+	/*
+	 * Enable global addresses. This helps with minimising the TLB flush
+	 * overhead when performing a context switch, as kernel pages can stay in
+	 * the TLB.
+	 */
 	uint32_t cr4;
 	__asm__ volatile("mov %%cr4, %0" : "=r" (cr4));
-
 	cr4 |= (1 << 7);
-
 	__asm__ volatile("mov %0, %%cr4" : : "r"(cr4));
 
 	// Enable paging
@@ -223,7 +258,7 @@ void paging_init() {
 }
 
 /*
- * Switches the currently-used page directory.
+ * Switches to a page directory.
  */
 void paging_switch_directory(page_directory_t* new) {
 	__asm__ volatile("mov %%cr3, %0" : "=r" (previous_directory));
@@ -280,8 +315,7 @@ unsigned int paging_map_section(unsigned int physAddress, unsigned int length, p
 
 	// We found enough memory, so map it
 	if(mapping_start != 0) {
-		// Note we don't call alloc_frame as this doesn't allocate any of our
-		// physical RAM.
+		// Don't call alloc_frame as this doesn't allocate any physical RAM
 		// kprintf("Mapping 0x%X to 0x%X -> 0x%X phys\n", mapping_start, mapping_start+length, phys_transformed);
 
 		for(int i = mapping_start; i < mapping_start+length; i+= 0x1000) {
@@ -299,6 +333,7 @@ unsigned int paging_map_section(unsigned int physAddress, unsigned int length, p
 		// Add the offset into the page we were requested to map
 		return mapping_start + (physAddress & 0x00000FFF);
 	} else {
+		KERROR("Could not map %u bytes, from 0x%08X in section %s", length, physAddress, section_name_table[sec]);
 		return 0;
 	}
 }
@@ -378,9 +413,12 @@ page_t* paging_get_page(unsigned int address, bool make, page_directory_t* dir) 
 
 	if (dir->tables[table_idx]) { // If this table is already assigned
 		return &dir->tables[table_idx]->pages[address % 0x400];
-	} else if(make == true) {
+	} else if(make == true) { // Table does not exist
 		unsigned int tmp;
+
+		// Create table, and zero its memory
 		dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &tmp);
+		memclr(dir->tables[table_idx], sizeof(page_table_t));
 
 		// update physical address
 		unsigned int phys_ptr = tmp | 0x7;
@@ -396,7 +434,7 @@ page_t* paging_get_page(unsigned int address, bool make, page_directory_t* dir) 
 
 		return &dir->tables[table_idx]->pages[address % 0x400];
 	} else {
-		return 0;
+		return NULL;
 	}
 }
 
@@ -474,4 +512,11 @@ void paging_page_fault_handler(err_registers_t regs) {
  */
 void paging_flush_tlb(unsigned int addr) {
 	__asm__ volatile("invlpg (%0)" : : "r" (addr) : "memory");
+}
+
+/*
+ * Returns the memory range in which a specific type of mapping will go.
+ */
+unsigned int *paging_get_memrange(paging_memory_section_t section) {
+	return section_to_memrange[section];
 }

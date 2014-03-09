@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+	<head>
+		<style type="text/css">
+			* {
+				font-family: Helvetica, sans-serif;
+				font-size: 14px;
+			}
+
+			td:first-child {
+				vertical-align: top;
+				position: relative;
+				width: 70px;
+			}
+
+			div:first-child {
+				font-family: Monaco, monospace;
+				font-size: 0.8em;
+
+				position: absolute;
+				top: 0px;
+			}
+
+			div:nth-child(2) {
+				font-family: Monaco, monospace;
+				font-size: 0.8em;
+
+				position: absolute;
+				bottom: -3px;
+				color: #666;
+			}
+
+			td:nth-child(2) {
+				border: 1px solid #000;
+				width: 150px;
+				text-align: center;
+			}
+
+			.unmapped { background: #eee; font-style: italic; }
+
+			.stack { background: #ecc; }
+			.data { background: #cec; }
+			.code { background: #cce; font-weight: bold; }
+			.bss { background: #eec; }
+
+			h1 {
+				font-size: 1.5em;
+			}
+
+			pre, code {
+				font-family: Monaco, monospace;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>TSOS Kernel Memory Layout</h1>
+		<table>
+			<tr style="height: 200px">
+				<td><div>0x00000000</div><div>0xBFFFFFFF</div></td>
+				<td class="unmapped">Userspace</td>
+			</tr>
+			<tr style="height: 75px">
+				<td><div>0xC0000000</div><div>0xC7FFFFFF</div></td>
+				<td class="code">Kernel Code/Data</td>
+			</tr>
+			<tr style="height: 75px">
+				<td><div>0xC8000000</div><div>0xCFFFFFFF</div></td>
+				<td class="code">Dynamically Loaded Drivers</td>
+			</tr>
+			<tr style="height: 150px">
+				<td><div>0xD0000000</div><div>0xDFFFFFFF</div></td>
+				<td class="data">Kernel Heap</td>
+			</tr>
+			<tr style="height: 150px">
+				<td><div>0xE0000000</div><div>0xFFFFFFFF</div></td>
+				<td class="bss">MMIO</td>
+			</tr>
+		</table>
+	</body>
+</html>

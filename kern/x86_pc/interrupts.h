@@ -1,5 +1,7 @@
 #import <types.h>
 
+#define DEBUG_IRQ_REG 0
+
 typedef void (*irq_callback_t)(void*);
 
 int irq_register_handler(uint8_t irq, irq_callback_t callback, void* ctx);

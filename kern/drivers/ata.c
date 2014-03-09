@@ -151,8 +151,11 @@ ata_driver_t* ata_init_pci(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t
 	driver->channels[ATA_SECONDARY].bmide = (BAR4 & 0xFFFFFFFC) + 8; // Bus Master IDE
 
 	// Disable IRQs for both channels
-	ata_reg_write(driver, ATA_PRIMARY, ATA_REG_CONTROL, driver->channels[ATA_PRIMARY].nIEN = 0x02);
-	ata_reg_write(driver, ATA_SECONDARY, ATA_REG_CONTROL, driver->channels[ATA_SECONDARY].nIEN = 0x02);
+	driver->channels[ATA_PRIMARY].nIEN = 0x02;
+	driver->channels[ATA_SECONDARY].nIEN = 0x02;
+
+	ata_reg_write(driver, ATA_PRIMARY, ATA_REG_CONTROL, driver->channels[ATA_PRIMARY].nIEN);
+	ata_reg_write(driver, ATA_SECONDARY, ATA_REG_CONTROL, driver->channels[ATA_SECONDARY].nIEN);
 
 	// Probe for devices
 	for(channel = 0; channel < 2; channel++) {
@@ -366,7 +369,11 @@ ata_driver_t* ata_init_pci(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t
 
 	for (int i = 0; i < 4; i++) {
 		if (driver->devices[i].drive_exists == true) {
-			KDEBUG("Found %s drive (%s) of %u sectors (Multiword DMA %u, UDMA %u, PIO %u)", ((driver->devices[i].type == ATA_DEVICE_TYPE_ATA) ? "ATA" : "ATAPI"), driver->devices[i].model, (unsigned int)(driver->devices[i].size & 0xFFFFFFFF), driver->devices[i].mwdma_supported, driver->devices[i].udma_supported, driver->devices[count].pio_supported);
+			if(driver->devices[i].type == ATA_DEVICE_TYPE_ATA) {
+				KDEBUG("Found ATA drive (%s) of %u sectors (Multiword DMA %u, UDMA %u, PIO %u)", driver->devices[i].model, (unsigned int)(driver->devices[i].size & 0xFFFFFFFF), driver->devices[i].mwdma_supported, driver->devices[i].udma_supported, driver->devices[count].pio_supported);
+			} else {
+				KDEBUG("Found ATAPI drive (%s) of %u sectors", driver->devices[i].model, (unsigned int)(driver->devices[i].size & 0xFFFFFFFF));
+			}
 		}
 	}
 

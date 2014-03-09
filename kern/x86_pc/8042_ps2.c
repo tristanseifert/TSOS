@@ -65,10 +65,6 @@ static bool i8042_match(device_t *dev) {
  * Initialises an 8042 KBC.
  */
 static void* i8042_init_device(device_t *dev) {
-	// Install IRQs
-	irq_register_handler(1, i8042_irq_port1, NULL);
-	irq_register_handler(12, i8042_irq_port2, NULL);
-
 	// Set up memory for the structs
 	i8042_ps2_t *info = kmalloc(sizeof(i8042_ps2_t));
 	memclr(info, sizeof(i8042_ps2_t));
@@ -79,6 +75,10 @@ static void* i8042_init_device(device_t *dev) {
 	// Device states
 	info->devices[0].state = kI8042StateNone;
 	info->devices[1].state = kI8042StateNone;
+
+	// Install IRQ handlers
+	irq_register_handler(1, i8042_irq_port1, shared_driver);
+	irq_register_handler(12, i8042_irq_port2, shared_driver);
 
 	// Disable output from attached devices
 	i8042_wait_input_buffer();
@@ -335,6 +335,7 @@ static void i8042_irq_port1(void* ctx) {
 
 		// Data should be forwarded to the proper device driver in this state
 		case kI8042StateReady: {
+			// If a driver registered for this device, forward the byte to it
 			i8042_ps2_device_driver_t *drv = shared_driver->devices[0].device.device_info;
 
 			if(drv->byte_from_device) {

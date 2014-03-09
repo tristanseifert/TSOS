@@ -67,12 +67,15 @@ static void *ps2_kbd_init(device_t *dev) {
 	ps2_dev = dev->bus_info;
 	i8042_ps2_device_driver_t *ret = kmalloc(sizeof(i8042_ps2_device_driver_t));
 
-	// KDEBUG("Initialising PS2 keyboard driver for '%s'", dev->node.name);
+	KDEBUG("Initialising PS2 keyboard driver for '%s'", dev->node.name);
 
 	// Assign byte handler
 	ret->byte_from_device = ps2_kbd_byte_received;
 
 	state = kStateWaitingForKey;
+
+	// Enable scanning
+	i8042_send(ps2_dev, 0xF4);
 
 	return ret;
 }
@@ -108,7 +111,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				lastKey = b;
 
 				if(!ps2_kbd_special_key_down(lastKey)) {
-					// KDEBUG("Key down: 0x%04X", (unsigned int) lastKey);
+					KDEBUG("Key down: 0x%04X", (unsigned int) lastKey);
 				}
 			}
 

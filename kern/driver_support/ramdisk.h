@@ -15,13 +15,11 @@ struct qrfs_header {
 	uint32_t version;
 	uint32_t numFiles;
 	bool compressed;
-
-	uint32_t reserved[8];
 } __attribute__((packed));
 
-// Entry in a filesystem (first one is directly after header)
+// Entry in a filesystem
 struct qrfs_file_entry {
-	const char name[64];
+	const char name[32];
 
 	uint32_t file_start;
 	uint32_t length;
@@ -30,4 +28,6 @@ struct qrfs_file_entry {
 
 // Called when the multiboot loader finds the RAM disk (copy to kernel mem)
 void ramdisk_found(uint32_t addr, uint32_t size);
+
+bool ramdisk_loaded(void);
 void *ramdisk_fopen(const char *name);

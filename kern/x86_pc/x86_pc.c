@@ -115,11 +115,6 @@ void x86_pc_init(void) {
 
 	// Remap PICs
 	i8259_remap(0x20, 0x28);
-	
-	// Mask all IRQs
-	for(int i = 0; i < 16; i++) {
-		i8259_set_mask(i);
-	}
 
 	// Set up system timer
 	x86_pc_init_timer();

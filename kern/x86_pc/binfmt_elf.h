@@ -65,6 +65,10 @@
 #define ELF32_ST_TYPE (i) ((i) & 0xF)
 #define ELF32_ST_INFO (b, t) (((b) << 4) + ((t) & 0xF)
 
+#define ELF_CHECK_MAGIC(x) \
+	x[0] != 0x7F || x[1] != 0x45 || \
+	x[2] != 0x4C || x[3] != 0x46
+
 typedef struct {
 	char magic[4];
 
@@ -118,12 +122,12 @@ typedef struct{
 } __attribute__((packed)) elf_section_entry_t;
 
 typedef struct elf_symbol_entry {
-	uint32_t st_name; // k
-	uint32_t st_address; // k
-	uint32_t st_size; // k
-	unsigned char st_info; // k
-	unsigned char st_other; // k
-	uint16_t st_shndx; // k
+	uint32_t st_name;
+	uint32_t st_address;
+	uint32_t st_size;
+	unsigned char st_info;
+	unsigned char st_other;
+	uint16_t st_shndx;
 } __attribute__((packed)) elf_symbol_entry_t;
 
 typedef struct{

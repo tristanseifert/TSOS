@@ -89,6 +89,8 @@ static void hal_config_parseline(char *str) {
  * Gets the value for a certain key from the internal hashmap.
  */
 char *hal_config_get(const char *key) {
+	if(!keys) return NULL;
+
 	return hashmap_get(keys, (void *) key);
 }
 
@@ -96,5 +98,7 @@ char *hal_config_get(const char *key) {
  * Sets a value in the internal hashmap.
  */
 void hal_config_set(const char *key, char *value) {
+	if(!keys) return;
+
 	hashmap_insert(keys, (void *) key, value);
 }

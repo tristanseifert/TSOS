@@ -9,6 +9,7 @@
 // External functions
 extern void __stack_chk_guard_setup(void);
 extern void srand(uint32_t);
+extern uint32_t kern_get_ticks(void);
 
 void kern_idle(void);
 
@@ -27,6 +28,12 @@ void main(void) {
 	vga_init();
 	KINFO("TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
 
+	// Seed the rng
+	srand(0xDEADBEEF);
+
+	// Set up stack guard
+	__stack_chk_guard_setup();
+
 	// Copy multiboot
 	x86_pc_init_multiboot();
 
@@ -36,19 +43,14 @@ void main(void) {
 	// Set up platform
 	x86_pc_init();
 
-	// Seed the rng
-	srand(0xDEADBEEF);
-
-	// Set up stack guard
-	__stack_chk_guard_setup();
-
 	// Parse kernel config
 	hal_config_parse(ramdisk_fopen("kernel.cfg"));
 
 	// Initialise modules
 	modules_load();
-	KSUCCESS("Static modules initialised");
+	modules_ramdisk_load();
 
+/*
 	// Allocate idle task
 	idle_task = task_new(kTaskPriorityIdle, true);
 	strncpy((char *) &idle_task->name, "Kernel Idle Task", 64);
@@ -59,7 +61,9 @@ void main(void) {
 	idle_task->cpu_state.eax = 0xDEADBEEF;
 
 	// Switch to the idle task.
-	task_switch(idle_task);
+	task_switch(idle_task);*/
+
+	while(1);
 }
 
 /*
