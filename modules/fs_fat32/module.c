@@ -20,15 +20,13 @@ static uint32_t some_counter;
 
 void testStuff(void *);
 void testStuff2(unsigned int);
+void testpls(void);
 
 /*
  * Entry function called by the kernel to initialise the driver
  */
 __attribute__((visibility("default"))) module_t *module_entry() {
 	KDEBUG("Initialising %s", test);
-	
-	testStuff2(0xC001C0DE);
-	testStuff("pls test string");
 
 	some_counter = 3;
 

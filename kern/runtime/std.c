@@ -570,7 +570,7 @@ void* memclr(void* start, size_t count) {
 }
 
 void *memmove(void *dest, const void *src, size_t n) {
-	unsigned char tmp[n];
+	uint8_t tmp[n];
 	memcpy(tmp, (char *) src, n);
 	memcpy(dest, tmp, n);
 	return dest;

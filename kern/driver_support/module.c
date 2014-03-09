@@ -170,7 +170,7 @@ void modules_ramdisk_load() {
 
 			if(entry_found) {
 				init_function_addr = progbits_start + init_addr;
-				KDEBUG("Init function at 0x%08X", init_function_addr);
+				// KDEBUG("Init function at 0x%08X", init_function_addr);
 			} else {
 				KERROR("'%s' has no entry function", moduleName);
 				goto nextModule;
@@ -207,25 +207,40 @@ void modules_ramdisk_load() {
 						// Get symbol in question
 						elf_symbol_entry_t *symbol = &symtab[symtab_index];
 						char *name = strtab + symbol->st_name;
+						unsigned int *ptr = elf + progbits_offset + ent->r_offset;
 
 						unsigned int kern_symbol_loc = find_symbol_in_kernel(name);
 
 						if(kern_symbol_loc) {
-							// Perform the relocation.
-							unsigned int *ptr = elf + progbits_offset + ent->r_offset;
-							unsigned int newOffset = kern_symbol_loc;
-							
-							*ptr = newOffset + *ptr - module_placement_addr;
+							// Perform the relocation.							
+							*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
 
 							#if DEBUG_MOBULE_RELOC
-							KDEBUG("0x%08X -> 0x%08X (%s, kern)", (unsigned int) ent->r_offset, *ptr, name);
+							KDEBUG("0x%08X -> 0x%08X (%s, kernel)", (unsigned int) ent->r_offset, *ptr, name);
 							#endif
 						} else {
+							// Search for the symbol in the module's synbol table
+							for(unsigned int i = 0; i < symtab_entries; i++) {
+								elf_symbol_entry_t *entry = &symtab[i];
+								char *symbol_name = strtab + entry->st_name;
+
+								// Symbol found
+								if(!strcmp(name, symbol_name) && entry->st_shndx != STN_UNDEF) {
+									kern_symbol_loc = (entry->st_address + module_placement_addr);
+
+									*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
+									
+									KDEBUG("0x%08X -> 0x%08X (%s, module)", (unsigned int) ent->r_offset, *ptr, name);
+									goto linkNext;
+								}
+							}
+
 							KERROR("Module %s references '%s', but symbol does not exist in kernel", moduleName, name);
 							goto nextModule;
 						}
 					} else {
-
+						KERROR("Module %s has undefined linkage", moduleName);
+						goto nextModule;
 					} 
 				} else if(ELF32_R_TYPE(ent->r_info) == R_386_32) {
 					/*
@@ -262,6 +277,7 @@ void modules_ramdisk_load() {
 							elf_symbol_entry_t *entry = &symtab[i];
 							char *symbol_name = strtab + entry->st_name;
 
+							// Symbol found
 							if(!strcmp(name, symbol_name) && entry->st_shndx != STN_UNDEF) {
 								addr = entry->st_address + module_placement_addr;
 								inKernel = false;
@@ -287,6 +303,8 @@ void modules_ramdisk_load() {
 						#endif
 					}
 				}
+
+				linkNext: ;
 			}
 
 			// Move PROGBITS from the file forward however many bits the offset is
@@ -345,6 +363,8 @@ void modules_ramdisk_load() {
 			}
 
 			// Jump into the initialiser function
+			// __asm__ volatile("call *%0" : : "r" (init_function_addr));
+
 			void *driver = ((void* (*)(void)) init_function_addr)();
 			KWARNING("Driver: 0x%08X", (unsigned int) driver);
 		}
@@ -377,12 +397,4 @@ static unsigned int find_symbol_in_kernel(char *name) {
 
 	// Symbol not found
 	return 0;
-}
-
-void testStuff(void *ptr) {
-	KDEBUG("Ptr: 0x%08X", (unsigned int) ptr);
-}
-
-void testStuff2(unsigned int d) {
-	KDEBUG("Data: 0x%08X", d);
 }
