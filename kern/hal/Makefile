@@ -1,5 +1,5 @@
 MODULE=hal
-SOURCES=keyboard.c disk.c bus.c
+SOURCES=keyboard.c disk.c bus.c config.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
 all: $(OBJECTS)

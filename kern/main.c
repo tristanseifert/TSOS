@@ -3,6 +3,8 @@
 #import "task/task.h"
 #import "paging/paging.h"
 #import "console/vga_console.h"
+#import "driver_support/ramdisk.h"
+#import "hal/config.h"
 
 // External functions
 extern void __stack_chk_guard_setup(void);
@@ -21,6 +23,10 @@ task_t *idle_task;
  * Kernel entry point
  */
 void main(void) {
+	// Console
+	vga_init();
+	KINFO("TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
+
 	// Copy multiboot
 	x86_pc_init_multiboot();
 
@@ -30,19 +36,18 @@ void main(void) {
 	// Set up platform
 	x86_pc_init();
 
-	// Console
-	vga_init();
-	KINFO("TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
-
 	// Seed the rng
 	srand(0xDEADBEEF);
 
 	// Set up stack guard
 	__stack_chk_guard_setup();
 
+	// Parse kernel config
+	hal_config_parse(ramdisk_fopen("kernel.cfg"));
+
 	// Initialise modules
 	modules_load();
-	KSUCCESS("Modules initialised");
+	KSUCCESS("Static modules initialised");
 
 	// Allocate idle task
 	idle_task = task_new(kTaskPriorityIdle, true);

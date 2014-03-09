@@ -14,9 +14,15 @@ else
 	exit
 fi
 
+# Create ramdisk
+echo "\n[3;32;40m***** Building ramdisk *****[0;37;49m"
+./tool/mkramdisk ramdisk
+
 # Copy kernel, etc
 rm -f /Volumes/TSOS/kernel.elf
 cp kern/kernel.elf /Volumes/TSOS/kernel.elf
+rm -f /Volumes/TSOS/initrd.gz
+cp initrd.gz /Volumes/TSOS/initrd.gz
 
 # Clean up OS X's crap
 rm -rf /Volumes/TSOS/.fseventsd

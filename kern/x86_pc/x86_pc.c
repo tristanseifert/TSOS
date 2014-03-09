@@ -11,6 +11,8 @@
 
 #import "task/systimer.h"
 
+#import "driver_support/ramdisk.h"
+
 // Some info from the ELF
 char *kern_elf_strtab;
 elf_symbol_entry_t *kern_elf_symtab;
@@ -91,9 +93,16 @@ void x86_pc_init_multiboot(void) {
 			himemStruct->mmap_addr = (uint32_t) new;
 		}
 
+		// Modules (only one, the ramdisk) 
+		if (MULTIBOOT_CHECK_FLAG(lowmemStruct->flags, 3)) {
+			multiboot_module_t *module = (multiboot_module_t *) lowmemStruct->mods_addr;
+			uint32_t size = module->mod_end - module->mod_start;
+			ramdisk_found(module->mod_start, size);
+		}
+
 		KINFO("%uKB low memory, %uKB high memory", (unsigned int) x86_multiboot_info->mem_lower, (unsigned int) x86_multiboot_info->mem_upper);
 	} else {
-		KWARNING("No multiboot info!");
+		KERROR("No multiboot info!");
 	}	
 }
 
