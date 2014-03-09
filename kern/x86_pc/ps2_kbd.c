@@ -67,7 +67,7 @@ static void *ps2_kbd_init(device_t *dev) {
 	ps2_dev = dev->bus_info;
 	i8042_ps2_device_driver_t *ret = kmalloc(sizeof(i8042_ps2_device_driver_t));
 
-	KDEBUG("Initialising PS2 keyboard driver for '%s'", dev->node.name);
+	// KDEBUG("Initialising PS2 keyboard driver for '%s'", dev->node.name);
 
 	// Assign byte handler
 	ret->byte_from_device = ps2_kbd_byte_received;

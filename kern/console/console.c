@@ -50,9 +50,8 @@ int kprintf(const char* format, ...) {
 int klog(enum log_type type, const char* format, ...) {
 	// Discard log levels lower than we care for
 	if(type < CONSOLE_MIN_LOG_LEVEL) return 0;
-
-	// Format our initial string
 	
+	// Format our initial string
 	va_list ap;
 	va_start(ap, format);
 	vsprintf(printf_buffer, format, ap);

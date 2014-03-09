@@ -205,6 +205,13 @@ void paging_init() {
 	}
 
 
+	// Create pages for loaded drivers
+	unsigned int driver_start = paging_get_memrange(kMemorySectionDrivers)[0];
+	unsigned int driver_end = paging_get_memrange(kMemorySectionDrivers)[1];
+	for(i = driver_start; i < (driver_end & 0xFFFFF000); i += 0x1000) {
+		paging_get_page(i, true, kernel_directory);
+	}
+
 	// Create pages for kernel heap
 	unsigned int kheap_start = paging_get_memrange(kMemorySectionKernelHeap)[0];
 	unsigned int kheap_end = paging_get_memrange(kMemorySectionKernelHeap)[1];

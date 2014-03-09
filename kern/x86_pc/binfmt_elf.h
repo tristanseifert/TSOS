@@ -1,5 +1,12 @@
 #import <types.h>
 
+#define ELF32_R_SYM(i) ((i) >> 8)
+#define ELF32_R_TYPE(i) ((uint8_t) i)
+#define ELF32_R_INFO(s, t) (((s) << 8) + (uint8_t)(t))
+
+#define R_386_32		1
+#define R_386_PC32		2
+
 #define SHN_UNDEF		0
 #define SHN_LORESERVE	0xFF00
 #define SHN_LOPROC		0xFF00
@@ -133,13 +140,13 @@ typedef struct elf_symbol_entry {
 typedef struct{
 	uint32_t r_offset;
 	uint32_t r_info;
-} __attribute__((packed)) elf_program_relocation;
+} __attribute__((packed)) elf_program_relocation_t;
 
 typedef struct{
 	uint32_t r_offset;
 	uint32_t r_info;
 	int32_t r_addend;
-} __attribute__((packed)) elf_program_relocation_addend;
+} __attribute__((packed)) elf_program_relocation_addend_t;
 
 typedef struct{
 	uint32_t p_type;
