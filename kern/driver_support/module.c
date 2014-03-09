@@ -1,5 +1,6 @@
 #import <types.h>
 #import "module.h"
+#import "module_type.h"
 #import "ramdisk.h"
 
 #import "paging/paging.h"
@@ -10,7 +11,8 @@
 #define DEBUG_MOBULE_RELOC		0
 
 // Compiler used to compile the kernel (used for kernel module compatibility checks)
-static const char kernel_compiler[] = "GNU GCC " __VERSION__;
+static const char KERNEL_COMPILER[] = "GNU GCC " __VERSION__;
+extern const char KERNEL_VERSION[];
 
 // Addresses of initcall addresses
 extern uint32_t __kern_initcalls, __kern_lateinitcalls, __kern_exitcalls, __kern_callsend;
@@ -131,7 +133,7 @@ void modules_ramdisk_load() {
 
 			// Traverse symbol table to find "module_entry" and "compiler"
 			unsigned int init_addr = 0;
-			char *compiler = NULL;
+			char *compiler = NULL, *supportedKernel = NULL;
 			bool entry_found = false;
 
 			for(unsigned int s = 0; s < symtab_entries; s++) {
@@ -155,13 +157,22 @@ void modules_ramdisk_load() {
 					if(!strcmp(name, "compiler")) {
 						elf_section_entry_t *section = &sections[symbol->st_shndx];
 						compiler = elf + section->sh_offset + symbol->st_address;
+					} else if(!strcmp(name, "supported_kernel")) {
+						elf_section_entry_t *section = &sections[symbol->st_shndx];
+						supportedKernel = elf + section->sh_offset + symbol->st_address;
 					}
 				}
 			}
 
 			// Check if we're using compatible compiler versions
-			if(strcmp(compiler, kernel_compiler)) {
-				KERROR("'%s' has incompatible compiler of '%s', expected '%s'", moduleName, compiler, kernel_compiler);
+			if(strcmp(compiler, KERNEL_COMPILER)) {
+				KERROR("'%s' has incompatible compiler of '%s', expected '%s'", moduleName, compiler, KERNEL_COMPILER);
+				goto nextModule;
+			}
+
+			// Check if the module is for this kernel version
+			if(strcmp(supportedKernel, KERNEL_VERSION)) {
+				KERROR("'%s' requires TSOS '%s', running '%s'", moduleName, supportedKernel, KERNEL_VERSION);
 				goto nextModule;
 			}
 
@@ -225,7 +236,7 @@ void modules_ramdisk_load() {
 								char *symbol_name = strtab + entry->st_name;
 
 								// Symbol found in module?
-								if(!strcmp(name, symbol_name) && entry->st_shndx != STN_UNDEF) {
+								if(unlikely(!strcmp(name, symbol_name)) && likely(entry->st_shndx != STN_UNDEF)) {
 									kern_symbol_loc = (entry->st_address + module_placement_addr);
 
 									*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
@@ -281,9 +292,14 @@ void modules_ramdisk_load() {
 							char *symbol_name = strtab + entry->st_name;
 
 							// Symbol found in module?
-							if(!strcmp(name, symbol_name) && entry->st_shndx != STN_UNDEF) {
+							if(unlikely(!strcmp(name, symbol_name)) && likely(entry->st_shndx != STN_UNDEF)) {
 								addr = entry->st_address + module_placement_addr;
 								
+								// Take into account the section's address
+								elf_section_entry_t *section = &sections[symbol->st_shndx];
+								addr += section->sh_addr;
+
+								// Go to the relocation code
 								#if DEBUG_MOBULE_RELOC
 								inKernel = false;
 								#endif
@@ -293,7 +309,7 @@ void modules_ramdisk_load() {
 						}
 
 						// See if the kernel has the symbol
-						if(!(addr = find_symbol_in_kernel(name))) {
+						if(unlikely(!(addr = find_symbol_in_kernel(name)))) {
 							KERROR("Module %s references '%s', but symbol does not exist", moduleName, name);
 							goto nextModule;					
 						}
@@ -313,6 +329,7 @@ void modules_ramdisk_load() {
 					}
 				}
 
+				// Drop down here to link the next symbol
 				linkNext: ;
 			}
 
@@ -372,9 +389,7 @@ void modules_ramdisk_load() {
 			}
 
 			// Jump into the initialiser function
-			// __asm__ volatile("call *%0" : : "r" (init_function_addr));
-
-			void *driver = ((void* (*)(void)) init_function_addr)();
+			module_t *driver = ((module_t* (*)(void)) init_function_addr)();
 			KWARNING("Driver: 0x%08X", (unsigned int) driver);
 		}
 

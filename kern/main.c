@@ -15,6 +15,8 @@ void kern_idle(void);
 
 // Linker defines
 extern uint32_t BUILD_NUMBER;
+const char KERNEL_VERSION[] = "0.1";
+
 extern uint32_t stack_top;
 
 // Idle task
@@ -26,7 +28,7 @@ task_t *idle_task;
 void main(void) {
 	// Console
 	vga_init();
-	KINFO("TSOS Version 0.1 build %u", (unsigned int) &BUILD_NUMBER);
+	KINFO("TSOS Version %s build %u", KERNEL_VERSION, (unsigned int) &BUILD_NUMBER);
 
 	// Seed the rng
 	srand(0xDEADBEEF);

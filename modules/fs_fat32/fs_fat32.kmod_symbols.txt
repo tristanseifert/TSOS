@@ -6,7 +6,7 @@ Disassembly of section .text:
 
 00000000 <module_entry>:
    0:	55                   	push   %ebp
-   1:	ba 66 00 00 00       	mov    $0x66,%edx
+   1:	ba a0 00 00 00       	mov    $0xa0,%edx
    6:	89 e5                	mov    %esp,%ebp
    8:	83 ec 28             	sub    $0x28,%esp
    b:	a1 00 00 00 00       	mov    0x0,%eax
@@ -17,17 +17,17 @@ Disassembly of section .text:
   1e:	89 44 24 08          	mov    %eax,0x8(%esp)
   22:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
   29:	e8 fc ff ff ff       	call   2a <module_entry+0x2a>
-  2e:	b9 03 00 00 00       	mov    $0x3,%ecx
-  33:	b8 ef be ad de       	mov    $0xdeadbeef,%eax
-  38:	8b 55 f4             	mov    -0xc(%ebp),%edx
-  3b:	33 15 00 00 00 00    	xor    0x0,%edx
-  41:	89 0d 00 00 00 00    	mov    %ecx,0x0
-  47:	75 02                	jne    4b <module_entry+0x4b>
-  49:	c9                   	leave  
-  4a:	c3                   	ret    
-  4b:	e8 fc ff ff ff       	call   4c <module_entry+0x4c>
+  2e:	b8 60 00 00 00       	mov    $0x60,%eax
+  33:	8b 55 f4             	mov    -0xc(%ebp),%edx
+  36:	33 15 00 00 00 00    	xor    0x0,%edx
+  3c:	75 02                	jne    40 <module_entry+0x40>
+  3e:	c9                   	leave  
+  3f:	c3                   	ret    
+  40:	e8 fc ff ff ff       	call   41 <module_entry+0x41>
+	...
 
-00000050 <test>:
-  50:	74 65 73 74 20 6b 65 72 6e 65 6c 20 65 78 74 65     test kernel exte
-  60:	6e 73 69 6f 6e 00 66 73 5f 66 61 74 33 32 3a 20     nsion.fs_fat32: 
-  70:	49 6e 69 74 69 61 6c 69 73 69 6e 67 20 25 73 00     Initialising %s.
+00000060 <mod>:
+  60:	66 73 5f 66 61 74 33 32 00 00 00 00 00 00 00 00     fs_fat32........
+	...
+  a0:	66 73 5f 66 61 74 33 32 3a 20 4e 6f 74 65 3a 20     fs_fat32: Note: 
+  b0:	25 73 00                                            %s.
