@@ -20,3 +20,4 @@ typedef void (*module_exitcall_t)(void);
 	__attribute__((__section__(".exitcall.exit"))) = fn
 
 void modules_load();
+void modules_ramdisk_load();

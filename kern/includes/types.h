@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef TYPES_H
 #define TYPES_H
 
@@ -101,4 +105,8 @@ static inline void io_wait(void) {
 	__asm__ volatile("outb %%al, $0x80" : : "a"(0));
 }
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

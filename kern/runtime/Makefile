@@ -1,6 +1,6 @@
 MODULE=runtime
-SOURCES=std.c error.c ordered_array.c hashmap.c list.c rand.c
-OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
+SOURCES=std.c error.c ordered_array.c hashmap.c list.c rand.c cpp_runtime.cpp
+OBJECTS=$(sort $(filter-out %.c %.s %.cpp,$(SOURCES:.c=.o) $(SOURCES:.s=.o) $(SOURCES:.cpp=.o)))
 
 all: $(OBJECTS)
 	@rm -f $(MODULE).oa
@@ -14,6 +14,10 @@ all: $(OBJECTS)
 .s.o:
 	@echo "[AS] $<"
 	@$(AS) $(ASFLAGS) $< -o $@
+
+.cpp.o:
+	@echo "[G++] $<"
+	@$(CPP) $(CPPFLAGS) $< -o $@
 
 clean:
 	@rm -rf $(OBJECTS)

@@ -1,3 +1,4 @@
+CPP=i686-pc-elf-g++
 CC=i686-pc-elf-gcc
 AS=i686-pc-elf-as
 LD=i686-pc-elf-ld
@@ -7,11 +8,12 @@ LIBGCC_PATH=$(dir $(shell which $(CC)))../lib/gcc/i686-pc-elf/4.6.2/libgcc.a
 CURRENT_DIR=$(shell pwd)
 
 ARCH_ARGS=-march=i686 -mtune=pentium3 -msoft-float -mno-sse
-WARNINGS=-Wall -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-deprecated -Wformat -Wno-format-extra-args -Wformat-security -Wformat-nonliteral -Wformat=2
+WARNINGS=-Werror -Wall -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wformat -Wno-format-extra-args -Wformat-security -Wformat-nonliteral -Wformat=2
 INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/
-OPTIONS=-falign-functions=16 -fstack-protector-all -fno-exceptions -ftree-vectorize -ffast-math -fno-builtin -fno-omit-frame-pointer
+OPTIONS=-fstack-protector-all -ftree-vectorize -ffast-math -fno-builtin -fno-omit-frame-pointer
+CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions
 
-CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -std=c99 -nostartfiles -nodefaultlibs -ffreestanding $(OPTIONS) $(INCLUDES) $(WARNINGS)
+CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -nostartfiles -nodefaultlibs -ffreestanding -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
 LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,kern.ld -lgcc $(LIBGCC_PATH)
 ASFLAGS =
 
@@ -24,8 +26,10 @@ LDFLAGS+= $(BUILD_NUMBER_LDFLAGS)
 export CC
 export AS
 export LD
+export CPP
 export CFLAGS
 export ASFLAGS
+export CPPFLAGS
 
 # Use pretty make
 export MAKE=$(shell pwd)/pretty_make.py
@@ -62,6 +66,10 @@ $(EXECUTABLE): $(OBJECTS)
 .c.o:
 	@echo "[CC] $<"
 	@$(CC) $(CFLAGS) $< -o $@
+
+.cpp.o:
+	@echo "[G++] $<"
+	@$(CPP) $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 .s.o:
 	@echo "[AS] $<"

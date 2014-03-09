@@ -41,9 +41,9 @@ static int hal_bus_match_devices(void) {
 	driver_t *driver;
 
 	// Loop through all the busses
-	for(int i = 0; i < bus_names->num_entries; i++) {
+	for(unsigned int i = 0; i < bus_names->num_entries; i++) {
 		// Get name and bus
-		name = list_get(bus_names, i);
+		name = (char *) list_get(bus_names, i);
 		hal_bus_load_drivers(name);
 	}
 
@@ -56,7 +56,7 @@ module_post_driver_init(hal_bus_match_devices);
  * is useful for hotplug events and whatnot.
  */
 void hal_bus_load_drivers(char *name) {
-	bus_t *bus = hashmap_get(busses, name);
+	bus_t *bus = (bus_t *) hashmap_get(busses, name);
 	driver_t *driver;
 	device_t *device;
 
@@ -67,8 +67,8 @@ void hal_bus_load_drivers(char *name) {
 	// make sure the bus exists
 	if(bus) {
 		// Iterate over all the devices
-		for(int j = 0; j < bus->devices->num_entries; j++) {
-			device = list_get(bus->devices, j);
+		for(unsigned int j = 0; j < bus->devices->num_entries; j++) {
+			device = (device_t *) list_get(bus->devices, j);
 			#if DEBUG_DRIVER_MATCH
 			KDEBUG(" Device '%s'", device->node.name);
 			#endif
@@ -76,8 +76,8 @@ void hal_bus_load_drivers(char *name) {
 			// Does this device have a driver loaded?
 			if(!device->driver) {
 				// Iterate through all drivers
-				for(int k = 0; k < bus->drivers->num_entries; k++) {
-					driver = list_get(bus->drivers, k);
+				for(unsigned int k = 0; k < bus->drivers->num_entries; k++) {
+					driver = (driver_t *) list_get(bus->drivers, k);
 
 					// This driver supports this device
 					if(driver->supportsDevice(device)) {
@@ -140,7 +140,7 @@ void hal_bus_register(bus_t *bus, char *name) {
  * Registers a driver for a certain bus.
  */
 bus_error_t hal_bus_register_driver(driver_t *driver, char* busName) {
-	bus_t *bus = hashmap_get(busses, busName);
+	bus_t *bus = (bus_t *) hashmap_get(busses, busName);
 
 	if(bus != NULL) {
 		// Insert driver into the array.

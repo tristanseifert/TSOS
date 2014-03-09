@@ -5,13 +5,11 @@ typedef int hal_disk_error_t;
 typedef struct disk hal_disk_t;
 typedef struct hal_disk_functions hal_disk_functions_t;
 
-typedef enum hal_disk_if hal_disk_if_t;
-
 // Read/write callback (gets read ID, data ptr and context ptr)
 typedef void (*hal_disk_callback_t)(unsigned int, void*, void*);
 
 // Interfaces a disk could be attached through
-enum hal_disk_if {
+typedef enum hal_disk_if {
 	kDiskInterfaceNone = -1,
 	kDiskInterfaceATA = 0,
 	kDiskInterfaceSATA,
@@ -19,7 +17,7 @@ enum hal_disk_if {
 	kDiskInterfaceSCSI,
 	kDiskInterfaceUSB,
 	kDiskInterfaceOther = 0x7FFFFFFF
-};
+} hal_disk_if_t;
 
 // Common disk error codes
 enum hal_disk_err {

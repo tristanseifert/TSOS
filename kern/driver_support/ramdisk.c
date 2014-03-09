@@ -17,7 +17,7 @@ void ramdisk_found(uint32_t addr, uint32_t size) {
 
 	// Verify magic
 	if(header->magic == QRFS_MAGIC) {
-		KDEBUG("Found ramdisk at 0x%08X, %u bytes", (unsigned int) addr, (unsigned int) size);
+		// KDEBUG("Found ramdisk at 0x%08X, %u bytes", (unsigned int) addr, (unsigned int) size);
 
 		// Copy to kernel space
 		ramdisk = kmalloc(size);
@@ -35,7 +35,7 @@ void ramdisk_found(uint32_t addr, uint32_t size) {
 /*
  * Searches for the specified filename, and if found, returns a pointer to it.
  */
-void *ramdisk_fopen(char *name) {
+void *ramdisk_fopen(const char *name) {
 	if(!ramdisk) {
 		KWARNING("Tried to read ramdisk file without valid ramdisk");
 		return NULL;

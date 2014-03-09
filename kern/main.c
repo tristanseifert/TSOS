@@ -68,7 +68,7 @@ void main(void) {
 void kern_idle(void) {
 	uint32_t temp;
 	__asm__ volatile("mov %%esp, %0" : "=r" (temp));
-	KWARNING("I am the kernel idle task! (%%esp = 0x%08X)", temp);
+	KWARNING("I am the kernel idle task! (%%esp = 0x%08X)", (unsigned int) temp);
 	
 	// Sleeping until an IRQ comes in lets the CPU possibly sleep
 	for(;;) {

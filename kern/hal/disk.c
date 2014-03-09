@@ -37,7 +37,7 @@ hal_disk_t *hal_disk_alloc() {
  */
 void hal_disk_register(hal_disk_t *disk) {
 	list_add(disks, disk);
-	KDEBUG("hal: disk registered 0x%08X", disk);
+	KDEBUG("hal: disk registered 0x%08X", (unsigned int) disk);
 }
 
 /*

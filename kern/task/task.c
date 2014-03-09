@@ -46,7 +46,7 @@ task_t *task_new(task_priority_t pri, bool isKernel) {
 		task->pagetable = kmalloc_ap(sizeof(page_directory_t), &phys);
 		task->pagetable->physicalAddr = phys;
 
-		KDEBUG("Task 0x%08X pagetable at phys 0x%08X", task->pagetable, phys);
+		KDEBUG("Task 0x%08X pagetable at phys 0x%08X", (unsigned int) task->pagetable, phys);
 
 		// Map 0xC0000000 to 0xFFFFFFFF in userspace (but inaccessible to users)
 		for(i = 0x300; i < 0x400; i++) {

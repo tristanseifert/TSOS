@@ -16,3 +16,15 @@ void modules_load() {
 		i++;
 	}
 }
+
+/*
+ * Loads the modules specified in the ramdisk. Loading follows this general
+ * procedure:
+ *
+ * 1. Ensure the file is a valid ELF.
+ * 2. Dynamically link with kernel functions from kernel symtab.
+ * 3. Call module entry point
+ */
+void modules_ramdisk_load() {
+
+}

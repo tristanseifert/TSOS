@@ -30,4 +30,4 @@ struct qrfs_file_entry {
 
 // Called when the multiboot loader finds the RAM disk (copy to kernel mem)
 void ramdisk_found(uint32_t addr, uint32_t size);
-void *ramdisk_fopen(char *name);
+void *ramdisk_fopen(const char *name);

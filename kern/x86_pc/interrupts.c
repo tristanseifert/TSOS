@@ -66,6 +66,11 @@ void irq_handler(uint32_t irq) {
  * Registers an IRQ handler and saves the context.
  */
 int irq_register_handler(uint8_t irq, irq_callback_t callback, void* ctx) {
+	// Clear any pending interrupts, if this IRQ has no handlers
+	if(!irqs_handled[irq]) {
+		irq_eoi(irq);
+	}
+
 	// Unmask IRQ
 	irq_unmask(irq);
 	irqs_handled[irq] = true;
