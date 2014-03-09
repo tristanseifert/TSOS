@@ -38,7 +38,7 @@ void hal_config_parse(void *buf) {
 				memcpy(&str, token, size);
 			}
 		} else { // This line has no comment
-			if(strlen(token) > 8) {
+			if(strlen(token) > 2) {
 				strncpy((char *) &str, token, 1024);
 			} else {
 				goto findNext;
@@ -61,6 +61,7 @@ static void hal_config_parseline(char *str) {
 	// Buffers
 	char keyBuf[64];
 	char *valBuf = kmalloc(1024-64);
+	memclr(&keyBuf, 64);
 
 	// Split the string at the colon
 	char *value = strchr(str, ':');
@@ -92,6 +93,51 @@ char *hal_config_get(const char *key) {
 	if(!keys) return NULL;
 
 	return hashmap_get(keys, (void *) key);
+}
+
+/*
+ * Gets the key, and formats it as a signed integer.
+ */
+int hal_config_get_int(const char *key) {
+	char *value = hal_config_get(key);
+
+	if(value) {
+		return strtol(value, NULL, 10);
+	} else {
+		return 0;
+	}
+}
+
+/*
+ * Gets the key, and formats it as an unsigned integer.
+ */
+unsigned int hal_config_get_uint(const char *key) {
+	char *value = hal_config_get(key);
+
+	if(value) {
+		return strtoul(value, NULL, 10);
+	} else {
+		return 0;
+	}
+}
+
+/*
+ * Gets the key, and formats it as a boolean.
+ *
+ * Expected value: true/false
+ */
+bool hal_config_get_bool(const char *key) {
+	char *value = hal_config_get(key);
+
+	if(value) {
+		if(!strcmp(value, "true")) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
 }
 
 /*

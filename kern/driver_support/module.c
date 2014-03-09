@@ -20,6 +20,10 @@ extern uint32_t __kern_initcalls, __kern_lateinitcalls, __kern_exitcalls, __kern
 // Address at which new modules may be placed.
 static unsigned int module_placement_addr, module_placement_end;
 
+// Map of loaded modules
+static hashmap_t *loaded_module_map;
+static list_t *loaded_module_names;
+
 // Paging info
 extern page_directory_t *kernel_directory;
 
@@ -52,6 +56,10 @@ void modules_load() {
  */
 void modules_ramdisk_load() {
 	if(!ramdisk_loaded()) return;
+
+	// Initialise some data structures
+	loaded_module_map = hashmap_allocate();
+	loaded_module_names = list_allocate();
 
 	// Acquire initial placement address
 	module_placement_addr = paging_get_memrange(kMemorySectionDrivers)[0];
@@ -166,14 +174,22 @@ void modules_ramdisk_load() {
 
 			// Check if we're using compatible compiler versions
 			if(strcmp(compiler, KERNEL_COMPILER)) {
-				KERROR("'%s' has incompatible compiler of '%s', expected '%s'", moduleName, compiler, KERNEL_COMPILER);
-				goto nextModule;
+				if(!hal_config_get_bool("module_ignore_compiler")) {
+					KERROR("'%s' has incompatible compiler of '%s', expected '%s'", moduleName, compiler, KERNEL_COMPILER);
+					goto nextModule;
+				} else {
+					KWARNING("'%s' has incompatible compiler of '%s', but loading anyways", moduleName, compiler);					
+				}
 			}
 
 			// Check if the module is for this kernel version
 			if(strcmp(supportedKernel, KERNEL_VERSION)) {
-				KERROR("'%s' requires TSOS '%s', running '%s'", moduleName, supportedKernel, KERNEL_VERSION);
-				goto nextModule;
+				if(!hal_config_get_bool("module_ignore_version")) {
+					KERROR("'%s' requires TSOS version '%s', but kernel is '%s'", moduleName, supportedKernel, KERNEL_VERSION);
+					goto nextModule;
+				} else {
+					KERROR("'%s' requires TSOS version '%s', but kernel is '%s', loading anyways", moduleName, supportedKernel, KERNEL_VERSION);					
+				}
 			}
 
 			// Calculate logical address of the entry point
@@ -337,9 +353,9 @@ void modules_ramdisk_load() {
 			memmove(elf, elf+progbits_offset, progbits_size_raw);
 
 			// Perform mapping for the PROGBITS section
-#if DEBUG_MODULE_MAPPING
+			#if DEBUG_MODULE_MAPPING
 			KDEBUG("Mapping PROGBITS from 0x%08X to 0x%08X", module_placement_addr, module_placement_addr+progbits_size);
-#endif
+			#endif
 
 			unsigned int progbits_end = module_placement_addr + progbits_size;
 
@@ -369,9 +385,9 @@ void modules_ramdisk_load() {
 
 				unsigned int nobits_end = module_placement_addr+nobits_size;
 
-#if DEBUG_MODULE_MAPPING
+				#if DEBUG_MODULE_MAPPING
 				KDEBUG("Mapping NOBITS from 0x%08X to 0x%08X", module_placement_addr, nobits_end);
-#endif
+				#endif
 
 				// Map the pages, and allocate memory to them
 				for(unsigned a = module_placement_addr; a < nobits_end; a += 0x1000) {
@@ -385,12 +401,28 @@ void modules_ramdisk_load() {
 				nobits_start = module_placement_addr;
 				module_placement_addr += nobits_size;
 			} else {
+				#if DEBUG_MODULE_MAPPING
 				KDEBUG("NOBITS section not required");
+				#endif
 			}
 
-			// Jump into the initialiser function
+			// Initialise driver
 			module_t *driver = ((module_t* (*)(void)) init_function_addr)();
-			KWARNING("Driver: 0x%08X", (unsigned int) driver);
+
+			// Save locations
+			driver->progbits_start = progbits_start;
+			driver->map_end = module_placement_addr-1;
+
+			// If there's no BSS, leave the nobits_start empty
+			if(nobits_size) {
+				driver->nobits_start = nobits_start;
+			} else {
+				driver->nobits_start = 0;
+			}
+
+			// Register them
+			list_add(loaded_module_names, (char *) driver->name);
+			hashmap_insert(loaded_module_map, (char *) driver->name, driver);
 		}
 
 		nextModule: ;

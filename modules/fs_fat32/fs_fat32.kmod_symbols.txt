@@ -6,7 +6,7 @@ Disassembly of section .text:
 
 00000000 <module_entry>:
    0:	55                   	push   %ebp
-   1:	ba a0 00 00 00       	mov    $0xa0,%edx
+   1:	ba ac 00 00 00       	mov    $0xac,%edx
    6:	89 e5                	mov    %esp,%ebp
    8:	83 ec 28             	sub    $0x28,%esp
    b:	a1 00 00 00 00       	mov    0x0,%eax
@@ -29,5 +29,5 @@ Disassembly of section .text:
 00000060 <mod>:
   60:	66 73 5f 66 61 74 33 32 00 00 00 00 00 00 00 00     fs_fat32........
 	...
-  a0:	66 73 5f 66 61 74 33 32 3a 20 4e 6f 74 65 3a 20     fs_fat32: Note: 
-  b0:	25 73 00                                            %s.
+  ac:	66 73 5f 66 61 74 33 32 3a 20 4e 6f 74 65 3a 20     fs_fat32: Note: 
+  bc:	25 73 00                                            %s.

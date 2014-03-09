@@ -538,7 +538,7 @@ int ata_poll_ready(ata_driver_t *drv, uint8_t channel, bool advanced_check) {
  */
 static int ata_post_driver_load(void) {
 	if(ata_drivers_loaded == 0) {
-		KWARNING("No ATA drivers loaded, trying legacy detection");
+		KWARNING("No ATA drivers loaded: attempting legacy init");
 
 		// Set up ATA driver (this will probe for devices)
 		ata_driver_t *ata = ata_init_pci(0, 0, 0, 0, 0);
@@ -550,7 +550,7 @@ static int ata_post_driver_load(void) {
 			}
 		}
 
-		// Register IRQs 14 and 15 since parallel ATA
+		// Register IRQs 14 and 15 since the controller is in legacy ATA mode
 		irq_register_handler(14, (void (*)(void *)) ata_irq_callback, ata);
 		irq_register_handler(15, (void (*)(void *)) ata_irq_callback, ata);
 	}

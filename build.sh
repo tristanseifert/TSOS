@@ -20,6 +20,7 @@ cp modules/*/*.kmod ramdisk/
 ./tool/mkramdisk ramdisk
 
 # Copy kernel, etc
+echo "\n[3;32;40m***** Copying files *****[0;37;49m"
 rm -f /Volumes/TSOS/kernel.elf
 cp kern/kernel.elf /Volumes/TSOS/kernel.elf
 rm -f /Volumes/TSOS/initrd.gz
