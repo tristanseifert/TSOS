@@ -8,6 +8,7 @@ typedef void (*module_exitcall_t)(void);
 #define module_init(fn)	__define_initcall(fn, 4)
 #define module_driver_init(fn)	__define_initcall(fn, 5)
 #define module_post_driver_init(fn)	__define_initcall(fn, 6)
+#define module_post_dynload(fn)	__define_initcall(fn, 8)
 #define module_exit(fn)	__exitcall(fn)
 
 // Plops pointers to a module's init function into the appropraite section

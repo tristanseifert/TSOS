@@ -29,7 +29,13 @@ SECTIONS {
 		*(.initcall7*);
 		BYTE(0x00); BYTE(0x00); BYTE(0x00); BYTE(0x00);
 
+		__kern_lateinitcalls = .;
+		*(.initcall8*);
+		*(.initcall9*);
+		BYTE(0x00); BYTE(0x00); BYTE(0x00); BYTE(0x00);
+
 		__kern_exitcalls = .;
+
 		*(.exitcall*);
 		BYTE(0x00); BYTE(0x00); BYTE(0x00); BYTE(0x00);
 

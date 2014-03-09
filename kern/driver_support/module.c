@@ -7,13 +7,13 @@
 #import "x86_pc/binfmt_elf.h"
 
 #define DEBUG_MODULE_MAPPING	0
-#define DEBUG_MOBULE_RELOC		1
+#define DEBUG_MOBULE_RELOC		0
 
 // Compiler used to compile the kernel (used for kernel module compatibility checks)
 static const char kernel_compiler[] = "GNU GCC " __VERSION__;
 
 // Addresses of initcall addresses
-extern uint32_t __kern_initcalls, __kern_exitcalls, __kern_callsend;
+extern uint32_t __kern_initcalls, __kern_lateinitcalls, __kern_exitcalls, __kern_callsend;
 
 // Address at which new modules may be placed.
 static unsigned int module_placement_addr, module_placement_end;
@@ -30,7 +30,7 @@ static unsigned int find_symbol_in_kernel(char *name);
 void modules_load() {
 	module_initcall_t *initcallArray = (module_initcall_t *) &__kern_initcalls;
 
-	int i = 0;
+	unsigned int i = 0;
 	while(initcallArray[i] != NULL) {
 		int returnValue = (initcallArray[i]());
 
@@ -199,7 +199,7 @@ void modules_ramdisk_load() {
 					/*
 					 * The ELF spec says that R_386_PC32 relocation entries must
 					 * add the value at the offset to the symbol address, and
-					 * subtract the section base address.
+					 * subtract the section base address added to the offset.
 					 */
 
 					// Look up only non-NULL relocations
@@ -224,7 +224,7 @@ void modules_ramdisk_load() {
 								elf_symbol_entry_t *entry = &symtab[i];
 								char *symbol_name = strtab + entry->st_name;
 
-								// Symbol found
+								// Symbol found in module?
 								if(!strcmp(name, symbol_name) && entry->st_shndx != STN_UNDEF) {
 									kern_symbol_loc = (entry->st_address + module_placement_addr);
 
@@ -269,18 +269,25 @@ void modules_ramdisk_load() {
 					} else {
 						// Get symbol name and a placeholder address
 						char *name = strtab + symbol->st_name;
-						unsigned int addr = 0xDEADBEEF;
+						unsigned int addr = 0;
+
+						#if DEBUG_MOBULE_RELOC
 						bool inKernel = false;
+						#endif
 
 						// Search through the module's symbols first
 						for(unsigned int i = 0; i < symtab_entries; i++) {
 							elf_symbol_entry_t *entry = &symtab[i];
 							char *symbol_name = strtab + entry->st_name;
 
-							// Symbol found
+							// Symbol found in module?
 							if(!strcmp(name, symbol_name) && entry->st_shndx != STN_UNDEF) {
 								addr = entry->st_address + module_placement_addr;
+								
+								#if DEBUG_MOBULE_RELOC
 								inKernel = false;
+								#endif
+
 								goto R_386_32_reloc_good;
 							}
 						}
@@ -291,7 +298,9 @@ void modules_ramdisk_load() {
 							goto nextModule;					
 						}
 
+						#if DEBUG_MOBULE_RELOC
 						inKernel = true;
+						#endif
 
 						// Perform relocation
 						R_386_32_reloc_good: ;
@@ -373,8 +382,16 @@ void modules_ramdisk_load() {
 		moduleName = strtok(NULL, " ");
 	}
 
-
 	KSUCCESS("Dynamically loaded modules initialised");
+
+	// Call the post-dynamic-load initcalls in the kernel
+	module_initcall_t *initcallArray = (module_initcall_t *) &__kern_lateinitcalls;
+
+	unsigned int i = 0;
+	while(initcallArray[i] != NULL) {
+		int returnValue = (initcallArray[i]());
+		i++;
+	}
 }
 
 /*

@@ -557,7 +557,7 @@ static int ata_post_driver_load(void) {
 
 	return 0;
 }
-module_post_driver_init(ata_post_driver_load);
+module_post_dynload(ata_post_driver_load);
 
 /*
  * Handles error codes returned by ata_poll_ready.
