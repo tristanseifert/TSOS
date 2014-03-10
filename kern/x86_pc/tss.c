@@ -5,8 +5,8 @@
 // TSS
 static tss_entry_t kern_tss;
 
-// Stack to use (shared with syscalls)
-extern uint8_t syscall_stack[1024 * 32];
+// Stack to use for IRQs while we're in usermode
+static uint8_t interrupt_stack[1024 * 32] __attribute__ ((aligned (16)));
 
 // GDT entry pointing to the TSS
 extern uint8_t gdt_kernel_tss;
@@ -18,7 +18,7 @@ extern uint8_t gdt_kernel_tss;
 void tss_init() {
 	// Set up the stack segment and stack address
 	kern_tss.ss0 = GDT_KERNEL_DATA;
-	kern_tss.esp0 = (uint32_t) &syscall_stack;
+	kern_tss.esp0 = (uint32_t) &interrupt_stack;
 	kern_tss.iomap_base = sizeof(tss_entry_t);
 
 	// Get address and size of TSS entry

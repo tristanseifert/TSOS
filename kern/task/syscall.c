@@ -9,7 +9,7 @@
 #define IA32_SYSENTER_EIP 0x176
 
 // Syscall stack (32KB)
-uint8_t syscall_stack[1024 * 32];
+static uint8_t syscall_stack[1024 * 32] __attribute__ ((aligned (16)));
 
 // Syscall handler
 extern void syscall_enter(void);

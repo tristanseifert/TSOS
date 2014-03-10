@@ -1,9 +1,11 @@
 #import <types.h>
 #import "error.h"
 #import "rand.h"
-#import "udis86.h"
-
 #import "x86_pc/binfmt_elf.h"
+
+#if ERROR_DISASSEMBLE
+#import "debugger/udis86.h"
+#endif
 
 // ELF sections useful for stack dumps
 extern char *kern_elf_strtab;
@@ -76,7 +78,8 @@ void error_dump_regs(err_registers_t regs) {
 		klog(kLogLevelCritical, "%s: 0x%08X %s: 0x%08X", (char *) &reg_names[i], (unsigned int) registers[i], (char *) &reg_names[i+1], (unsigned int) registers[i+1]);
 	}
 
-/*	// If the error is anything but page fault, show a partial disassembly
+#if ERROR_DISASSEMBLE
+	// If the error is anything but page fault, show a partial disassembly
 	if(regs.int_no != 14) {
 		ud_t u;
 		
@@ -94,7 +97,8 @@ void error_dump_regs(err_registers_t regs) {
 				klog(kLogLevelCritical, "%s", ud_insn_asm(&u));
 			}
 		}
-	}*/
+	}
+#endif
 
 	error_dump_stack_trace(256, regs.ebp);
 }
@@ -236,7 +240,7 @@ void __stack_chk_guard_setup(void) {
 	unsigned int *p = (unsigned int *) __stack_chk_guard;
 	*p = rand_32();
 	
-	KSUCCESS("Stack guards initialised");
+	// KSUCCESS("Stack guards initialised");
 }
  
 void __attribute__((noreturn)) __stack_chk_fail() { 

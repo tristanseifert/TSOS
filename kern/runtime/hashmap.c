@@ -30,7 +30,6 @@ hashmap_t *hashmap_allocate() {
 		return NULL;
 	}
 
-	memclr(hashmap, sizeof(hashmap_t));
 	hashmap->num_buckets = 256;
 
 	// Ugly method to get mask
@@ -42,7 +41,6 @@ hashmap_t *hashmap_allocate() {
 
 	for(int i = 0; i < hashmap->num_buckets; i++) {
 		bucket = (hashmap_bucket_t *) kmalloc(sizeof(hashmap_bucket_t));
-		memclr(bucket, sizeof(hashmap_bucket_t));
 
 		// Set the bucket's next structure
 		if(likely(prev_bucket)) {

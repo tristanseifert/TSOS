@@ -30,6 +30,9 @@ extern "C" {
 // Miscellaneous
 #import "driver_support/module.h"
 
+// Timers
+#import "task/systimer.h"
+
 // X86 intrinsic macros (SSE)
 // #import <x86intrin.h>
 
@@ -47,6 +50,8 @@ extern "C" {
 
 #define ENDIAN_DWORD_SWAP(x) ((x >> 24) & 0xFF) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | ((x << 24) & 0xFF000000)
 #define ENDIAN_WORD_SWAP(x) ((x & 0xFF) << 0x08) | ((x & 0xFF00) >> 0x08)
+
+#define BREAKPOINT() __asm__ volatile("xchg	%bx, %bx");
 
 /*
  * Write a byte to system IO port

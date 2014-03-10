@@ -8,7 +8,7 @@ LIBCXX_HEADERS=$(dir $(shell which $(CC)))../../libcxx/include/
 CURRENT_DIR=$(shell pwd)
 
 ARCH_ARGS=-march=i686 -mtune=pentium3 -msoft-float -mno-sse
-WARNINGS=-Werror -Wall -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wformat -Wno-format-extra-args -Wformat-security -Wformat-nonliteral -Wformat=2
+WARNINGS=-Werror -Wall -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -Wno-multichar -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wno-format-extra-args
 INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/
 OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer
 CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions
@@ -60,7 +60,7 @@ $(EXECUTABLE): $(OBJECTS)
 
 	$(CPP) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
 
-	@i686-pc-elf-objdump -b elf32-i386 -d -S $@ > $@_symbols.txt
+	@i686-pc-elf-objdump -b elf32-i386 -d $@ > $@_symbols.txt
 	@i686-pc-elf-objcopy --strip-debug $@
 
 .c.o:

@@ -41,12 +41,14 @@ task_t *task_new(task_priority_t pri, bool isKernel) {
 	} else {
 		uint32_t i;
 
-		// Create pagetable
+		// Create pagetable and clear its memory
 		unsigned int phys;
 		task->pagetable = kmalloc_ap(sizeof(page_directory_t), &phys);
-		task->pagetable->physicalAddr = phys;
 
-		KDEBUG("Task 0x%08X pagetable at phys 0x%08X", (unsigned int) task->pagetable, phys);
+		// Determine physical address
+		task->pagetable->physicalAddr = phys + offsetof(page_directory_t, tablesPhysical);
+
+		KDEBUG("Task 0x%08X PT at phys 0x%08X, phys tables at 0x%08X", (unsigned int) task->pagetable, phys, task->pagetable->physicalAddr);
 
 		// Map 0xC0000000 to 0xFFFFFFFF in userspace (but inaccessible to users)
 		for(i = 0x300; i < 0x400; i++) {
@@ -55,10 +57,14 @@ task_t *task_new(task_priority_t pri, bool isKernel) {
 		}
 
 		// Allocate 64KB for a stack
-		for(i = 0xBFFF0000; i < 0xBFFFF000; i += 0x1000) {
+		for(i = 0xBFFF0000; i < 0xC0000000; i += 0x1000) {
 			page_t *page = paging_get_user_page(i, true, task->pagetable);
 			alloc_frame(page, false, true);
+			page->user = 1;
 		}
+
+
+		task->cpu_state.usersp = 0xBFFFFFF0;
 	}
 
 	// Set up priority

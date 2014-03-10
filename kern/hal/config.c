@@ -39,7 +39,7 @@ void hal_config_parse(void *buf) {
 			}
 		} else { // This line has no comment
 			if(strlen(token) > 2) {
-				strncpy((char *) &str, token, 1024);
+				strncpy((char *) &str, token, 1024-1);
 			} else {
 				goto findNext;
 			}
@@ -69,12 +69,12 @@ static void hal_config_parseline(char *str) {
 
 	// Copy key and value
 	memcpy((void *) &keyBuf, str, keyLength);
-	strncpy(valBuf, str+keyLength+1, 1024-64);
+	strncpy(valBuf, str+keyLength+1, 1024-65);
 
 	// Strip leading spaces from the value string
 	while(true) {
 		if(valBuf[0] == ' ') {
-			for(int i = 0; i < 1024-64; i++) {
+			for(int i = 0; i < 1024-65; i++) {
 				valBuf[i] = valBuf[i+1];
 			}
 		} else {

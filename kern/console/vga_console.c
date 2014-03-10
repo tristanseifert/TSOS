@@ -34,6 +34,13 @@ void vga_init(void) {
 }
 
 /*
+ * Called once VGA memory is remapped.
+ */
+void vga_textmem_remap(unsigned int newaddr) {
+	video_memory = (uint16_t *) newaddr;
+}
+
+/*
  * Prints a character to the console, except newlines.
  */
 void vga_console_putchar(char c) {

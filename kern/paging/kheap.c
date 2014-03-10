@@ -39,8 +39,8 @@
 			}															\
 		}
 
-#define LIBALLOC_MAGIC	0xc001c0de
-#define LIBALLOC_DEAD	0xdeaddead
+#define LIBALLOC_MAGIC	'MEMB'
+#define LIBALLOC_DEAD	'DEAD'
 
 // Allocator types
 /*
@@ -180,13 +180,16 @@ void *kheap_smart_alloc(size_t size, bool aligned, unsigned int *phys) {
 	} else { // This allocation must be aligned
 		// First, try to see if the allocation we get back is already page aligned
 		ptr = (unsigned int) lalloc_malloc(size);
-		memclr((void *) ptr, size);
 
 		// If it isn't, re-allocate it plus 0x1000
 		if(likely(ptr & 0x00000FFF)) {
-			krealloc((void *) ptr, size + 0x1000);
+			ptr = (unsigned int) krealloc((void *) ptr, size + 0x1000);
+			memclr((void *) ptr, size + 0x1000);
+
 			ptr += 0x1000;
 			ptr &= 0xFFFFF000;
+		} else {
+			memclr((void *) ptr, size);
 		}
 	}
 
@@ -384,10 +387,10 @@ static struct allocator_major *allocate_new_page(unsigned int size) {
 		st  = st / (l_pageSize);
 	} else {
 		// No, we need more space
-		st  = st / (l_pageSize) + 1;
+		st  = (st / (l_pageSize)) + 1;
 	}
 	
-	// Make sure it's  the minimum size.
+	// Enforce minimum
 	if (st < l_pageCount) st = l_pageCount;
 	
 	maj = (struct allocator_major *) allocator_alloc(st);

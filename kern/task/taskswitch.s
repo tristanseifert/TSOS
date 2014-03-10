@@ -11,22 +11,22 @@
 # pushed onto the stack.
 ###############################################################################
 task_context_switch:
-	# First entry in struct is in edi
+	# First entry in struct is pointed to by edi
 	lea		4(%esp), %edi
 
-	# If the task will execute in kernel mode, jump
+	# If the task will execute in ring 0, jump
 	movl	(%edi), %eax
 	test	%eax, %eax
 	jnz		task_switch_kernel
 
-	# Reserve 12 bytes on the process stack frame
+	# Reserve 20 bytes on the process stack frame
 	xchg	%bx, %bx
-	movl	4(%edi), %ecx
-	lea		-0xC(%ecx), %ecx
+	movl	0x04(%edi), %ecx
+	lea		-0x14(%ecx), %ecx
 	movl	%ecx, task_iretd_stack_ptr
 
 	# set %eip
-	movl	8(%edi), %eax
+	movl	0x08(%edi), %eax
 	movl	%eax, 0x00(%ecx)
 
 	# Set the ring this program will execute in into %ebx
@@ -47,12 +47,17 @@ task_context_switch:
 	movl	%ecx, 0x18(%edi)
 
 	# Reset data segments
-	movw	$GDT_USER_DATA, %ax
+	movl	$GDT_USER_DATA, %eax
 	or		%ebx, %eax
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %fs
 	movw	%ax, %gs
+
+	# Set stack pointer and SS
+	movl	0x04(%edi), %ebx
+	movl	%ebx, 0x0C(%ecx)
+	movl	%eax, 0x10(%ecx)
 
 	# Pop the remaining userspace registers
 	lea		0xC(%edi), %esp

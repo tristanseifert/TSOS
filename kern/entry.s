@@ -4,6 +4,7 @@
 
 .globl	gdt_table
 .globl	gdt_kernel_tss
+.globl	infinite_loop
 
 .globl	stack_top
 
@@ -119,6 +120,9 @@ sse_init:
 	pop		%eax
 	ret
 
+infinite_loop:
+	jmp		.
+
 # GDT
 .section .data
 	.align	0x10
@@ -138,10 +142,10 @@ gdt_table:
 	.long	gdt_start											# Linear address to GDT	
 
 
-# Reserve a stack of 128K
+# Reserve a stack of 64K
 .section .bss
 stack_bottom:
-.skip 0x20000
+.skip 0x10000
 stack_top:
 
 

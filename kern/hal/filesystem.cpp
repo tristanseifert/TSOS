@@ -14,6 +14,11 @@ bool hal_fs::directory_exists(char *directory) {
 }
 
 list_t* hal_fs::list_directory(char* dirname) {
+	// Does directory exist?
+	if(this->directory_exists(dirname)) {
+
+	}
+
 	return NULL;
 }
 

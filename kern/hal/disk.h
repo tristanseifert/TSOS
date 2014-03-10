@@ -40,8 +40,8 @@ typedef enum {
 struct hal_disk_partition {
 	uint8_t type;
 
-	uint32_t lba_start;
-	uint32_t size;
+	unsigned int lba_start;
+	unsigned int size;
 };
 
 // Function calls for interfacing with a disk

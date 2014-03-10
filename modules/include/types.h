@@ -32,7 +32,7 @@ extern "C" {
 #define __used	__attribute__((__used__))
 
 #define PANIC(msg) panic(msg, __FILE__, __LINE__);
-#define ASSERT(b) ((b) ? (void)0 : panic_assert(__FILE__, __LINE__, #b))
+#define ASSERT(b) ((b) ? (void)0 : panic_assert((char *) __FILE__, __LINE__, (char *) #b))
 
 #define IRQ_OFF() __asm__ volatile("cli");
 #define IRQ_RES() __asm__ volatile("sti");

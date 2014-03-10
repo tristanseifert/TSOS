@@ -14,6 +14,7 @@ extern void srand(uint32_t);
 extern uint32_t kern_get_ticks(void);
 
 void kern_idle(void);
+extern void infinite_loop(void);
 
 // Linker defines
 extern uint32_t BUILD_NUMBER;
@@ -61,7 +62,7 @@ void main(void) {
 
 	// Set up initial state (%esp and %eip)
 	idle_task->cpu_state.eip = (uint32_t) &kern_idle;
-	idle_task->cpu_state.usersp = (uint32_t) stack_top;
+	idle_task->cpu_state.usersp = (uint32_t) &stack_top;
 	idle_task->cpu_state.eax = 0xDEADBEEF;
 
 	// Switch to the idle task.
@@ -76,11 +77,17 @@ void main(void) {
 void kern_idle(void) {
 	uint32_t temp;
 	__asm__ volatile("mov %%esp, %0" : "=r" (temp));
-	KSUCCESS("Kernel idle task started (%%esp = 0x%08X)", (unsigned int) temp);
+	KSUCCESS("Kernel idle task started");
 	
 	hal_run_init_handlers();
 
-	// Sleeping until an IRQ comes in lets the CPU possibly sleep
+	// Ensure IRQs are on
+	IRQ_RES();
+
+	/*
+	 * Use of the "htl" instruction allows the CPU to enter lower P states and
+	 * conserve power, as well as not heating up as much.
+	 */
 	for(;;) {
 		__asm__ volatile("hlt");
 	}

@@ -63,6 +63,7 @@ struct task {
 	// General info
 	unsigned int pid;
 	char name[64];
+	bool is_v8086;
 
 	// Signal to be sent to this process
 	unsigned int next_signal;

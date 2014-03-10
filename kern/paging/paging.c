@@ -3,6 +3,7 @@
 #import "paging.h"
 #import "x86_pc/multiboot.h"
 #import "runtime/error.h"
+#import "console/vga_console.h"
  
 extern unsigned int __kern_size, __kern_bss_start, __kern_bss_size;
 
@@ -24,7 +25,7 @@ static unsigned int section_to_memrange[7][2] = {
 	
 	{0xD0000000, 0xDFFFFFFF}, // kMemorySectionKernelHeap
 	
-	{0xD0000000, 0xFFFFFFFF}  // kMemorySectionHardware
+	{0xE0000000, 0xFFFFFFFF}  // kMemorySectionHardware
 };
 
 static const char* section_name_table[7] = {
@@ -145,7 +146,7 @@ void alloc_frame(page_t* page, bool is_kernel, bool is_writeable) {
 		page->user = (is_kernel) ? 0 : 1;
 		page->frame = idx;
 
-		// kprintf("Mapped page at phys 0x%X\n", idx * 0x1000);
+		// KDEBUG("Mapped page at phys 0x%08X", idx * 0x1000);
 	}
 }
 
@@ -200,7 +201,7 @@ void paging_init() {
 	unsigned int kern_start = paging_get_memrange(kMemorySectionKernel)[0];
 	unsigned int kern_end = paging_get_memrange(kMemorySectionKernel)[1];
 
-	for(i = kern_start; i < (kern_end & 0xFFFFF000); i += 0x1000) {
+	for(i = kern_start; i < kern_end; i += 0x1000) {
 		paging_get_page(i, true, kernel_directory);
 	}
 
@@ -208,32 +209,39 @@ void paging_init() {
 	// Create pages for loaded drivers
 	unsigned int driver_start = paging_get_memrange(kMemorySectionDrivers)[0];
 	unsigned int driver_end = paging_get_memrange(kMemorySectionDrivers)[1];
-	for(i = driver_start; i < (driver_end & 0xFFFFF000); i += 0x1000) {
+	for(i = driver_start; i < driver_end; i += 0x1000) {
 		paging_get_page(i, true, kernel_directory);
 	}
 
 	// Create pages for kernel heap
 	unsigned int kheap_start = paging_get_memrange(kMemorySectionKernelHeap)[0];
 	unsigned int kheap_end = paging_get_memrange(kMemorySectionKernelHeap)[1];
-	for(i = kheap_start; i < (kheap_end & 0xFFFFF000); i += 0x1000) {
+	for(i = kheap_start; i < kheap_end; i += 0x1000) {
 		paging_get_page(i, true, kernel_directory);
 	}
 
+	/*
+	 * GIGANTIC FUCKING HACK ALERT!
+	 * 
+	 * Remap VGA memory from physical 0xB8000 to somewhere in the hardware
+	 * address range.
+	 */
+	unsigned int vga_newaddr = paging_map_section(0xB8000, 0x10000, kernel_directory, kMemorySectionHardware);
 
 	// Create the kernel heap
 	kheap_install();
 
 
 	// Mark frames as in-use from 0x00000000 to the end of the dumb heap
-	unsigned int kern_end_phys = ((dumb_heap_address - 0xC0000000) & 0xFFFFF000) + 0x1000;
+	unsigned int kern_end_phys = ((dumb_heap_address - 0xC0000000) & 0xFFFFF000) + 0x2000;
 	for(i = 0; i < kern_end_phys; i += 0x1000) {
 		set_frame(i);
 	}
-	// KDEBUG("Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
+	KDEBUG("Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
 
 
 	// Mark kernel data as present
-	unsigned int kern_heap_end = (dumb_heap_address & 0xFFFFF000) + 0x1000;
+	unsigned int kern_heap_end = (dumb_heap_address & 0xFFFFF000) + 0x2000;
 	for(i = kern_start; i < (kern_end & 0xFFFFF000); i += 0x1000) {
 		page_t* page = paging_get_page(i, false, kernel_directory);
 
@@ -262,6 +270,7 @@ void paging_init() {
 
 	// Enable paging
 	paging_switch_directory(kernel_directory);
+	vga_textmem_remap(vga_newaddr);
 }
 
 /*
@@ -284,8 +293,10 @@ unsigned int paging_map_section(unsigned int physAddress, unsigned int length, p
 	unsigned int section_end = section_to_memrange[sec][1];
 
 	// Round up length to a multiple of a page
-	length &= 0xFFFFF000;
-	length += 0x1000;
+	if(length & 0x00000FFF) {
+		length &= 0xFFFFF000;
+		length += 0x1000;
+	}
 
 	// Align physical address to a page boundary.
 	unsigned int phys_transformed = physAddress & 0xFFFFF000;
@@ -428,7 +439,7 @@ page_t* paging_get_page(unsigned int address, bool make, page_directory_t* dir) 
 		memclr(dir->tables[table_idx], sizeof(page_table_t));
 
 		// update physical address
-		unsigned int phys_ptr = tmp | 0x7;
+		unsigned int phys_ptr = tmp | 0x3;
 
 		// Ensure that kernel code and data is global
 		if(unlikely(table_idx >= 0x300 && table_idx < 0x320)) {
@@ -466,7 +477,7 @@ page_t* paging_get_user_page(unsigned int address, bool make, page_directory_t* 
 		dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &tmp);
 
 		// update physical address
-		unsigned int phys_ptr = tmp | 0x3;
+		unsigned int phys_ptr = tmp | 0x7;
 
 		// Ensure that kernel code and data is global
 		if(unlikely(table_idx >= 0x300 && table_idx < 0x320)) {

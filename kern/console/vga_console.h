@@ -20,6 +20,7 @@ enum vga_colour {
 
 // Initialise VGA driver
 void vga_init(void);
+void vga_textmem_remap(unsigned int newaddr);
 
 // Print a character to the VGA console
 void vga_console_putchar(char c);
