@@ -1,7 +1,6 @@
 #import <types.h>
-#import "hal/bus.h"
+#import "hal/hal.h"
 #import "8042_ps2.h"
-#import "interrupts.h"
 
 #import "ps2_kbd.h"
 
@@ -77,8 +76,8 @@ static void* i8042_init_device(device_t *dev) {
 	info->devices[1].state = kI8042StateNone;
 
 	// Install IRQ handlers
-	irq_register_handler(1, i8042_irq_port1, shared_driver);
-	irq_register_handler(12, i8042_irq_port2, shared_driver);
+	hal_register_irq_handler(1, i8042_irq_port1, shared_driver);
+	hal_register_irq_handler(12, i8042_irq_port2, shared_driver);
 
 	// Disable output from attached devices
 	i8042_wait_input_buffer();

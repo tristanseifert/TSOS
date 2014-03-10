@@ -3,7 +3,7 @@ CC=i686-pc-elf-gcc
 AS=i686-pc-elf-as
 LD=i686-pc-elf-ld
 
-LIBGCC_PATH=$(dir $(shell which $(CC)))../lib/gcc/i686-pc-elf/4.6.2/libgcc.a
+LIBCXX_HEADERS=$(dir $(shell which $(CC)))../../libcxx/include/
 
 CURRENT_DIR=$(shell pwd)
 
@@ -14,7 +14,7 @@ OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer
 CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions
 
 CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -nostartfiles -nodefaultlibs -ffreestanding -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
-LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,kern.ld -lgcc $(LIBGCC_PATH)
+LDFLAGS=-T kern.ld -ffreestanding -O2 -nostdlib -lgcc
 ASFLAGS =
 
 # Build number
@@ -58,7 +58,7 @@ $(EXECUTABLE): $(OBJECTS)
 	@if ! test -f $(BUILD_NUMBER_FILE); then echo 0 > $(BUILD_NUMBER_FILE); fi
 	@echo $$(($$(cat $(BUILD_NUMBER_FILE)) + 1)) > $(BUILD_NUMBER_FILE)
 
-	$(CC) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
+	$(CPP) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
 
 	@i686-pc-elf-objdump -b elf32-i386 -d -S $@ > $@_symbols.txt
 	@i686-pc-elf-objcopy --strip-debug $@
@@ -69,7 +69,7 @@ $(EXECUTABLE): $(OBJECTS)
 
 .cpp.o:
 	@echo "[G++] $<"
-	@$(CPP) $(CFLAGS) $(CPPFLAGS) $< -o $@
+	@$(CPP) $(CPPFLAGS) $< -o $@
 
 .s.o:
 	@echo "[AS] $<"
@@ -78,7 +78,7 @@ $(EXECUTABLE): $(OBJECTS)
 # Submodules
 $(SUBDIRS):
 	@echo "\n\n[3;32;40m***** Compiling $@ *****[0;37;49m"
-	@$(MAKE) -C $@ all
+	@$(MAKE) -s -C $@ || exit $$?
 
 $(SUBDIRS_CLEAN):
 	@$(MAKE) -C $(subst _clean,, $@) clean

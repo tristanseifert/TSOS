@@ -1,9 +1,8 @@
 #import <types.h>
-#import "hal/bus.h"
-#import "runtime/rand.h"
+#import "hal/hal.h"
 
-#import "cmos_rtc.h"
 #import "interrupts.h"
+#import "cmos_rtc.h"
 
 #define DRIVER_NAME "CMOS Clock"
 
@@ -87,7 +86,7 @@ static void* rtc_init(device_t *dev) {
 	io_outb(CMOS_DATA_PORT, (reg & 0xF0) | 0x0F);
 
 	// Install IRQ handler
-	irq_register_handler(8, rtc_sys_tick, NULL);
+	hal_register_irq_handler(8, rtc_sys_tick, NULL);
 
 	// Re-enable IRQs
 	IRQ_RES();

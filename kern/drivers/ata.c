@@ -1,7 +1,6 @@
 #import <types.h>
 #import "ata.h"
-#import "hal/disk.h"
-#import "x86_pc/interrupts.h"
+#import "hal/hal.h"
 #import "x86_pc/x86_pc.h"
 
 // D2203
@@ -350,11 +349,14 @@ ata_driver_t* ata_init_pci(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t
 			disk->f = ata_hal_disk_functions;
 			disk->drive_number = count;
 			disk->driver = driver;
-			disk->interface = kDiskInterfaceATA;
+			disk->interface = kDiskInterfacePATA;
 
 			// If the drive is a hard disk, we know that it's got media loaded
 			if(!isATAPI) {
+				disk->type = kDiskTypeHardDrive;
 				disk->media_loaded = true;
+			} else {
+				disk->type = kDiskTypeOptical;
 			}
 
 			// Get sleep status from ATA IDENTIFY response
@@ -551,8 +553,8 @@ static int ata_post_driver_load(void) {
 		}
 
 		// Register IRQs 14 and 15 since the controller is in legacy ATA mode
-		irq_register_handler(14, (void (*)(void *)) ata_irq_callback, ata);
-		irq_register_handler(15, (void (*)(void *)) ata_irq_callback, ata);
+		hal_register_irq_handler(14, (void (*)(void *)) ata_irq_callback, ata);
+		hal_register_irq_handler(15, (void (*)(void *)) ata_irq_callback, ata);
 	}
 
 	return 0;

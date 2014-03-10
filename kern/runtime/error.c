@@ -1,6 +1,8 @@
 #import <types.h>
 #import "error.h"
-#import "runtime/rand.h"
+#import "rand.h"
+#import "udis86.h"
+
 #import "x86_pc/binfmt_elf.h"
 
 // ELF sections useful for stack dumps
@@ -73,6 +75,26 @@ void error_dump_regs(err_registers_t regs) {
 	for(uint8_t i = 0; i < 18; i+=2) {
 		klog(kLogLevelCritical, "%s: 0x%08X %s: 0x%08X", (char *) &reg_names[i], (unsigned int) registers[i], (char *) &reg_names[i+1], (unsigned int) registers[i+1]);
 	}
+
+/*	// If the error is anything but page fault, show a partial disassembly
+	if(regs.int_no != 14) {
+		ud_t u;
+		
+		// Initialise udis86 in 32-bit mode, intel syntax
+		ud_init(&u);
+		ud_set_mode(&u, 32);
+		ud_set_pc(&u, regs.eip);
+		ud_set_syntax(&u, UD_SYN_ATT);
+
+		ud_set_input_buffer(&u, (uint8_t *) regs.eip, 128);
+
+		// Dump 16 instructions
+		for(unsigned int i = 0; i < 16; i++) {
+			if(ud_disassemble(&u)) {
+				klog(kLogLevelCritical, "%s", ud_insn_asm(&u));
+			}
+		}
+	}*/
 
 	error_dump_stack_trace(256, regs.ebp);
 }
@@ -157,16 +179,19 @@ char *error_get_closest_symbol(unsigned int address) {
 	for(unsigned int i = 0; i < kern_elf_symtab_entries; i++) {
 		entry = &kern_elf_symtab[i];
 
-		// Calculate offset
-		int offset = address - entry->st_address;
+		// Check only functions
+		if(entry->st_info & STT_FUNC) {
+			// Calculate offset
+			int offset = address - entry->st_address;
 
-		// Ignore negative offsets
-		if(offset > 0) {
-			// Is it closer than the last?
-			if(offset < abs_offset) {
-				// If so, save offset
-				abs_offset = (unsigned int) offset;
-				index = i;
+			// Ignore negative offsets
+			if(offset > 0) {
+				// Is it closer than the last?
+				if(offset < abs_offset) {
+					// If so, save offset
+					abs_offset = (unsigned int) offset;
+					index = i;
+				}
 			}
 		}
 	}
@@ -181,6 +206,10 @@ char *error_get_closest_symbol(unsigned int address) {
 	entry = &kern_elf_symtab[index];
 	char *name = kern_elf_strtab + entry->st_name;
 	int offset = address - entry->st_address;
+
+	// Demangle the name
+//	int status;
+//	char *realname = abi::__cxa_demangle(name, 0, 0, &status);
 
 	if(offset == 0) {
 		// The address is the start of the symbol

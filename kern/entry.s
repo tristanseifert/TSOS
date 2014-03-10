@@ -138,10 +138,10 @@ gdt_table:
 	.long	gdt_start											# Linear address to GDT	
 
 
-# Reserve a stack of 64K
+# Reserve a stack of 128K
 .section .bss
 stack_bottom:
-.skip 0x10000
+.skip 0x20000
 stack_top:
 
 

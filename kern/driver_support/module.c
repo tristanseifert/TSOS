@@ -4,7 +4,7 @@
 #import "ramdisk.h"
 
 #import "paging/paging.h"
-#import "hal/config.h"
+#import "hal/hal.h"
 #import "x86_pc/binfmt_elf.h"
 
 #define DEBUG_MODULE_MAPPING	0
@@ -98,9 +98,12 @@ void modules_ramdisk_load() {
 			elf_section_entry_t *shstrtab_sec = &sections[header->sh_str_index];
 			shstrtab = elf + shstrtab_sec->sh_offset;
 
-			// Relocation table
-			elf_program_relocation_t *rtab = NULL;
-			unsigned int rtab_entries = 0;
+			// Relocation table(s)
+			unsigned int currentRtab = 0;
+			struct {
+				elf_program_relocation_t *rtab;
+				unsigned int rtab_entries;
+			} rtabs[16];
 
 			// Read the section table
 			for(unsigned int s = 0; s < header->sh_entry_count; s++) {
@@ -121,8 +124,8 @@ void modules_ramdisk_load() {
 						nobits_start = section->sh_addr;
 					}
 				} else if(section->sh_type == SHT_REL) { // relocation
-					rtab = elf + section->sh_offset;
-					rtab_entries = section->sh_size / sizeof(elf_program_relocation_t);
+					rtabs[currentRtab].rtab = elf + section->sh_offset;
+					rtabs[currentRtab++].rtab_entries = section->sh_size / sizeof(elf_program_relocation_t);
 				} else if(section->sh_type == SHT_SYMTAB) { // symbol table
 					symtab = elf + section->sh_offset;
 					symtab_entries = section->sh_size / sizeof(elf_symbol_entry_t);
@@ -147,18 +150,12 @@ void modules_ramdisk_load() {
 			for(unsigned int s = 0; s < symtab_entries; s++) {
 				elf_symbol_entry_t *symbol = &symtab[s];
 
-				// Function of interest
+/*				// Function of interest
 				if(symbol->st_info & STT_FUNC) {
 					char *name = strtab + symbol->st_name;
-
-					if(!strcmp(name, "module_entry")) {
-						elf_section_entry_t *section = &sections[symbol->st_shndx];
-						init_addr = section->sh_addr + symbol->st_address;
-						entry_found = true;
-					}
 				} 
 				// Objects of interest
-				else if(symbol->st_info & STT_OBJECT) {
+				else*/ if(symbol->st_info & STT_OBJECT) {
 					char *name = strtab + symbol->st_name;
 
 					// Note how sh_offset is used, as we read out of the loaded elf
@@ -192,16 +189,13 @@ void modules_ramdisk_load() {
 				}
 			}
 
-			// Calculate logical address of the entry point
-			unsigned int init_function_addr = 0;
-
-			if(entry_found) {
-				init_function_addr = progbits_start + init_addr;
-				// KDEBUG("Init function at 0x%08X", init_function_addr);
-			} else {
-				KERROR("'%s' has no entry function", moduleName);
-				goto nextModule;
-			}
+			/*
+			 * To determine the entry function to initialise this module, we
+			 * depend on the ELF file's entry header field to have the correct
+			 * value. This means that the module's entry point MUST be extern C,
+			 * and be named "start".
+			 */
+			unsigned int init_function_addr = progbits_start + header->entry;
 
 			/*
  			 * In order for the module to be able to properly call into kernel
@@ -217,136 +211,145 @@ void modules_ramdisk_load() {
  			 * loading is aborted, as the module may crash later in hard to
  			 * debug ways if a function is simply left unrelocated.
 			 */
-			for(unsigned int r = 0; r < rtab_entries; r++) {
-				elf_program_relocation_t *ent = &rtab[r];
-				unsigned int symtab_index = ELF32_R_SYM(ent->r_info);
+			for(unsigned int u = 0; u < currentRtab; u++) {
+				elf_program_relocation_t *rtab = rtabs[u].rtab;
+				unsigned int rtab_entries = rtabs[u].rtab_entries;
 
-				// Function call relocations?
-				if(ELF32_R_TYPE(ent->r_info) == R_386_PC32) {
-					/*
-					 * The ELF spec says that R_386_PC32 relocation entries must
-					 * add the value at the offset to the symbol address, and
-					 * subtract the section base address added to the offset.
-					 */
+				// Perform relocation for this rtab.
+				for(unsigned int r = 0; r < rtab_entries; r++) {
+					elf_program_relocation_t *ent = &rtab[r];
+					unsigned int symtab_index = ELF32_R_SYM(ent->r_info);
 
-					// Look up only non-NULL relocations
-					if(symtab_index != STN_UNDEF) {
-						// Get symbol in question
+					// Function call relocations?
+					if(ELF32_R_TYPE(ent->r_info) == R_386_PC32) {
+						/*
+						 * The ELF spec says that R_386_PC32 relocation entries must
+						 * add the value at the offset to the symbol address, and
+						 * subtract the section base address added to the offset.
+						 */
+
+						// Look up only non-NULL relocations
+						if(symtab_index != STN_UNDEF) {
+							// Get symbol in question
+							elf_symbol_entry_t *symbol = &symtab[symtab_index];
+							char *name = strtab + symbol->st_name;
+							unsigned int *ptr = elf + progbits_offset + ent->r_offset;
+
+							unsigned int kern_symbol_loc = find_symbol_in_kernel(name);
+
+							if(kern_symbol_loc) {
+								// Perform the relocation.							
+								*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
+
+								#if DEBUG_MOBULE_RELOC
+								KDEBUG("0x%08X -> 0x%08X (%s, kernel)", (unsigned int) ent->r_offset, *ptr, name);
+								#endif
+							} else {
+								// Search for the symbol in the module's synbol table
+								for(unsigned int i = 0; i < symtab_entries; i++) {
+									elf_symbol_entry_t *entry = &symtab[i];
+									char *symbol_name = strtab + entry->st_name;
+
+									// Symbol found in module?
+									if(unlikely(!strcmp(name, symbol_name)) && likely(entry->st_shndx != STN_UNDEF)) {
+										kern_symbol_loc = (entry->st_address + module_placement_addr);
+
+										*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
+										
+										#if DEBUG_MOBULE_RELOC
+										KDEBUG("0x%08X -> 0x%08X (%s, module)", (unsigned int) ent->r_offset, *ptr, name);
+										#endif
+
+										goto linkNext;
+									}
+								}
+
+								KERROR("Module %s references '%s', but symbol does not exist", moduleName, name);
+								goto nextModule;
+							}
+						} else {
+							KERROR("Module %s has undefined linkage", moduleName);
+							goto nextModule;
+						} 
+					} else if(ELF32_R_TYPE(ent->r_info) == R_386_32) {
+						/*
+						 * The ELF spec says that R_386_32 relocation entries must
+						 * add the value at the offset to the symbol address.
+						 */
 						elf_symbol_entry_t *symbol = &symtab[symtab_index];
-						char *name = strtab + symbol->st_name;
-						unsigned int *ptr = elf + progbits_offset + ent->r_offset;
 
-						unsigned int kern_symbol_loc = find_symbol_in_kernel(name);
+						// If name = 0, relocating section
+						if(symbol->st_name == 0) {
+							// Get the section requested
+							unsigned int sectionIndex = symbol->st_shndx;
+							elf_section_entry_t *section = &sections[sectionIndex];
+							char *name = shstrtab + section->sh_name;
 
-						if(kern_symbol_loc) {
-							// Perform the relocation.							
-							*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
+							// Get virtual address of the section
+							unsigned int addr = section->sh_addr + module_placement_addr;
+
+							// Perform relocation
+							unsigned int *ptr = elf + progbits_offset + ent->r_offset;
+							*ptr = addr + *ptr;
 
 							#if DEBUG_MOBULE_RELOC
-							KDEBUG("0x%08X -> 0x%08X (%s, kernel)", (unsigned int) ent->r_offset, *ptr, name);
+							KDEBUG("0x%08X -> 0x%08X (section: %s+0x%X)", (unsigned int) ent->r_offset, *ptr, name, *ptr - addr);
 							#endif
 						} else {
-							// Search for the symbol in the module's synbol table
+							// Get symbol name and a placeholder address
+							char *name = strtab + symbol->st_name;
+							unsigned int addr = 0;
+
+							#if DEBUG_MOBULE_RELOC
+							bool inKernel = false;
+							#endif
+
+							// Search through the module's symbols first
 							for(unsigned int i = 0; i < symtab_entries; i++) {
 								elf_symbol_entry_t *entry = &symtab[i];
 								char *symbol_name = strtab + entry->st_name;
 
 								// Symbol found in module?
 								if(unlikely(!strcmp(name, symbol_name)) && likely(entry->st_shndx != STN_UNDEF)) {
-									kern_symbol_loc = (entry->st_address + module_placement_addr);
-
-									*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
+									addr = entry->st_address + module_placement_addr;
 									
-									KDEBUG("0x%08X -> 0x%08X (%s, module)", (unsigned int) ent->r_offset, *ptr, name);
-									goto linkNext;
+									// Take into account the section's address
+									elf_section_entry_t *section = &sections[symbol->st_shndx];
+									addr += section->sh_addr;
+
+									// Go to the relocation code
+									#if DEBUG_MOBULE_RELOC
+									inKernel = false;
+									#endif
+
+									goto R_386_32_reloc_good;
 								}
 							}
 
-							KERROR("Module %s references '%s', but symbol does not exist in kernel", moduleName, name);
-							goto nextModule;
-						}
-					} else {
-						KERROR("Module %s has undefined linkage", moduleName);
-						goto nextModule;
-					} 
-				} else if(ELF32_R_TYPE(ent->r_info) == R_386_32) {
-					/*
-					 * The ELF spec says that R_386_32 relocation entries must
-					 * add the value at the offset to the symbol address.
-					 */
-					elf_symbol_entry_t *symbol = &symtab[symtab_index];
-
-					// If name = 0, relocating section
-					if(symbol->st_name == 0) {
-						// Get the section requested
-						unsigned int sectionIndex = symbol->st_shndx;
-						elf_section_entry_t *section = &sections[sectionIndex];
-						char *name = shstrtab + section->sh_name;
-
-						// Get virtual address of the section
-						unsigned int addr = section->sh_addr + module_placement_addr;
-
-						// Perform relocation
-						unsigned int *ptr = elf + progbits_offset + ent->r_offset;
-						*ptr = addr + *ptr;
-
-						#if DEBUG_MOBULE_RELOC
-						KDEBUG("0x%08X -> 0x%08X (section: %s+0x%X)", (unsigned int) ent->r_offset, *ptr, name, *ptr - addr);
-						#endif
-					} else {
-						// Get symbol name and a placeholder address
-						char *name = strtab + symbol->st_name;
-						unsigned int addr = 0;
-
-						#if DEBUG_MOBULE_RELOC
-						bool inKernel = false;
-						#endif
-
-						// Search through the module's symbols first
-						for(unsigned int i = 0; i < symtab_entries; i++) {
-							elf_symbol_entry_t *entry = &symtab[i];
-							char *symbol_name = strtab + entry->st_name;
-
-							// Symbol found in module?
-							if(unlikely(!strcmp(name, symbol_name)) && likely(entry->st_shndx != STN_UNDEF)) {
-								addr = entry->st_address + module_placement_addr;
-								
-								// Take into account the section's address
-								elf_section_entry_t *section = &sections[symbol->st_shndx];
-								addr += section->sh_addr;
-
-								// Go to the relocation code
-								#if DEBUG_MOBULE_RELOC
-								inKernel = false;
-								#endif
-
-								goto R_386_32_reloc_good;
+							// See if the kernel has the symbol
+							if(unlikely(!(addr = find_symbol_in_kernel(name)))) {
+								KERROR("Module %s references '%s', but symbol does not exist", moduleName, name);
+								goto nextModule;					
 							}
+
+							#if DEBUG_MOBULE_RELOC
+							inKernel = true;
+							#endif
+
+							// Perform relocation
+							R_386_32_reloc_good: ;
+							unsigned int *ptr = elf + progbits_offset + ent->r_offset;
+							*ptr = addr + *ptr;
+
+							#if DEBUG_MOBULE_RELOC
+							KDEBUG("0x%08X -> 0x%08X (%s, %s)", (unsigned int) ent->r_offset, addr, name, inKernel ? "kernel" : "module");
+							#endif
 						}
-
-						// See if the kernel has the symbol
-						if(unlikely(!(addr = find_symbol_in_kernel(name)))) {
-							KERROR("Module %s references '%s', but symbol does not exist", moduleName, name);
-							goto nextModule;					
-						}
-
-						#if DEBUG_MOBULE_RELOC
-						inKernel = true;
-						#endif
-
-						// Perform relocation
-						R_386_32_reloc_good: ;
-						unsigned int *ptr = elf + progbits_offset + ent->r_offset;
-						*ptr = addr + *ptr;
-
-						#if DEBUG_MOBULE_RELOC
-						KDEBUG("0x%08X -> 0x%08X (%s, %s)", (unsigned int) ent->r_offset, addr, name, inKernel ? "kernel" : "module");
-						#endif
 					}
-				}
 
-				// Drop down here to link the next symbol
-				linkNext: ;
+					// Drop down here to link the next symbol
+					linkNext: ;
+				}
 			}
 
 			// Move PROGBITS from the file forward however many bits the offset is
@@ -452,11 +455,15 @@ static unsigned int find_symbol_in_kernel(char *name) {
 
 	// Loop through symbols
 	for(unsigned int i = 0; i < kern_elf_symtab_entries; i++) {
-		elf_symbol_entry_t *entry = &kern_elf_symtab[i];
-		char *symbol_name = kern_elf_strtab + entry->st_name;
+		elf_symbol_entry_t *symbol = &kern_elf_symtab[i];
 
-		// Return address, if found
-		if(!strcmp(name, symbol_name)) return entry->st_address;
+		// Check only functions and objects
+		if(symbol->st_info & STT_FUNC || symbol->st_info & STT_OBJECT) {
+			char *symbol_name = kern_elf_strtab + symbol->st_name;
+
+			// Return address, if found
+			if(!strcmp(name, symbol_name)) return symbol->st_address;
+		}
 	}
 
 	// Symbol not found

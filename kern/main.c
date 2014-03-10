@@ -3,8 +3,10 @@
 #import "task/task.h"
 #import "paging/paging.h"
 #import "console/vga_console.h"
+
 #import "driver_support/ramdisk.h"
-#import "hal/config.h"
+
+#import "hal/hal.h"
 
 // External functions
 extern void __stack_chk_guard_setup(void);
@@ -52,7 +54,7 @@ void main(void) {
 	modules_load();
 	modules_ramdisk_load();
 
-/*
+
 	// Allocate idle task
 	idle_task = task_new(kTaskPriorityIdle, true);
 	strncpy((char *) &idle_task->name, "Kernel Idle Task", 64);
@@ -63,7 +65,7 @@ void main(void) {
 	idle_task->cpu_state.eax = 0xDEADBEEF;
 
 	// Switch to the idle task.
-	task_switch(idle_task);*/
+	task_switch(idle_task);
 
 	while(1);
 }
@@ -74,8 +76,10 @@ void main(void) {
 void kern_idle(void) {
 	uint32_t temp;
 	__asm__ volatile("mov %%esp, %0" : "=r" (temp));
-	KWARNING("I am the kernel idle task! (%%esp = 0x%08X)", (unsigned int) temp);
+	KSUCCESS("Kernel idle task started (%%esp = 0x%08X)", (unsigned int) temp);
 	
+	hal_run_init_handlers();
+
 	// Sleeping until an IRQ comes in lets the CPU possibly sleep
 	for(;;) {
 		__asm__ volatile("hlt");
