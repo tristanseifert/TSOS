@@ -6,7 +6,7 @@
 static tss_entry_t kern_tss;
 
 // Stack to use for IRQs while we're in usermode
-static uint8_t interrupt_stack[1024 * 32] __attribute__ ((aligned (16)));
+static uint8_t interrupt_stack[1024 * 8] __attribute__ ((aligned (16)));
 
 // GDT entry pointing to the TSS
 extern uint8_t gdt_kernel_tss;

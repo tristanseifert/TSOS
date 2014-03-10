@@ -4,6 +4,7 @@
 
 // Internal state
 static volatile bool hal_disk_null_callback_called = false;
+static unsigned int hal_disk_null_callback_error;
 static list_t *disks;
 
 // Private functions
@@ -88,7 +89,7 @@ extern "C" {
 
 				hal_disk_null_callback_called = false;
 
-				return r;
+				return hal_disk_null_callback_error;
 			} else {
 				return r;
 			}
@@ -102,6 +103,10 @@ extern "C" {
  */
 static void hal_disk_null_callback(unsigned int id, void* buf, void* ctx) {
 	hal_disk_null_callback_called = true;
+
+	if(!buf) {
+		hal_disk_null_callback_error = *((unsigned int *) ctx);
+	}
 }
 
 
@@ -114,7 +119,8 @@ static void hal_disk_read_ptables(void) {
 
 		// Read MBR, only on hard drives
 		if(hal_disk_setup(disk) == kDiskErrorNone && disk->type == kDiskTypeHardDrive) {
-			hal_disk_read(disk, 0, 1, kmalloc(512), NULL, hal_disk_register_mbr_read_callback, disk);
+			void *buffer = kmalloc(1024);
+			hal_disk_read(disk, 0, 1, buffer, NULL, hal_disk_register_mbr_read_callback, disk);
 		}
 	}
 }
@@ -123,6 +129,11 @@ static void hal_disk_read_ptables(void) {
  * Callback for when the read of sector zero completes
  */
 static void hal_disk_register_mbr_read_callback(unsigned int id, void *buf, void *ctx) {
+	if(!buf) {
+		KERROR("Error reading MBR");
+		return;
+	}
+
 	hal_disk_t *disk = (hal_disk_t *) ctx;
 	uint8_t *readPtr = (uint8_t *) buf;
 

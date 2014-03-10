@@ -104,16 +104,6 @@ hal_disk_functions_t ata_hal_disk_functions = {
 	.write = ata_disk_write
 };
 
-/*	// Miscellaneous
-	hal_disk_error_t (*flush_cache)(hal_disk_t*);
-
-	hal_disk_error_t (*sleep)(hal_disk_t*);
-	hal_disk_error_t (*wake)(hal_disk_t*);
-
-	// Removable media support
-	hal_disk_error_t (*lock)(hal_disk_t*, bool); // Sets disk lock state, if supported
-	hal_disk_error_t (*eject)(hal_disk_t*);*/
-
 /*
  * Initialises the driver, based on the base addresses from the PCI controller
  */
@@ -517,6 +507,8 @@ int ata_poll_ready(ata_driver_t *drv, uint8_t channel, bool advanced_check) {
 		}
 	}
 
+	//advanced_check = false;
+
  	// If set, we perform more in-depth checking
 	if(advanced_check) {
 		// Read status register
@@ -607,21 +599,7 @@ static int ata_convert_error(ata_driver_t *drv, int drive, int err) {
  */
 int ata_read(ata_driver_t *drv, uint8_t drive, uint32_t lba, uint8_t sectors, void *buffer) {
 	if(buffer) {
-		// HUGE FUCKING KLUDGE
-		if(sectors == 1) {
-			void *buf = (void *) kmalloc(0x400);
-			int r = ata_access_pio(drv, ATA_READ, drive, lba, 2, buf);
-
-			// Was there an error?
-			if(!r) {
-				memcpy(buffer, buf, 0x200);
-				kfree(buf);
-			}
-
-			return r;
-		} else {
-			return ata_access_pio(drv, ATA_READ, drive, lba, sectors, buffer);
-		}
+		return ata_access_pio(drv, ATA_READ, drive, lba, sectors, buffer);
 	} else {
 		return -1;
 	}
@@ -729,36 +707,35 @@ static int ata_access_pio(ata_driver_t *drv, uint8_t rw, uint8_t drive, uint32_t
 	 * They expect the number of words in ECX, IO port in EDX, and address to
 	 * use in ES:EDI.
 	 */
+	uint16_t *buffer = (uint16_t *) buf;
 
 	// Read or write data to the device
 	if (rw == ATA_READ) { // Read
 		for (uint8_t s = 0; s < numsects; s++) {
 			// Wait for drive to have a sector available
 			if ((err = ata_poll_ready(drv, channel, true))) {
-				KERROR("IDE: Device read error %u (disk %u on channel %u, LBA 0x%X size 0x%X)", ata_convert_error(drv, drive, err), slavebit, channel, (unsigned int) lba, numsects);
+				KERROR("IDE: Device read error 0x%x (disk %u on channel %u, LBA 0x%X size 0x%X)", ata_convert_error(drv, drive, err), slavebit, channel, (unsigned int) lba, numsects);
 				return ata_convert_error(drv, drive, err);
 			}
 
-			// Receive data
-			__asm__ volatile("pushw %es");
-			__asm__ volatile("mov %%ax, %%es" : : "a" (GDT_KERNEL_DATA));
-			__asm__ volatile("rep insw" : : "c" (sectorSize), "d" (bus_io_reg), "D" (buf));
-			__asm__ volatile("popw %es");
+			// Receive 256 words
+			for(unsigned int b = 0; b < sectorSize; b++) {
+				buffer[b] = io_inw(bus_io_reg);
+			}
 
-			buf += (sectorSize * 2);
+			buffer += sectorSize;
 		}
 	} else { // Write
 		for (uint8_t s = 0; s < numsects; s++) {
 			// Wait for the device to be ready to accept another sector
 			ata_poll_ready(drv, channel, false);
 
-			// Write data
-			__asm__ volatile("pushw %ds");
-			__asm__ volatile("mov %%ax, %%ds" : : "a" (GDT_KERNEL_DATA));
-			__asm__ volatile("rep outsw" : : "c" (sectorSize), "d" (bus_io_reg), "S" (buf));
-			__asm__ volatile("popw %ds");
+			// Write a sector of data
+			for(unsigned int b = 0; b < sectorSize; b++) {
+				io_outw(bus_io_reg, buffer[b]);
+			}
 
-			buf += (sectorSize * 2);
+			buffer += sectorSize;
 		}
 
 		// Flush cache after writing
@@ -796,7 +773,16 @@ static hal_disk_error_t ata_disk_read(hal_disk_t *disk, uint32_t lba, uint32_t l
 	*id = drv->last_access_id++;
 
 	int r = ata_read(drv, (uint8_t) disk->drive_number, lba, (uint8_t) length, buffer);
-	callback(*id, buffer, ctx);
+
+	/*
+	 * If there's an error, set the buffer to NULL and instead of passing the
+	 * context, pass a pointer to the error.
+	 */
+	if(!r) {
+		callback(*id, buffer, ctx);
+	} else {
+		callback(*id, NULL, &r);
+	}
 
 	return r;
 }
@@ -806,7 +792,11 @@ static hal_disk_error_t ata_disk_write(hal_disk_t *disk, uint32_t lba, uint32_t 
 	*id = drv->last_access_id++;
 
 	int r = ata_write(drv, (uint8_t) disk->drive_number, lba, (uint8_t) length, buffer);
-	callback(*id, buffer, ctx);
+	if(!r) {
+		callback(*id, buffer, ctx);
+	} else {
+		callback(*id, NULL, &r);
+	}
 
 	return r;
 }
