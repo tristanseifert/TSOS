@@ -17,6 +17,7 @@ fi
 # Create ramdisk
 echo "\n[3;32;40m***** Building ramdisk *****[0;37;49m"
 cp modules/*/*.kmod ramdisk/
+dot_clean -m ramdisk/
 ./tool/mkramdisk ramdisk
 
 # Copy kernel, etc

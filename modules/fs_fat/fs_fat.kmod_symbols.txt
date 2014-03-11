@@ -1,0 +1,3567 @@
+
+fs_fat.kmod:     file format elf32-i386
+
+
+Disassembly of section .text:
+
+00000000 <_ZN8fs_fat3215sector_for_fileEPcj>:
+}
+
+/*
+ * Gets the sector, relative to the start of the partition, for a certain file.
+ */
+unsigned int fs_fat32::sector_for_file(char *path, unsigned int offset) {
+       0:	55                   	push   %ebp
+       1:	89 e5                	mov    %esp,%ebp
+       3:	83 ec 18             	sub    $0x18,%esp
+       6:	a1 00 00 00 00       	mov    0x0,%eax
+       b:	89 45 f4             	mov    %eax,-0xc(%ebp)
+       e:	31 c0                	xor    %eax,%eax
+	return 0;
+      10:	8b 55 f4             	mov    -0xc(%ebp),%edx
+      13:	33 15 00 00 00 00    	xor    0x0,%edx
+      19:	75 02                	jne    1d <_ZN8fs_fat3215sector_for_fileEPcj+0x1d>
+      1b:	c9                   	leave  
+      1c:	c3                   	ret    
+      1d:	e8 fc ff ff ff       	call   1e <_ZN8fs_fat3215sector_for_fileEPcj+0x1e>
+      22:	66 90                	xchg   %ax,%ax
+
+00000024 <_ZN8fs_fat32D1Ev>:
+}
+
+/*
+ * Clean up the filesystem's internal data structures, and cleanly unmount it.
+ */
+fs_fat32::~fs_fat32() {
+      24:	55                   	push   %ebp
+      25:	89 e5                	mov    %esp,%ebp
+      27:	83 ec 18             	sub    $0x18,%esp
+      2a:	a1 00 00 00 00       	mov    0x0,%eax
+      2f:	89 45 f4             	mov    %eax,-0xc(%ebp)
+      32:	31 c0                	xor    %eax,%eax
+      34:	8b 45 08             	mov    0x8(%ebp),%eax
+      37:	c7 00 08 00 00 00    	movl   $0x8,(%eax)
+
+}
+      3d:	8b 45 f4             	mov    -0xc(%ebp),%eax
+      40:	33 05 00 00 00 00    	xor    0x0,%eax
+      46:	75 02                	jne    4a <_ZN8fs_fat32D1Ev+0x26>
+      48:	c9                   	leave  
+      49:	c3                   	ret    
+      4a:	e8 fc ff ff ff       	call   4b <_ZN8fs_fat32D1Ev+0x27>
+      4f:	90                   	nop
+
+00000050 <_ZN8fs_fat3211lfnCheckSumEPh>:
+}
+
+/*
+ * Calculates the checksum for a long name.
+ */
+uint8_t fs_fat32::lfnCheckSum(unsigned char *shortName) {
+      50:	55                   	push   %ebp
+	uint16_t FcbNameLen;
+	uint8_t sum = 0;
+
+	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+		// NOTE: The operation is an unsigned char rotate right
+		sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + *shortName++;
+      51:	31 c9                	xor    %ecx,%ecx
+}
+
+/*
+ * Calculates the checksum for a long name.
+ */
+uint8_t fs_fat32::lfnCheckSum(unsigned char *shortName) {
+      53:	89 e5                	mov    %esp,%ebp
+      55:	53                   	push   %ebx
+      56:	83 ec 14             	sub    $0x14,%esp
+      59:	8b 55 0c             	mov    0xc(%ebp),%edx
+      5c:	a1 00 00 00 00       	mov    0x0,%eax
+      61:	89 45 f4             	mov    %eax,-0xc(%ebp)
+      64:	31 c0                	xor    %eax,%eax
+      66:	8d 5a 0b             	lea    0xb(%edx),%ebx
+      69:	eb 16                	jmp    81 <_ZN8fs_fat3211lfnCheckSumEPh+0x31>
+      6b:	90                   	nop
+      6c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+	uint16_t FcbNameLen;
+	uint8_t sum = 0;
+
+	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+		// NOTE: The operation is an unsigned char rotate right
+		sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + *shortName++;
+      70:	0f b6 c8             	movzbl %al,%ecx
+      73:	89 c8                	mov    %ecx,%eax
+      75:	83 e0 01             	and    $0x1,%eax
+      78:	83 f8 01             	cmp    $0x1,%eax
+      7b:	19 c0                	sbb    %eax,%eax
+      7d:	f6 d0                	not    %al
+      7f:	24 80                	and    $0x80,%al
+      81:	02 02                	add    (%edx),%al
+      83:	42                   	inc    %edx
+      84:	d1 f9                	sar    %ecx
+      86:	00 c8                	add    %cl,%al
+ */
+uint8_t fs_fat32::lfnCheckSum(unsigned char *shortName) {
+	uint16_t FcbNameLen;
+	uint8_t sum = 0;
+
+	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+      88:	39 da                	cmp    %ebx,%edx
+      8a:	75 e4                	jne    70 <_ZN8fs_fat3211lfnCheckSumEPh+0x20>
+		// NOTE: The operation is an unsigned char rotate right
+		sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + *shortName++;
+	}
+
+	return sum;
+}
+      8c:	8b 55 f4             	mov    -0xc(%ebp),%edx
+      8f:	33 15 00 00 00 00    	xor    0x0,%edx
+      95:	75 06                	jne    9d <_ZN8fs_fat3211lfnCheckSumEPh+0x4d>
+      97:	83 c4 14             	add    $0x14,%esp
+      9a:	5b                   	pop    %ebx
+      9b:	5d                   	pop    %ebp
+      9c:	c3                   	ret    
+      9d:	e8 fc ff ff ff       	call   9e <_ZN8fs_fat3211lfnCheckSumEPh+0x4e>
+      a2:	66 90                	xchg   %ax,%ax
+
+000000a4 <_ZN8fs_fat3217convert_timestampEtth>:
+
+/*
+ * Converts from the FAT timestamp format (separate date, time, and millis) to
+ * more acceptable, sane, (and indubitably) less shitty UNIX epoch.
+ */
+time_t fs_fat32::convert_timestamp(uint16_t date, uint16_t time, uint8_t millis) {
+      a4:	55                   	push   %ebp
+      a5:	89 e5                	mov    %esp,%ebp
+      a7:	56                   	push   %esi
+      a8:	53                   	push   %ebx
+      a9:	83 ec 10             	sub    $0x10,%esp
+      ac:	0f b7 5d 0c          	movzwl 0xc(%ebp),%ebx
+      b0:	a1 00 00 00 00       	mov    0x0,%eax
+      b5:	89 45 f4             	mov    %eax,-0xc(%ebp)
+      b8:	31 c0                	xor    %eax,%eax
+      ba:	0f b7 4d 10          	movzwl 0x10(%ebp),%ecx
+	time_t t = 315532800;
+      be:	b8 00 a6 ce 12       	mov    $0x12cea600,%eax
+
+/*
+ * Converts from the FAT timestamp format (separate date, time, and millis) to
+ * more acceptable, sane, (and indubitably) less shitty UNIX epoch.
+ */
+time_t fs_fat32::convert_timestamp(uint16_t date, uint16_t time, uint8_t millis) {
+      c3:	0f b6 55 14          	movzbl 0x14(%ebp),%edx
+	time_t t = 315532800;
+
+	// Process date
+	if(date) {
+      c7:	85 db                	test   %ebx,%ebx
+      c9:	74 10                	je     db <_ZN8fs_fat3217convert_timestampEtth+0x37>
+		unsigned int month = (date & 0x1E0) >> 5;
+		unsigned int year = (date & 0xFE00) >> 9;
+
+		t += (date & 0x1F) * 86400; // day
+      cb:	89 d8                	mov    %ebx,%eax
+      cd:	83 e0 1f             	and    $0x1f,%eax
+      d0:	69 c0 80 51 01 00    	imul   $0x15180,%eax,%eax
+      d6:	05 00 a6 ce 12       	add    $0x12cea600,%eax
+	}
+
+	// Process time
+	if(time) {
+      db:	85 c9                	test   %ecx,%ecx
+      dd:	74 2c                	je     10b <_ZN8fs_fat3217convert_timestampEtth+0x67>
+		t += (time & 0x1F) * 2; // stored as multiples of twos
+		t += ((time & 0x7E0) >> 5) * 60;
+		t += ((time & 0xF800) >> 11) * 3600;
+      df:	89 cb                	mov    %ecx,%ebx
+		t += (date & 0x1F) * 86400; // day
+	}
+
+	// Process time
+	if(time) {
+		t += (time & 0x1F) * 2; // stored as multiples of twos
+      e1:	89 ce                	mov    %ecx,%esi
+		t += ((time & 0x7E0) >> 5) * 60;
+		t += ((time & 0xF800) >> 11) * 3600;
+      e3:	c1 eb 0b             	shr    $0xb,%ebx
+	}
+
+	// Process time
+	if(time) {
+		t += (time & 0x1F) * 2; // stored as multiples of twos
+		t += ((time & 0x7E0) >> 5) * 60;
+      e6:	81 e1 e0 07 00 00    	and    $0x7e0,%ecx
+		t += ((time & 0xF800) >> 11) * 3600;
+      ec:	69 db 10 0e 00 00    	imul   $0xe10,%ebx,%ebx
+		t += (date & 0x1F) * 86400; // day
+	}
+
+	// Process time
+	if(time) {
+		t += (time & 0x1F) * 2; // stored as multiples of twos
+      f2:	83 e6 1f             	and    $0x1f,%esi
+		t += ((time & 0x7E0) >> 5) * 60;
+      f5:	c1 f9 05             	sar    $0x5,%ecx
+		t += (date & 0x1F) * 86400; // day
+	}
+
+	// Process time
+	if(time) {
+		t += (time & 0x1F) * 2; // stored as multiples of twos
+      f8:	8d 1c 73             	lea    (%ebx,%esi,2),%ebx
+		t += ((time & 0x7E0) >> 5) * 60;
+      fb:	8d 34 8d 00 00 00 00 	lea    0x0(,%ecx,4),%esi
+     102:	c1 e1 06             	shl    $0x6,%ecx
+     105:	29 f1                	sub    %esi,%ecx
+     107:	01 d9                	add    %ebx,%ecx
+		t += ((time & 0xF800) >> 11) * 3600;
+     109:	01 c8                	add    %ecx,%eax
+	}
+
+	// Milliseconds
+	if(millis) {
+		if(millis > 99) t++;
+     10b:	80 fa 64             	cmp    $0x64,%dl
+     10e:	83 d8 ff             	sbb    $0xffffffff,%eax
+	}
+
+	return t;
+}
+     111:	8b 55 f4             	mov    -0xc(%ebp),%edx
+     114:	33 15 00 00 00 00    	xor    0x0,%edx
+     11a:	75 07                	jne    123 <_ZN8fs_fat3217convert_timestampEtth+0x7f>
+     11c:	83 c4 10             	add    $0x10,%esp
+     11f:	5b                   	pop    %ebx
+     120:	5e                   	pop    %esi
+     121:	5d                   	pop    %ebp
+     122:	c3                   	ret    
+     123:	e8 fc ff ff ff       	call   124 <_ZN8fs_fat3217convert_timestampEtth+0x80>
+
+00000128 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0>:
+
+/*
+ * Converts FAT32-style directory entries into fat_file_t or fat_directory_t
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+     128:	55                   	push   %ebp
+     129:	89 e5                	mov    %esp,%ebp
+     12b:	57                   	push   %edi
+     12c:	56                   	push   %esi
+     12d:	53                   	push   %ebx
+     12e:	81 ec bc 06 00 00    	sub    $0x6bc,%esp
+     134:	89 8d 70 f9 ff ff    	mov    %ecx,-0x690(%ebp)
+     13a:	8b 4d 08             	mov    0x8(%ebp),%ecx
+     13d:	89 8d 64 f9 ff ff    	mov    %ecx,-0x69c(%ebp)
+     143:	8b 0d 00 00 00 00    	mov    0x0,%ecx
+     149:	89 4d e4             	mov    %ecx,-0x1c(%ebp)
+     14c:	31 c9                	xor    %ecx,%ecx
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     14e:	8b 8d 70 f9 ff ff    	mov    -0x690(%ebp),%ecx
+     154:	85 c9                	test   %ecx,%ecx
+     156:	0f 84 b4 00 00 00    	je     210 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xe8>
+     15c:	89 d3                	mov    %edx,%ebx
+     15e:	31 d2                	xor    %edx,%edx
+     160:	c6 85 60 f9 ff ff 00 	movb   $0x0,-0x6a0(%ebp)
+     167:	31 f6                	xor    %esi,%esi
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+					unsigned int newNameLen = 0;
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+     169:	89 c7                	mov    %eax,%edi
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     16b:	89 95 68 f9 ff ff    	mov    %edx,-0x698(%ebp)
+     171:	c6 85 6c f9 ff ff 00 	movb   $0x0,-0x694(%ebp)
+     178:	90                   	nop
+     179:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+		entry = &entries[i];
+
+		// Is this entry usable?
+		if(entry->name[0] != 0xE5 && entry->name[0] != 0x00) {
+     180:	0f b6 03             	movzbl (%ebx),%eax
+     183:	84 c0                	test   %al,%al
+     185:	0f 84 a5 00 00 00    	je     230 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x108>
+     18b:	3c e5                	cmp    $0xe5,%al
+     18d:	0f 84 9d 00 00 00    	je     230 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x108>
+			// Clear state
+			item = NULL;
+
+			// Long Filenames
+			if((entry->attributes & FAT_ATTR_LFN) == FAT_ATTR_LFN) {
+     193:	0f b6 53 0b          	movzbl 0xb(%ebx),%edx
+     197:	89 d1                	mov    %edx,%ecx
+     199:	83 e1 0f             	and    $0xf,%ecx
+     19c:	83 f9 0f             	cmp    $0xf,%ecx
+     19f:	0f 84 ab 00 00 00    	je     250 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x128>
+					}
+
+					// Copy checksum
+					longname_checksum = ln->checksum;
+				}
+			} else if(entry->attributes & FAT_ATTR_DIRECTORY) { // directory
+     1a5:	f6 c2 10             	test   $0x10,%dl
+     1a8:	0f 85 82 01 00 00    	jne    330 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x208>
+					item = &dir->i;
+
+					// Add directory as child
+					list_add(root->children, dir);
+				}
+			} else if(entry->attributes & FAT_ATTR_VOLUME_ID) { // Volume label
+     1ae:	f6 c2 08             	test   $0x8,%dl
+     1b1:	0f 84 b9 02 00 00    	je     470 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x348>
+				if(volumeLabel) {
+     1b7:	8b 57 14             	mov    0x14(%edi),%edx
+     1ba:	31 c0                	xor    %eax,%eax
+     1bc:	85 d2                	test   %edx,%edx
+     1be:	74 14                	je     1d4 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xac>
+					memclr(volumeLabel, 16);
+     1c0:	b9 10 00 00 00       	mov    $0x10,%ecx
+     1c5:	89 4c 24 04          	mov    %ecx,0x4(%esp)
+     1c9:	89 14 24             	mov    %edx,(%esp)
+     1cc:	e8 fc ff ff ff       	call   1cd <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xa5>
+     1d1:	8b 47 14             	mov    0x14(%edi),%eax
+				}
+
+				memcpy(volumeLabel, &entry->name, 11);
+     1d4:	ba 0b 00 00 00       	mov    $0xb,%edx
+     1d9:	89 54 24 08          	mov    %edx,0x8(%esp)
+     1dd:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+     1e1:	89 04 24             	mov    %eax,(%esp)
+     1e4:	e8 fc ff ff ff       	call   1e5 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xbd>
+
+				// Trim spaces at the end
+				for(unsigned int i = 10; i > 0; i--) {
+     1e9:	b8 0a 00 00 00       	mov    $0xa,%eax
+     1ee:	66 90                	xchg   %ax,%ax
+					if(volumeLabel[i] == ' ') {
+     1f0:	8b 57 14             	mov    0x14(%edi),%edx
+     1f3:	01 c2                	add    %eax,%edx
+     1f5:	80 3a 20             	cmpb   $0x20,(%edx)
+     1f8:	75 06                	jne    200 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xd8>
+				}
+
+				memcpy(volumeLabel, &entry->name, 11);
+
+				// Trim spaces at the end
+				for(unsigned int i = 10; i > 0; i--) {
+     1fa:	48                   	dec    %eax
+					if(volumeLabel[i] == ' ') {
+						volumeLabel[i] = 0x00;
+     1fb:	c6 02 00             	movb   $0x0,(%edx)
+				}
+
+				memcpy(volumeLabel, &entry->name, 11);
+
+				// Trim spaces at the end
+				for(unsigned int i = 10; i > 0; i--) {
+     1fe:	75 f0                	jne    1f0 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xc8>
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     200:	46                   	inc    %esi
+     201:	83 c3 20             	add    $0x20,%ebx
+     204:	3b b5 70 f9 ff ff    	cmp    -0x690(%ebp),%esi
+     20a:	0f 85 70 ff ff ff    	jne    180 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x58>
+		}
+	}
+
+	// Perform some cleanup after the conversion finishes.
+	done: ;
+}
+     210:	8b 45 e4             	mov    -0x1c(%ebp),%eax
+     213:	33 05 00 00 00 00    	xor    0x0,%eax
+     219:	0f 85 6a 05 00 00    	jne    789 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x661>
+     21f:	81 c4 bc 06 00 00    	add    $0x6bc,%esp
+     225:	5b                   	pop    %ebx
+     226:	5e                   	pop    %esi
+     227:	5f                   	pop    %edi
+     228:	5d                   	pop    %ebp
+     229:	c3                   	ret    
+     22a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+				 * To speed up file reads, store the first cluster of this file
+				 * in the low 32 bits of the userData field of the item.
+				 */
+				item->userData = (entry->cluster_high << 16) | (entry->cluster_low);
+			}
+		} else if(entry->name[0] == 0x00) {
+     230:	84 c0                	test   %al,%al
+     232:	74 dc                	je     210 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xe8>
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     234:	46                   	inc    %esi
+     235:	83 c3 20             	add    $0x20,%ebx
+     238:	3b b5 70 f9 ff ff    	cmp    -0x690(%ebp),%esi
+     23e:	0f 85 3c ff ff ff    	jne    180 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x58>
+     244:	eb ca                	jmp    210 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xe8>
+     246:	8d 76 00             	lea    0x0(%esi),%esi
+     249:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+			if((entry->attributes & FAT_ATTR_LFN) == FAT_ATTR_LFN) {
+				// Get longname entry
+				fat_longname_dirent_t *ln = (fat_longname_dirent_t *) entry;
+
+				// Ignore invalid longname entries
+				if(ln->type == 0) {
+     250:	80 7b 0c 00          	cmpb   $0x0,0xc(%ebx)
+     254:	75 aa                	jne    200 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xd8>
+					foundLongName = true;
+
+					unsigned int longname_offset = (ln->order & 0x3F) - 1;
+     256:	0f b6 c0             	movzbl %al,%eax
+     259:	89 c1                	mov    %eax,%ecx
+     25b:	83 e1 3f             	and    $0x3f,%ecx
+
+					// Last entry?
+					if(ln->order & 0x40) {
+						longname_num = longname_offset + 1;
+     25e:	a8 40                	test   $0x40,%al
+
+				// Ignore invalid longname entries
+				if(ln->type == 0) {
+					foundLongName = true;
+
+					unsigned int longname_offset = (ln->order & 0x3F) - 1;
+     260:	8d 51 ff             	lea    -0x1(%ecx),%edx
+
+					// Last entry?
+					if(ln->order & 0x40) {
+						longname_num = longname_offset + 1;
+     263:	0f 44 8d 68 f9 ff ff 	cmove  -0x698(%ebp),%ecx
+
+					// Copy strings
+					unsigned int c = 0;
+
+					for(c = 0; c < 5; c++){
+						longname_buffer[longname_offset].name1[c] = ln->name1[c];
+     26a:	8d 04 52             	lea    (%edx,%edx,2),%eax
+     26d:	8d 04 82             	lea    (%edx,%eax,4),%eax
+     270:	0f b7 53 01          	movzwl 0x1(%ebx),%edx
+
+					unsigned int longname_offset = (ln->order & 0x3F) - 1;
+
+					// Last entry?
+					if(ln->order & 0x40) {
+						longname_num = longname_offset + 1;
+     274:	89 8d 68 f9 ff ff    	mov    %ecx,-0x698(%ebp)
+
+					// Copy strings
+					unsigned int c = 0;
+
+					for(c = 0; c < 5; c++){
+						longname_buffer[longname_offset].name1[c] = ln->name1[c];
+     27a:	89 c1                	mov    %eax,%ecx
+     27c:	01 c9                	add    %ecx,%ecx
+     27e:	89 85 74 f9 ff ff    	mov    %eax,-0x68c(%ebp)
+     284:	8d 45 e8             	lea    -0x18(%ebp),%eax
+     287:	01 c8                	add    %ecx,%eax
+     289:	66 89 90 96 f9 ff ff 	mov    %dx,-0x66a(%eax)
+     290:	0f b7 53 03          	movzwl 0x3(%ebx),%edx
+     294:	66 89 90 98 f9 ff ff 	mov    %dx,-0x668(%eax)
+     29b:	0f b7 53 05          	movzwl 0x5(%ebx),%edx
+     29f:	66 89 90 9a f9 ff ff 	mov    %dx,-0x666(%eax)
+     2a6:	0f b7 53 07          	movzwl 0x7(%ebx),%edx
+     2aa:	66 89 90 9c f9 ff ff 	mov    %dx,-0x664(%eax)
+     2b1:	0f b7 53 09          	movzwl 0x9(%ebx),%edx
+     2b5:	66 89 90 9e f9 ff ff 	mov    %dx,-0x662(%eax)
+
+/*
+ * Converts FAT32-style directory entries into fat_file_t or fat_directory_t
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+     2bc:	8d 95 7e f9 ff ff    	lea    -0x682(%ebp),%edx
+
+					// Copy strings
+					unsigned int c = 0;
+
+					for(c = 0; c < 5; c++){
+						longname_buffer[longname_offset].name1[c] = ln->name1[c];
+     2c2:	31 c0                	xor    %eax,%eax
+
+/*
+ * Converts FAT32-style directory entries into fat_file_t or fat_directory_t
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+     2c4:	01 d1                	add    %edx,%ecx
+     2c6:	8d 76 00             	lea    0x0(%esi),%esi
+     2c9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+					for(c = 0; c < 5; c++){
+						longname_buffer[longname_offset].name1[c] = ln->name1[c];
+					}
+
+					for(c = 0; c < 6; c++){
+						longname_buffer[longname_offset].name2[c] = ln->name2[c];
+     2d0:	0f b7 54 43 0e       	movzwl 0xe(%ebx,%eax,2),%edx
+     2d5:	66 89 54 41 0a       	mov    %dx,0xa(%ecx,%eax,2)
+
+					for(c = 0; c < 5; c++){
+						longname_buffer[longname_offset].name1[c] = ln->name1[c];
+					}
+
+					for(c = 0; c < 6; c++){
+     2da:	40                   	inc    %eax
+     2db:	83 f8 06             	cmp    $0x6,%eax
+     2de:	75 f0                	jne    2d0 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x1a8>
+						longname_buffer[longname_offset].name2[c] = ln->name2[c];
+					}
+
+					for(c = 0; c < 2; c++){
+						longname_buffer[longname_offset].name3[c] = ln->name3[c];
+     2e0:	8b 8d 74 f9 ff ff    	mov    -0x68c(%ebp),%ecx
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     2e6:	46                   	inc    %esi
+					for(c = 0; c < 6; c++){
+						longname_buffer[longname_offset].name2[c] = ln->name2[c];
+					}
+
+					for(c = 0; c < 2; c++){
+						longname_buffer[longname_offset].name3[c] = ln->name3[c];
+     2e7:	0f b7 53 1c          	movzwl 0x1c(%ebx),%edx
+				// Get longname entry
+				fat_longname_dirent_t *ln = (fat_longname_dirent_t *) entry;
+
+				// Ignore invalid longname entries
+				if(ln->type == 0) {
+					foundLongName = true;
+     2eb:	c6 85 6c f9 ff ff 01 	movb   $0x1,-0x694(%ebp)
+					for(c = 0; c < 6; c++){
+						longname_buffer[longname_offset].name2[c] = ln->name2[c];
+					}
+
+					for(c = 0; c < 2; c++){
+						longname_buffer[longname_offset].name3[c] = ln->name3[c];
+     2f2:	8d 44 4d e8          	lea    -0x18(%ebp,%ecx,2),%eax
+     2f6:	66 89 90 ac f9 ff ff 	mov    %dx,-0x654(%eax)
+     2fd:	0f b7 53 1e          	movzwl 0x1e(%ebx),%edx
+     301:	66 89 90 ae f9 ff ff 	mov    %dx,-0x652(%eax)
+					}
+
+					// Copy checksum
+					longname_checksum = ln->checksum;
+     308:	0f b6 53 0d          	movzbl 0xd(%ebx),%edx
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     30c:	83 c3 20             	add    $0x20,%ebx
+     30f:	3b b5 70 f9 ff ff    	cmp    -0x690(%ebp),%esi
+					for(c = 0; c < 2; c++){
+						longname_buffer[longname_offset].name3[c] = ln->name3[c];
+					}
+
+					// Copy checksum
+					longname_checksum = ln->checksum;
+     315:	88 95 60 f9 ff ff    	mov    %dl,-0x6a0(%ebp)
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     31b:	0f 85 5f fe ff ff    	jne    180 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x58>
+     321:	e9 ea fe ff ff       	jmp    210 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xe8>
+     326:	8d 76 00             	lea    0x0(%esi),%esi
+     329:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+		/*
+		 * Extracts the 8.3 filename for a directory entry, and formats it as a 14-byte
+		 * character string.
+		 */
+		static char* dirent_get_8_3_name(fat_dirent_t *d) {
+			char *buf = (char *) kmalloc(16);
+     330:	c7 04 24 10 00 00 00 	movl   $0x10,(%esp)
+     337:	e8 fc ff ff ff       	call   338 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x210>
+     33c:	89 c2                	mov    %eax,%edx
+			memclr(buf, 16);
+     33e:	b8 10 00 00 00       	mov    $0x10,%eax
+     343:	89 14 24             	mov    %edx,(%esp)
+     346:	89 95 54 f9 ff ff    	mov    %edx,-0x6ac(%ebp)
+     34c:	89 44 24 04          	mov    %eax,0x4(%esp)
+     350:	e8 fc ff ff ff       	call   351 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x229>
+
+			unsigned int c = 0;
+     355:	8b 95 54 f9 ff ff    	mov    -0x6ac(%ebp),%edx
+     35b:	31 c9                	xor    %ecx,%ecx
+     35d:	8d 76 00             	lea    0x0(%esi),%esi
+
+			// Copy filename
+			for(int i = 0; i < 8; i++) {
+				if(d->name[i] != ' ') {
+     360:	0f b6 04 0b          	movzbl (%ebx,%ecx,1),%eax
+     364:	3c 20                	cmp    $0x20,%al
+     366:	74 09                	je     371 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x249>
+					buf[c++] = d->name[i];
+     368:	88 04 0a             	mov    %al,(%edx,%ecx,1)
+     36b:	41                   	inc    %ecx
+			memclr(buf, 16);
+
+			unsigned int c = 0;
+
+			// Copy filename
+			for(int i = 0; i < 8; i++) {
+     36c:	83 f9 08             	cmp    $0x8,%ecx
+     36f:	75 ef                	jne    360 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x238>
+					break;
+				}
+			}
+
+			// Dot
+			if(!(d->attributes & FAT_ATTR_DIRECTORY)) {
+     371:	f6 43 0b 10          	testb  $0x10,0xb(%ebx)
+     375:	75 05                	jne    37c <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x254>
+				buf[c++] = '.';
+     377:	c6 04 0a 2e          	movb   $0x2e,(%edx,%ecx,1)
+     37b:	41                   	inc    %ecx
+		 */
+		static char* dirent_get_8_3_name(fat_dirent_t *d) {
+			char *buf = (char *) kmalloc(16);
+			memclr(buf, 16);
+
+			unsigned int c = 0;
+     37c:	31 c0                	xor    %eax,%eax
+     37e:	89 b5 74 f9 ff ff    	mov    %esi,-0x68c(%ebp)
+     384:	89 c6                	mov    %eax,%esi
+				buf[c++] = '.';
+			}
+
+			// Extension
+			for(int i = 0; i < 3; i++) {
+				if(d->ext[i] != ' ') {
+     386:	0f b6 44 33 08       	movzbl 0x8(%ebx,%esi,1),%eax
+     38b:	3c 20                	cmp    $0x20,%al
+     38d:	0f 84 3d 03 00 00    	je     6d0 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x5a8>
+			if(!(d->attributes & FAT_ATTR_DIRECTORY)) {
+				buf[c++] = '.';
+			}
+
+			// Extension
+			for(int i = 0; i < 3; i++) {
+     393:	46                   	inc    %esi
+				if(d->ext[i] != ' ') {
+					buf[c++] = d->ext[i];
+     394:	88 04 0a             	mov    %al,(%edx,%ecx,1)
+     397:	41                   	inc    %ecx
+			if(!(d->attributes & FAT_ATTR_DIRECTORY)) {
+				buf[c++] = '.';
+			}
+
+			// Extension
+			for(int i = 0; i < 3; i++) {
+     398:	83 fe 03             	cmp    $0x3,%esi
+     39b:	75 e9                	jne    386 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x25e>
+     39d:	8b b5 74 f9 ff ff    	mov    -0x68c(%ebp),%esi
+				}
+			} else if(entry->attributes & FAT_ATTR_DIRECTORY) { // directory
+				char *name = fs_fat32::dirent_get_8_3_name(entry);
+
+				// Ignore dot and dotdot
+				if(strcmp(".", name) && strcmp("..", name)) {
+     3a3:	89 54 24 04          	mov    %edx,0x4(%esp)
+     3a7:	89 95 54 f9 ff ff    	mov    %edx,-0x6ac(%ebp)
+     3ad:	c7 04 24 2c 16 00 00 	movl   $0x162c,(%esp)
+     3b4:	e8 fc ff ff ff       	call   3b5 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x28d>
+     3b9:	8b 95 54 f9 ff ff    	mov    -0x6ac(%ebp),%edx
+     3bf:	85 c0                	test   %eax,%eax
+     3c1:	0f 84 39 fe ff ff    	je     200 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xd8>
+     3c7:	89 54 24 04          	mov    %edx,0x4(%esp)
+     3cb:	c7 04 24 2e 16 00 00 	movl   $0x162e,(%esp)
+     3d2:	e8 fc ff ff ff       	call   3d3 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x2ab>
+     3d7:	8b 95 54 f9 ff ff    	mov    -0x6ac(%ebp),%edx
+     3dd:	85 c0                	test   %eax,%eax
+     3df:	0f 84 1b fe ff ff    	je     200 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xd8>
+					// Lowercase directory name?
+					if((entry->nt_reserved & 0x08) || (entry->nt_reserved & 0x10)) {
+     3e5:	0f b6 43 0c          	movzbl 0xc(%ebx),%eax
+     3e9:	31 c9                	xor    %ecx,%ecx
+     3eb:	a8 18                	test   $0x18,%al
+     3ed:	74 30                	je     41f <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x2f7>
+     3ef:	89 b5 74 f9 ff ff    	mov    %esi,-0x68c(%ebp)
+     3f5:	89 ce                	mov    %ecx,%esi
+     3f7:	89 f6                	mov    %esi,%esi
+     3f9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+						for(unsigned int c = 0; c < 11; c++) {
+							name[c] = tolower(name[c]);
+     400:	0f b6 04 32          	movzbl (%edx,%esi,1),%eax
+     404:	88 c1                	mov    %al,%cl
+     406:	80 e9 41             	sub    $0x41,%cl
+     409:	80 f9 19             	cmp    $0x19,%cl
+     40c:	77 02                	ja     410 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x2e8>
+     40e:	04 20                	add    $0x20,%al
+     410:	88 04 32             	mov    %al,(%edx,%esi,1)
+
+				// Ignore dot and dotdot
+				if(strcmp(".", name) && strcmp("..", name)) {
+					// Lowercase directory name?
+					if((entry->nt_reserved & 0x08) || (entry->nt_reserved & 0x10)) {
+						for(unsigned int c = 0; c < 11; c++) {
+     413:	46                   	inc    %esi
+     414:	83 fe 0b             	cmp    $0xb,%esi
+     417:	75 e7                	jne    400 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x2d8>
+     419:	8b b5 74 f9 ff ff    	mov    -0x68c(%ebp),%esi
+							name[c] = tolower(name[c]);
+						}
+					}
+
+					fs_directory_t *dir = hal_vfs_allocate_directory(true);
+     41f:	89 95 54 f9 ff ff    	mov    %edx,-0x6ac(%ebp)
+     425:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
+     42c:	e8 fc ff ff ff       	call   42d <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x305>
+					dir->i.name = name;
+     431:	8b 95 54 f9 ff ff    	mov    -0x6ac(%ebp),%edx
+					dir->parent = root->i.handle;
+     437:	8b 8d 64 f9 ff ff    	mov    -0x69c(%ebp),%ecx
+							name[c] = tolower(name[c]);
+						}
+					}
+
+					fs_directory_t *dir = hal_vfs_allocate_directory(true);
+					dir->i.name = name;
+     43d:	89 50 04             	mov    %edx,0x4(%eax)
+					dir->parent = root->i.handle;
+     440:	8b 51 14             	mov    0x14(%ecx),%edx
+     443:	89 50 2c             	mov    %edx,0x2c(%eax)
+					item = &dir->i;
+     446:	89 c2                	mov    %eax,%edx
+
+					// Add directory as child
+					list_add(root->children, dir);
+     448:	89 44 24 04          	mov    %eax,0x4(%esp)
+     44c:	8b 41 30             	mov    0x30(%ecx),%eax
+     44f:	89 95 54 f9 ff ff    	mov    %edx,-0x6ac(%ebp)
+     455:	89 04 24             	mov    %eax,(%esp)
+     458:	e8 fc ff ff ff       	call   459 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x331>
+     45d:	8b 95 54 f9 ff ff    	mov    -0x6ac(%ebp),%edx
+     463:	e9 10 01 00 00       	jmp    578 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x450>
+     468:	90                   	nop
+     469:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+						break;
+					}
+				}
+			} else { // regular file
+				// Allocate a file object
+				fs_file_t *file = hal_vfs_allocate_file(root);
+     470:	8b 95 64 f9 ff ff    	mov    -0x69c(%ebp),%edx
+     476:	89 14 24             	mov    %edx,(%esp)
+     479:	e8 fc ff ff ff       	call   47a <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x352>
+				file->size = entry->filesize;
+     47e:	8b 4b 1c             	mov    0x1c(%ebx),%ecx
+
+				unsigned int c = 0;
+
+				// Handle long name
+				if(foundLongName) {
+     481:	80 bd 6c f9 ff ff 00 	cmpb   $0x0,-0x694(%ebp)
+						break;
+					}
+				}
+			} else { // regular file
+				// Allocate a file object
+				fs_file_t *file = hal_vfs_allocate_file(root);
+     488:	89 85 74 f9 ff ff    	mov    %eax,-0x68c(%ebp)
+				file->size = entry->filesize;
+     48e:	89 48 34             	mov    %ecx,0x34(%eax)
+     491:	c7 40 38 00 00 00 00 	movl   $0x0,0x38(%eax)
+
+				unsigned int c = 0;
+
+				// Handle long name
+				if(foundLongName) {
+     498:	0f 85 92 01 00 00    	jne    630 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x508>
+
+					longname_checksum = longname_num = 0;
+					foundLongName = false;
+				} else {
+					// Lowercase basename?
+					if(entry->nt_reserved & 0x08) {
+     49e:	0f b6 4b 0c          	movzbl 0xc(%ebx),%ecx
+     4a2:	f6 c1 08             	test   $0x8,%cl
+     4a5:	89 8d 6c f9 ff ff    	mov    %ecx,-0x694(%ebp)
+     4ab:	74 1c                	je     4c9 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x3a1>
+     4ad:	31 c9                	xor    %ecx,%ecx
+     4af:	90                   	nop
+						for(c = 0; c < 8; c++) {
+							entry->name[c] = tolower(entry->name[c]);
+     4b0:	0f b6 04 0b          	movzbl (%ebx,%ecx,1),%eax
+     4b4:	88 c2                	mov    %al,%dl
+     4b6:	80 ea 41             	sub    $0x41,%dl
+     4b9:	80 fa 19             	cmp    $0x19,%dl
+     4bc:	77 02                	ja     4c0 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x398>
+     4be:	04 20                	add    $0x20,%al
+     4c0:	88 04 0b             	mov    %al,(%ebx,%ecx,1)
+					longname_checksum = longname_num = 0;
+					foundLongName = false;
+				} else {
+					// Lowercase basename?
+					if(entry->nt_reserved & 0x08) {
+						for(c = 0; c < 8; c++) {
+     4c3:	41                   	inc    %ecx
+     4c4:	83 f9 08             	cmp    $0x8,%ecx
+     4c7:	75 e7                	jne    4b0 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x388>
+							entry->name[c] = tolower(entry->name[c]);
+						}
+					} 
+
+					// Lowercase extension?
+					if(entry->nt_reserved & 0x10) {
+     4c9:	f6 85 6c f9 ff ff 10 	testb  $0x10,-0x694(%ebp)
+     4d0:	74 1d                	je     4ef <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x3c7>
+     4d2:	31 c9                	xor    %ecx,%ecx
+						for(c = 0; c < 3; c++) {
+							entry->ext[c] = tolower(entry->ext[c]);
+     4d4:	0f b6 44 0b 08       	movzbl 0x8(%ebx,%ecx,1),%eax
+     4d9:	88 c2                	mov    %al,%dl
+     4db:	80 ea 41             	sub    $0x41,%dl
+     4de:	80 fa 19             	cmp    $0x19,%dl
+     4e1:	77 02                	ja     4e5 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x3bd>
+     4e3:	04 20                	add    $0x20,%al
+     4e5:	88 44 0b 08          	mov    %al,0x8(%ebx,%ecx,1)
+						}
+					} 
+
+					// Lowercase extension?
+					if(entry->nt_reserved & 0x10) {
+						for(c = 0; c < 3; c++) {
+     4e9:	41                   	inc    %ecx
+     4ea:	83 f9 03             	cmp    $0x3,%ecx
+     4ed:	75 e5                	jne    4d4 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x3ac>
+		/*
+		 * Extracts the 8.3 filename for a directory entry, and formats it as a 14-byte
+		 * character string.
+		 */
+		static char* dirent_get_8_3_name(fat_dirent_t *d) {
+			char *buf = (char *) kmalloc(16);
+     4ef:	c7 04 24 10 00 00 00 	movl   $0x10,(%esp)
+     4f6:	e8 fc ff ff ff       	call   4f7 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x3cf>
+     4fb:	89 c2                	mov    %eax,%edx
+			memclr(buf, 16);
+     4fd:	b8 10 00 00 00       	mov    $0x10,%eax
+     502:	89 14 24             	mov    %edx,(%esp)
+     505:	89 95 54 f9 ff ff    	mov    %edx,-0x6ac(%ebp)
+     50b:	89 44 24 04          	mov    %eax,0x4(%esp)
+     50f:	e8 fc ff ff ff       	call   510 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x3e8>
+
+			unsigned int c = 0;
+     514:	8b 95 54 f9 ff ff    	mov    -0x6ac(%ebp),%edx
+     51a:	31 c9                	xor    %ecx,%ecx
+     51c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+
+			// Copy filename
+			for(int i = 0; i < 8; i++) {
+				if(d->name[i] != ' ') {
+     520:	0f b6 04 0b          	movzbl (%ebx,%ecx,1),%eax
+     524:	3c 20                	cmp    $0x20,%al
+     526:	74 09                	je     531 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x409>
+					buf[c++] = d->name[i];
+     528:	88 04 0a             	mov    %al,(%edx,%ecx,1)
+     52b:	41                   	inc    %ecx
+			memclr(buf, 16);
+
+			unsigned int c = 0;
+
+			// Copy filename
+			for(int i = 0; i < 8; i++) {
+     52c:	83 f9 08             	cmp    $0x8,%ecx
+     52f:	75 ef                	jne    520 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x3f8>
+					break;
+				}
+			}
+
+			// Dot
+			if(!(d->attributes & FAT_ATTR_DIRECTORY)) {
+     531:	f6 43 0b 10          	testb  $0x10,0xb(%ebx)
+     535:	0f 84 e5 00 00 00    	je     620 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x4f8>
+		 */
+		static char* dirent_get_8_3_name(fat_dirent_t *d) {
+			char *buf = (char *) kmalloc(16);
+			memclr(buf, 16);
+
+			unsigned int c = 0;
+     53b:	31 c0                	xor    %eax,%eax
+     53d:	89 b5 6c f9 ff ff    	mov    %esi,-0x694(%ebp)
+     543:	89 c6                	mov    %eax,%esi
+				buf[c++] = '.';
+			}
+
+			// Extension
+			for(int i = 0; i < 3; i++) {
+				if(d->ext[i] != ' ') {
+     545:	0f b6 44 33 08       	movzbl 0x8(%ebx,%esi,1),%eax
+     54a:	3c 20                	cmp    $0x20,%al
+     54c:	0f 84 8d 01 00 00    	je     6df <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x5b7>
+			if(!(d->attributes & FAT_ATTR_DIRECTORY)) {
+				buf[c++] = '.';
+			}
+
+			// Extension
+			for(int i = 0; i < 3; i++) {
+     552:	46                   	inc    %esi
+				if(d->ext[i] != ' ') {
+					buf[c++] = d->ext[i];
+     553:	88 04 0a             	mov    %al,(%edx,%ecx,1)
+     556:	41                   	inc    %ecx
+			if(!(d->attributes & FAT_ATTR_DIRECTORY)) {
+				buf[c++] = '.';
+			}
+
+			// Extension
+			for(int i = 0; i < 3; i++) {
+     557:	83 fe 03             	cmp    $0x3,%esi
+     55a:	75 e9                	jne    545 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x41d>
+     55c:	8b b5 6c f9 ff ff    	mov    -0x694(%ebp),%esi
+						}
+					}
+
+					// Regular shortname
+					char *name = fs_fat32::dirent_get_8_3_name(entry);
+					file->i.name = name;
+     562:	8b 85 74 f9 ff ff    	mov    -0x68c(%ebp),%eax
+     568:	89 50 04             	mov    %edx,0x4(%eax)
+				}
+
+				// Save the item
+				item = &file->i;
+     56b:	8b 95 74 f9 ff ff    	mov    -0x68c(%ebp),%edx
+     571:	c6 85 6c f9 ff ff 00 	movb   $0x0,-0x694(%ebp)
+			}
+
+			// Set flags
+			if(item) {
+				item->is_hidden = (entry->attributes & FAT_ATTR_HIDDEN);
+     578:	f6 43 0b 02          	testb  $0x2,0xb(%ebx)
+     57c:	0f 95 42 0e          	setne  0xe(%edx)
+				item->is_system = (entry->attributes & FAT_ATTR_SYSTEM);
+     580:	f6 43 0b 04          	testb  $0x4,0xb(%ebx)
+     584:	0f 95 42 0f          	setne  0xf(%edx)
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     588:	46                   	inc    %esi
+
+			// Set flags
+			if(item) {
+				item->is_hidden = (entry->attributes & FAT_ATTR_HIDDEN);
+				item->is_system = (entry->attributes & FAT_ATTR_SYSTEM);
+				item->is_readonly = (entry->attributes & FAT_ATTR_READ_ONLY);
+     589:	0f b6 43 0b          	movzbl 0xb(%ebx),%eax
+     58d:	83 e0 01             	and    $0x1,%eax
+     590:	88 42 10             	mov    %al,0x10(%edx)
+
+				// Convert the timestamps
+				item->time_created = this->convert_timestamp(entry->created_date, entry->created_time, 0);
+				item->time_written = this->convert_timestamp(entry->write_date, entry->write_time, 0);
+     593:	31 c0                	xor    %eax,%eax
+     595:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     599:	0f b7 43 16          	movzwl 0x16(%ebx),%eax
+     59d:	89 44 24 08          	mov    %eax,0x8(%esp)
+     5a1:	0f b7 43 18          	movzwl 0x18(%ebx),%eax
+     5a5:	89 3c 24             	mov    %edi,(%esp)
+     5a8:	89 95 54 f9 ff ff    	mov    %edx,-0x6ac(%ebp)
+     5ae:	89 44 24 04          	mov    %eax,0x4(%esp)
+     5b2:	e8 fc ff ff ff       	call   5b3 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x48b>
+     5b7:	8b 95 54 f9 ff ff    	mov    -0x6ac(%ebp),%edx
+				item->time_created = this->convert_timestamp(entry->accessed_date, 0, 0);
+     5bd:	31 c9                	xor    %ecx,%ecx
+				item->is_system = (entry->attributes & FAT_ATTR_SYSTEM);
+				item->is_readonly = (entry->attributes & FAT_ATTR_READ_ONLY);
+
+				// Convert the timestamps
+				item->time_created = this->convert_timestamp(entry->created_date, entry->created_time, 0);
+				item->time_written = this->convert_timestamp(entry->write_date, entry->write_time, 0);
+     5bf:	89 42 1c             	mov    %eax,0x1c(%edx)
+				item->time_created = this->convert_timestamp(entry->accessed_date, 0, 0);
+     5c2:	31 d2                	xor    %edx,%edx
+     5c4:	89 54 24 0c          	mov    %edx,0xc(%esp)
+     5c8:	89 4c 24 08          	mov    %ecx,0x8(%esp)
+     5cc:	0f b7 43 12          	movzwl 0x12(%ebx),%eax
+     5d0:	89 3c 24             	mov    %edi,(%esp)
+     5d3:	89 44 24 04          	mov    %eax,0x4(%esp)
+     5d7:	e8 fc ff ff ff       	call   5d8 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x4b0>
+     5dc:	8b 95 54 f9 ff ff    	mov    -0x6ac(%ebp),%edx
+     5e2:	89 42 18             	mov    %eax,0x18(%edx)
+
+				/*
+				 * To speed up file reads, store the first cluster of this file
+				 * in the low 32 bits of the userData field of the item.
+				 */
+				item->userData = (entry->cluster_high << 16) | (entry->cluster_low);
+     5e5:	0f b7 43 14          	movzwl 0x14(%ebx),%eax
+     5e9:	0f b7 4b 1a          	movzwl 0x1a(%ebx),%ecx
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     5ed:	83 c3 20             	add    $0x20,%ebx
+
+				/*
+				 * To speed up file reads, store the first cluster of this file
+				 * in the low 32 bits of the userData field of the item.
+				 */
+				item->userData = (entry->cluster_high << 16) | (entry->cluster_low);
+     5f0:	c1 e0 10             	shl    $0x10,%eax
+     5f3:	09 c8                	or     %ecx,%eax
+     5f5:	89 c1                	mov    %eax,%ecx
+     5f7:	c1 f9 1f             	sar    $0x1f,%ecx
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     5fa:	3b b5 70 f9 ff ff    	cmp    -0x690(%ebp),%esi
+
+				/*
+				 * To speed up file reads, store the first cluster of this file
+				 * in the low 32 bits of the userData field of the item.
+				 */
+				item->userData = (entry->cluster_high << 16) | (entry->cluster_low);
+     600:	89 42 24             	mov    %eax,0x24(%edx)
+     603:	89 4a 28             	mov    %ecx,0x28(%edx)
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+     606:	0f 85 74 fb ff ff    	jne    180 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x58>
+     60c:	e9 ff fb ff ff       	jmp    210 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0xe8>
+     611:	eb 0d                	jmp    620 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x4f8>
+     613:	90                   	nop
+     614:	90                   	nop
+     615:	90                   	nop
+     616:	90                   	nop
+     617:	90                   	nop
+     618:	90                   	nop
+     619:	90                   	nop
+     61a:	90                   	nop
+     61b:	90                   	nop
+     61c:	90                   	nop
+     61d:	90                   	nop
+     61e:	90                   	nop
+     61f:	90                   	nop
+				}
+			}
+
+			// Dot
+			if(!(d->attributes & FAT_ATTR_DIRECTORY)) {
+				buf[c++] = '.';
+     620:	c6 04 0a 2e          	movb   $0x2e,(%edx,%ecx,1)
+     624:	41                   	inc    %ecx
+     625:	e9 11 ff ff ff       	jmp    53b <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x413>
+     62a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+				unsigned int c = 0;
+
+				// Handle long name
+				if(foundLongName) {
+					// Allocate memory
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+     630:	8b 95 68 f9 ff ff    	mov    -0x698(%ebp),%edx
+     636:	8d 04 52             	lea    (%edx,%edx,2),%eax
+     639:	8d 44 82 01          	lea    0x1(%edx,%eax,4),%eax
+     63d:	89 04 24             	mov    %eax,(%esp)
+     640:	e8 fc ff ff ff       	call   641 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x519>
+
+/*
+ * Converts FAT32-style directory entries into fat_file_t or fat_directory_t
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+     645:	8d 4b 0b             	lea    0xb(%ebx),%ecx
+					// Allocate memory
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+					unsigned int newNameLen = 0;
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+     648:	89 da                	mov    %ebx,%edx
+
+/*
+ * Converts FAT32-style directory entries into fat_file_t or fat_directory_t
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+     64a:	89 8d 5c f9 ff ff    	mov    %ecx,-0x6a4(%ebp)
+	uint16_t FcbNameLen;
+	uint8_t sum = 0;
+
+	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+		// NOTE: The operation is an unsigned char rotate right
+		sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + *shortName++;
+     650:	31 c9                	xor    %ecx,%ecx
+     652:	89 b5 58 f9 ff ff    	mov    %esi,-0x6a8(%ebp)
+     658:	89 de                	mov    %ebx,%esi
+     65a:	8b 9d 5c f9 ff ff    	mov    -0x6a4(%ebp),%ebx
+				unsigned int c = 0;
+
+				// Handle long name
+				if(foundLongName) {
+					// Allocate memory
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+     660:	89 85 6c f9 ff ff    	mov    %eax,-0x694(%ebp)
+	uint16_t FcbNameLen;
+	uint8_t sum = 0;
+
+	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+		// NOTE: The operation is an unsigned char rotate right
+		sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + *shortName++;
+     666:	31 c0                	xor    %eax,%eax
+     668:	eb 17                	jmp    681 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x559>
+     66a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+     670:	0f b6 c8             	movzbl %al,%ecx
+     673:	89 c8                	mov    %ecx,%eax
+     675:	83 e0 01             	and    $0x1,%eax
+     678:	83 f8 01             	cmp    $0x1,%eax
+     67b:	19 c0                	sbb    %eax,%eax
+     67d:	f6 d0                	not    %al
+     67f:	24 80                	and    $0x80,%al
+     681:	02 02                	add    (%edx),%al
+     683:	42                   	inc    %edx
+     684:	d1 f9                	sar    %ecx
+     686:	00 c8                	add    %cl,%al
+ */
+uint8_t fs_fat32::lfnCheckSum(unsigned char *shortName) {
+	uint16_t FcbNameLen;
+	uint8_t sum = 0;
+
+	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+     688:	39 da                	cmp    %ebx,%edx
+     68a:	75 e4                	jne    670 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x548>
+					// Allocate memory
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+					unsigned int newNameLen = 0;
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+     68c:	38 85 60 f9 ff ff    	cmp    %al,-0x6a0(%ebp)
+     692:	89 f3                	mov    %esi,%ebx
+     694:	8b b5 58 f9 ff ff    	mov    -0x6a8(%ebp),%esi
+     69a:	74 52                	je     6ee <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x5c6>
+
+						longname_done: ;
+					}
+
+					// Free old name and save new
+					kfree(file->i.name);
+     69c:	8b 8d 74 f9 ff ff    	mov    -0x68c(%ebp),%ecx
+     6a2:	8b 41 04             	mov    0x4(%ecx),%eax
+     6a5:	89 04 24             	mov    %eax,(%esp)
+     6a8:	e8 fc ff ff ff       	call   6a9 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x581>
+					file->i.name = newName;
+     6ad:	8b 85 74 f9 ff ff    	mov    -0x68c(%ebp),%eax
+     6b3:	8b 95 6c f9 ff ff    	mov    -0x694(%ebp),%edx
+
+					longname_checksum = longname_num = 0;
+     6b9:	c6 85 60 f9 ff ff 00 	movb   $0x0,-0x6a0(%ebp)
+						longname_done: ;
+					}
+
+					// Free old name and save new
+					kfree(file->i.name);
+					file->i.name = newName;
+     6c0:	89 50 04             	mov    %edx,0x4(%eax)
+
+					longname_checksum = longname_num = 0;
+     6c3:	31 c0                	xor    %eax,%eax
+     6c5:	89 85 68 f9 ff ff    	mov    %eax,-0x698(%ebp)
+     6cb:	e9 9b fe ff ff       	jmp    56b <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x443>
+     6d0:	8b b5 74 f9 ff ff    	mov    -0x68c(%ebp),%esi
+			// Extension
+			for(int i = 0; i < 3; i++) {
+				if(d->ext[i] != ' ') {
+					buf[c++] = d->ext[i];
+				} else {
+					buf[c] = 0;
+     6d6:	c6 04 0a 00          	movb   $0x0,(%edx,%ecx,1)
+     6da:	e9 c4 fc ff ff       	jmp    3a3 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x27b>
+     6df:	8b b5 6c f9 ff ff    	mov    -0x694(%ebp),%esi
+     6e5:	c6 04 0a 00          	movb   $0x0,(%edx,%ecx,1)
+     6e9:	e9 74 fe ff ff       	jmp    562 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x43a>
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+					unsigned int newNameLen = 0;
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+     6ee:	8b 85 68 f9 ff ff    	mov    -0x698(%ebp),%eax
+     6f4:	85 c0                	test   %eax,%eax
+     6f6:	74 a4                	je     69c <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x574>
+     6f8:	89 9d 58 f9 ff ff    	mov    %ebx,-0x6a8(%ebp)
+     6fe:	8b 9d 6c f9 ff ff    	mov    -0x694(%ebp),%ebx
+     704:	31 c0                	xor    %eax,%eax
+     706:	89 85 60 f9 ff ff    	mov    %eax,-0x6a0(%ebp)
+     70c:	8d 8d 7e f9 ff ff    	lea    -0x682(%ebp),%ecx
+     712:	31 c0                	xor    %eax,%eax
+     714:	89 b5 5c f9 ff ff    	mov    %esi,-0x6a4(%ebp)
+	uint16_t FcbNameLen;
+	uint8_t sum = 0;
+
+	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+		// NOTE: The operation is an unsigned char rotate right
+		sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + *shortName++;
+     71a:	31 d2                	xor    %edx,%edx
+     71c:	89 c6                	mov    %eax,%esi
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+							// Copy characters
+							for(c = 0; c < 5; c++){
+								if(longname_buffer[l].name1[c]) {
+     71e:	0f b7 04 51          	movzwl (%ecx,%edx,2),%eax
+     722:	85 c0                	test   %eax,%eax
+     724:	74 52                	je     778 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x650>
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+							// Copy characters
+							for(c = 0; c < 5; c++){
+     726:	42                   	inc    %edx
+								if(longname_buffer[l].name1[c]) {
+									newName[newNameLen++] = longname_buffer[l].name1[c];
+     727:	88 04 33             	mov    %al,(%ebx,%esi,1)
+     72a:	46                   	inc    %esi
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+							// Copy characters
+							for(c = 0; c < 5; c++){
+     72b:	83 fa 05             	cmp    $0x5,%edx
+     72e:	75 ee                	jne    71e <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x5f6>
+     730:	31 d2                	xor    %edx,%edx
+									goto longname_done;
+								}
+							}
+
+							for(c = 0; c < 6; c++){
+								if(longname_buffer[l].name2[c]) {
+     732:	0f b7 44 51 0a       	movzwl 0xa(%ecx,%edx,2),%eax
+     737:	85 c0                	test   %eax,%eax
+     739:	74 3d                	je     778 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x650>
+								} else {
+									goto longname_done;
+								}
+							}
+
+							for(c = 0; c < 6; c++){
+     73b:	42                   	inc    %edx
+								if(longname_buffer[l].name2[c]) {
+									newName[newNameLen++] = longname_buffer[l].name2[c];
+     73c:	88 04 33             	mov    %al,(%ebx,%esi,1)
+     73f:	46                   	inc    %esi
+								} else {
+									goto longname_done;
+								}
+							}
+
+							for(c = 0; c < 6; c++){
+     740:	83 fa 06             	cmp    $0x6,%edx
+     743:	75 ed                	jne    732 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x60a>
+									goto longname_done;
+								}
+							}
+
+							for(c = 0; c < 2; c++){
+								if(longname_buffer[l].name3[c]) {
+     745:	0f b7 51 16          	movzwl 0x16(%ecx),%edx
+     749:	89 f0                	mov    %esi,%eax
+     74b:	85 d2                	test   %edx,%edx
+     74d:	74 29                	je     778 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x650>
+									newName[newNameLen++] = longname_buffer[l].name3[c];
+     74f:	88 14 33             	mov    %dl,(%ebx,%esi,1)
+									goto longname_done;
+								}
+							}
+
+							for(c = 0; c < 2; c++){
+								if(longname_buffer[l].name3[c]) {
+     752:	0f b7 51 18          	movzwl 0x18(%ecx),%edx
+     756:	85 d2                	test   %edx,%edx
+     758:	74 1e                	je     778 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x650>
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+					unsigned int newNameLen = 0;
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+     75a:	ff 85 60 f9 ff ff    	incl   -0x6a0(%ebp)
+								}
+							}
+
+							for(c = 0; c < 2; c++){
+								if(longname_buffer[l].name3[c]) {
+									newName[newNameLen++] = longname_buffer[l].name3[c];
+     760:	83 c0 02             	add    $0x2,%eax
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+					unsigned int newNameLen = 0;
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+     763:	83 c1 1a             	add    $0x1a,%ecx
+								}
+							}
+
+							for(c = 0; c < 2; c++){
+								if(longname_buffer[l].name3[c]) {
+									newName[newNameLen++] = longname_buffer[l].name3[c];
+     766:	88 54 33 01          	mov    %dl,0x1(%ebx,%esi,1)
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+					unsigned int newNameLen = 0;
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+     76a:	8b 95 68 f9 ff ff    	mov    -0x698(%ebp),%edx
+     770:	39 95 60 f9 ff ff    	cmp    %edx,-0x6a0(%ebp)
+     776:	75 a2                	jne    71a <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x5f2>
+     778:	8b b5 5c f9 ff ff    	mov    -0x6a4(%ebp),%esi
+     77e:	8b 9d 58 f9 ff ff    	mov    -0x6a8(%ebp),%ebx
+     784:	e9 13 ff ff ff       	jmp    69c <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x574>
+		}
+	}
+
+	// Perform some cleanup after the conversion finishes.
+	done: ;
+}
+     789:	e8 fc ff ff ff       	call   78a <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0+0x662>
+     78e:	66 90                	xchg   %ax,%ax
+
+00000790 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory>:
+
+/*
+ * Converts FAT32-style directory entries into fat_file_t or fat_directory_t
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+     790:	55                   	push   %ebp
+     791:	89 e5                	mov    %esp,%ebp
+     793:	83 ec 38             	sub    $0x38,%esp
+     796:	89 5d f8             	mov    %ebx,-0x8(%ebp)
+     799:	8b 5d 14             	mov    0x14(%ebp),%ebx
+     79c:	89 75 fc             	mov    %esi,-0x4(%ebp)
+     79f:	8b 45 08             	mov    0x8(%ebp),%eax
+     7a2:	8b 35 00 00 00 00    	mov    0x0,%esi
+     7a8:	89 75 f4             	mov    %esi,-0xc(%ebp)
+     7ab:	31 f6                	xor    %esi,%esi
+     7ad:	8b 55 0c             	mov    0xc(%ebp),%edx
+     7b0:	8b 4d 10             	mov    0x10(%ebp),%ecx
+	// Sanity checking
+	ASSERT(root);
+     7b3:	85 db                	test   %ebx,%ebx
+     7b5:	0f 84 95 00 00 00    	je     850 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0xc0>
+	ASSERT(entries);
+     7bb:	85 d2                	test   %edx,%edx
+     7bd:	74 51                	je     810 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0x80>
+
+	if(!number) {
+     7bf:	85 c9                	test   %ecx,%ecx
+     7c1:	74 2d                	je     7f0 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0x60>
+     7c3:	8b 75 f4             	mov    -0xc(%ebp),%esi
+     7c6:	33 35 00 00 00 00    	xor    0x0,%esi
+     7cc:	0f 85 b3 00 00 00    	jne    885 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0xf5>
+     7d2:	89 5d 08             	mov    %ebx,0x8(%ebp)
+		}
+	}
+
+	// Perform some cleanup after the conversion finishes.
+	done: ;
+}
+     7d5:	8b 75 fc             	mov    -0x4(%ebp),%esi
+     7d8:	8b 5d f8             	mov    -0x8(%ebp),%ebx
+     7db:	89 ec                	mov    %ebp,%esp
+     7dd:	5d                   	pop    %ebp
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+	// Sanity checking
+	ASSERT(root);
+	ASSERT(entries);
+
+	if(!number) {
+     7de:	e9 45 f9 ff ff       	jmp    128 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory.part.0>
+     7e3:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+     7e9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+		}
+	}
+
+	// Perform some cleanup after the conversion finishes.
+	done: ;
+}
+     7f0:	8b 45 f4             	mov    -0xc(%ebp),%eax
+     7f3:	33 05 00 00 00 00    	xor    0x0,%eax
+     7f9:	0f 85 86 00 00 00    	jne    885 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0xf5>
+     7ff:	8b 5d f8             	mov    -0x8(%ebp),%ebx
+     802:	8b 75 fc             	mov    -0x4(%ebp),%esi
+     805:	89 ec                	mov    %ebp,%esp
+     807:	5d                   	pop    %ebp
+     808:	c3                   	ret    
+     809:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+	// Sanity checking
+	ASSERT(root);
+	ASSERT(entries);
+     810:	be 40 16 00 00       	mov    $0x1640,%esi
+     815:	89 74 24 08          	mov    %esi,0x8(%esp)
+     819:	be 77 01 00 00       	mov    $0x177,%esi
+     81e:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+     821:	89 55 e0             	mov    %edx,-0x20(%ebp)
+     824:	89 4d dc             	mov    %ecx,-0x24(%ebp)
+     827:	89 74 24 04          	mov    %esi,0x4(%esp)
+     82b:	c7 04 24 36 16 00 00 	movl   $0x1636,(%esp)
+     832:	e8 fc ff ff ff       	call   833 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0xa3>
+     837:	8b 4d dc             	mov    -0x24(%ebp),%ecx
+     83a:	8b 55 e0             	mov    -0x20(%ebp),%edx
+     83d:	8b 45 e4             	mov    -0x1c(%ebp),%eax
+     840:	e9 7a ff ff ff       	jmp    7bf <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0x2f>
+     845:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+     849:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+ * Converts FAT32-style directory entries into fat_file_t or fat_directory_t
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+	// Sanity checking
+	ASSERT(root);
+     850:	be 31 16 00 00       	mov    $0x1631,%esi
+     855:	89 74 24 08          	mov    %esi,0x8(%esp)
+     859:	be 76 01 00 00       	mov    $0x176,%esi
+     85e:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+     861:	89 55 e0             	mov    %edx,-0x20(%ebp)
+     864:	89 4d dc             	mov    %ecx,-0x24(%ebp)
+     867:	89 74 24 04          	mov    %esi,0x4(%esp)
+     86b:	c7 04 24 36 16 00 00 	movl   $0x1636,(%esp)
+     872:	e8 fc ff ff ff       	call   873 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0xe3>
+     877:	8b 4d dc             	mov    -0x24(%ebp),%ecx
+     87a:	8b 55 e0             	mov    -0x20(%ebp),%edx
+     87d:	8b 45 e4             	mov    -0x1c(%ebp),%eax
+     880:	e9 36 ff ff ff       	jmp    7bb <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0x2b>
+		}
+	}
+
+	// Perform some cleanup after the conversion finishes.
+	done: ;
+}
+     885:	e8 fc ff ff ff       	call   886 <_ZN8fs_fat3216processFATDirEntEP12fat_dirent_tjP12fs_directory+0xf6>
+     88a:	66 90                	xchg   %ax,%ax
+
+0000088c <_ZN8fs_fat3224fatEntryOffsetForClusterEj>:
+ * Calculates a cluster's offset into the FAT. The returned structure indicates
+ * the sector to read, and the dword offset into that sector. In other words,
+ * if the sector is read as an array of bytes, the offset must be multiplied
+ * by four.
+ */
+fat32_secoff_t fs_fat32::fatEntryOffsetForCluster(unsigned int cluster) {
+     88c:	55                   	push   %ebp
+     88d:	89 e5                	mov    %esp,%ebp
+     88f:	83 ec 18             	sub    $0x18,%esp
+     892:	89 5d f8             	mov    %ebx,-0x8(%ebp)
+     895:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+     898:	89 75 fc             	mov    %esi,-0x4(%ebp)
+     89b:	8b 45 10             	mov    0x10(%ebp),%eax
+     89e:	8b 15 00 00 00 00    	mov    0x0,%edx
+     8a4:	89 55 f4             	mov    %edx,-0xc(%ebp)
+     8a7:	31 d2                	xor    %edx,%edx
+
+	// Number of FAT entries per cluster
+	unsigned int entries_per_cluster = cluster_size / 4;
+
+	// Determine size of FAT and normalise cluster
+	offset.sector = bpb.reserved_sector_count + (cluster / entries_per_cluster);
+     8a9:	31 d2                	xor    %edx,%edx
+ * Calculates a cluster's offset into the FAT. The returned structure indicates
+ * the sector to read, and the dword offset into that sector. In other words,
+ * if the sector is read as an array of bytes, the offset must be multiplied
+ * by four.
+ */
+fat32_secoff_t fs_fat32::fatEntryOffsetForCluster(unsigned int cluster) {
+     8ab:	8b 4d 08             	mov    0x8(%ebp),%ecx
+	fat32_secoff_t offset;
+
+	// Number of FAT entries per cluster
+	unsigned int entries_per_cluster = cluster_size / 4;
+     8ae:	8b b3 84 02 00 00    	mov    0x284(%ebx),%esi
+
+	// Determine size of FAT and normalise cluster
+	offset.sector = bpb.reserved_sector_count + (cluster / entries_per_cluster);
+     8b4:	0f b7 5b 26          	movzwl 0x26(%ebx),%ebx
+ */
+fat32_secoff_t fs_fat32::fatEntryOffsetForCluster(unsigned int cluster) {
+	fat32_secoff_t offset;
+
+	// Number of FAT entries per cluster
+	unsigned int entries_per_cluster = cluster_size / 4;
+     8b8:	c1 ee 02             	shr    $0x2,%esi
+
+	// Determine size of FAT and normalise cluster
+	offset.sector = bpb.reserved_sector_count + (cluster / entries_per_cluster);
+     8bb:	f7 f6                	div    %esi
+     8bd:	01 d8                	add    %ebx,%eax
+	offset.offset = cluster % entries_per_cluster;
+     8bf:	89 51 04             	mov    %edx,0x4(%ecx)
+
+	return offset;
+}
+     8c2:	8b 55 f4             	mov    -0xc(%ebp),%edx
+     8c5:	33 15 00 00 00 00    	xor    0x0,%edx
+
+	// Number of FAT entries per cluster
+	unsigned int entries_per_cluster = cluster_size / 4;
+
+	// Determine size of FAT and normalise cluster
+	offset.sector = bpb.reserved_sector_count + (cluster / entries_per_cluster);
+     8cb:	89 01                	mov    %eax,(%ecx)
+	offset.offset = cluster % entries_per_cluster;
+
+	return offset;
+}
+     8cd:	89 c8                	mov    %ecx,%eax
+     8cf:	75 0c                	jne    8dd <_ZN8fs_fat3224fatEntryOffsetForClusterEj+0x51>
+     8d1:	8b 5d f8             	mov    -0x8(%ebp),%ebx
+     8d4:	8b 75 fc             	mov    -0x4(%ebp),%esi
+     8d7:	89 ec                	mov    %ebp,%esp
+     8d9:	5d                   	pop    %ebp
+     8da:	c2 04 00             	ret    $0x4
+     8dd:	e8 fc ff ff ff       	call   8de <_ZN8fs_fat3224fatEntryOffsetForClusterEj+0x52>
+     8e2:	66 90                	xchg   %ax,%ax
+
+000008e4 <_ZN8fs_fat3222clusterChainForClusterEj>:
+ * Follows the cluster chain to find all clusters on which the specified
+ * starting cluster has data. This *can* be slow.
+ *
+ * Note that the array returned is terminated by FAT32_END_CHAIN.
+ */
+unsigned int *fs_fat32::clusterChainForCluster(unsigned int cluster) {
+     8e4:	55                   	push   %ebp
+     8e5:	89 e5                	mov    %esp,%ebp
+     8e7:	57                   	push   %edi
+     8e8:	56                   	push   %esi
+     8e9:	53                   	push   %ebx
+     8ea:	83 ec 4c             	sub    $0x4c,%esp
+     8ed:	8b 7d 0c             	mov    0xc(%ebp),%edi
+     8f0:	a1 00 00 00 00       	mov    0x0,%eax
+     8f5:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+     8f8:	31 c0                	xor    %eax,%eax
+     8fa:	8b 5d 08             	mov    0x8(%ebp),%ebx
+	unsigned int chain_len = 32;
+	unsigned int chain_offset = 0;
+	unsigned int *chain = (unsigned int *) kmalloc(sizeof(unsigned int) * chain_len);
+     8fd:	c7 04 24 80 00 00 00 	movl   $0x80,(%esp)
+     904:	e8 fc ff ff ff       	call   905 <_ZN8fs_fat3222clusterChainForClusterEj+0x21>
+	unsigned int err;
+
+	fat32_secoff_t off;
+
+	// Guard against broken FS implementations
+	if(cluster == 0) {
+     909:	85 ff                	test   %edi,%edi
+ * Note that the array returned is terminated by FAT32_END_CHAIN.
+ */
+unsigned int *fs_fat32::clusterChainForCluster(unsigned int cluster) {
+	unsigned int chain_len = 32;
+	unsigned int chain_offset = 0;
+	unsigned int *chain = (unsigned int *) kmalloc(sizeof(unsigned int) * chain_len);
+     90b:	89 45 d0             	mov    %eax,-0x30(%ebp)
+	unsigned int err;
+
+	fat32_secoff_t off;
+
+	// Guard against broken FS implementations
+	if(cluster == 0) {
+     90e:	0f 84 ec 00 00 00    	je     a00 <_ZN8fs_fat3222clusterChainForClusterEj+0x11c>
+	// Place the initial cluster as the first entry in the chain.
+	chain[chain_offset++] = cluster;
+
+	// Repeat until the end is reached (marked by FAT32_END_CHAIN)
+	unsigned int nextCluster = cluster;
+	while(nextCluster != FAT32_END_CHAIN) {
+     914:	81 ff f8 ff ff 0f    	cmp    $0xffffff8,%edi
+	if(cluster == 0) {
+		cluster = 2;
+	}
+
+	// Place the initial cluster as the first entry in the chain.
+	chain[chain_offset++] = cluster;
+     91a:	89 38                	mov    %edi,(%eax)
+
+	// Repeat until the end is reached (marked by FAT32_END_CHAIN)
+	unsigned int nextCluster = cluster;
+	while(nextCluster != FAT32_END_CHAIN) {
+     91c:	0f 84 be 00 00 00    	je     9e0 <_ZN8fs_fat3222clusterChainForClusterEj+0xfc>
+ * Follows the cluster chain to find all clusters on which the specified
+ * starting cluster has data. This *can* be slow.
+ *
+ * Note that the array returned is terminated by FAT32_END_CHAIN.
+ */
+unsigned int *fs_fat32::clusterChainForCluster(unsigned int cluster) {
+     922:	be 01 00 00 00       	mov    $0x1,%esi
+     927:	c7 45 cc 20 00 00 00 	movl   $0x20,-0x34(%ebp)
+     92e:	eb 13                	jmp    943 <_ZN8fs_fat3222clusterChainForClusterEj+0x5f>
+			chain_len += 32;
+			chain = (unsigned int *) krealloc(chain, sizeof(unsigned int) * chain_len);
+		}
+
+		// Write into chain array
+		chain[chain_offset++] = nextCluster & FAT32_MASK;
+     930:	8b 45 d0             	mov    -0x30(%ebp),%eax
+     933:	89 3c b0             	mov    %edi,(%eax,%esi,4)
+     936:	46                   	inc    %esi
+	// Place the initial cluster as the first entry in the chain.
+	chain[chain_offset++] = cluster;
+
+	// Repeat until the end is reached (marked by FAT32_END_CHAIN)
+	unsigned int nextCluster = cluster;
+	while(nextCluster != FAT32_END_CHAIN) {
+     937:	81 ff f8 ff ff 0f    	cmp    $0xffffff8,%edi
+     93d:	0f 84 9d 00 00 00    	je     9e0 <_ZN8fs_fat3222clusterChainForClusterEj+0xfc>
+ */
+fat32_secoff_t fs_fat32::fatEntryOffsetForCluster(unsigned int cluster) {
+	fat32_secoff_t offset;
+
+	// Number of FAT entries per cluster
+	unsigned int entries_per_cluster = cluster_size / 4;
+     943:	8b 8b 84 02 00 00    	mov    0x284(%ebx),%ecx
+
+	// Determine size of FAT and normalise cluster
+	offset.sector = bpb.reserved_sector_count + (cluster / entries_per_cluster);
+     949:	89 f8                	mov    %edi,%eax
+     94b:	31 d2                	xor    %edx,%edx
+ */
+fat32_secoff_t fs_fat32::fatEntryOffsetForCluster(unsigned int cluster) {
+	fat32_secoff_t offset;
+
+	// Number of FAT entries per cluster
+	unsigned int entries_per_cluster = cluster_size / 4;
+     94d:	c1 e9 02             	shr    $0x2,%ecx
+
+	// Determine size of FAT and normalise cluster
+	offset.sector = bpb.reserved_sector_count + (cluster / entries_per_cluster);
+     950:	f7 f1                	div    %ecx
+     952:	89 d7                	mov    %edx,%edi
+     954:	0f b7 53 26          	movzwl 0x26(%ebx),%edx
+     958:	01 c2                	add    %eax,%edx
+	while(nextCluster != FAT32_END_CHAIN) {
+		// Read the FAT for this sector
+		off = this->fatEntryOffsetForCluster(nextCluster);
+
+		// Read out cluster
+		if(this->read_sectors(off.sector, bpb.sectors_per_cluster, fatBuffer, &err)) {
+     95a:	8d 45 e0             	lea    -0x20(%ebp),%eax
+     95d:	89 44 24 10          	mov    %eax,0x10(%esp)
+     961:	8b 83 88 02 00 00    	mov    0x288(%ebx),%eax
+
+	// Number of FAT entries per cluster
+	unsigned int entries_per_cluster = cluster_size / 4;
+
+	// Determine size of FAT and normalise cluster
+	offset.sector = bpb.reserved_sector_count + (cluster / entries_per_cluster);
+     967:	89 55 d4             	mov    %edx,-0x2c(%ebp)
+	while(nextCluster != FAT32_END_CHAIN) {
+		// Read the FAT for this sector
+		off = this->fatEntryOffsetForCluster(nextCluster);
+
+		// Read out cluster
+		if(this->read_sectors(off.sector, bpb.sectors_per_cluster, fatBuffer, &err)) {
+     96a:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     96e:	0f b6 43 25          	movzbl 0x25(%ebx),%eax
+     972:	89 54 24 04          	mov    %edx,0x4(%esp)
+     976:	89 1c 24             	mov    %ebx,(%esp)
+     979:	89 44 24 08          	mov    %eax,0x8(%esp)
+     97d:	e8 fc ff ff ff       	call   97e <_ZN8fs_fat3222clusterChainForClusterEj+0x9a>
+     982:	85 c0                	test   %eax,%eax
+     984:	0f 84 96 00 00 00    	je     a20 <_ZN8fs_fat3222clusterChainForClusterEj+0x13c>
+			nextCluster = fatBuffer[off.offset];
+     98a:	8b 83 88 02 00 00    	mov    0x288(%ebx),%eax
+			goto error;
+		}
+
+		// Is this the end of the chain?
+		if(nextCluster >= FAT32_END_CHAIN) {
+			nextCluster = FAT32_END_CHAIN;
+     990:	ba f8 ff ff 0f       	mov    $0xffffff8,%edx
+		// Read the FAT for this sector
+		off = this->fatEntryOffsetForCluster(nextCluster);
+
+		// Read out cluster
+		if(this->read_sectors(off.sector, bpb.sectors_per_cluster, fatBuffer, &err)) {
+			nextCluster = fatBuffer[off.offset];
+     995:	8d 3c b8             	lea    (%eax,%edi,4),%edi
+     998:	8b 3f                	mov    (%edi),%edi
+			goto error;
+		}
+
+		// Is this the end of the chain?
+		if(nextCluster >= FAT32_END_CHAIN) {
+			nextCluster = FAT32_END_CHAIN;
+     99a:	81 ff f8 ff ff 0f    	cmp    $0xffffff8,%edi
+     9a0:	0f 43 fa             	cmovae %edx,%edi
+		}
+
+		// Expand chain buffer
+		if(chain_offset == chain_len) {
+     9a3:	3b 75 cc             	cmp    -0x34(%ebp),%esi
+     9a6:	75 88                	jne    930 <_ZN8fs_fat3222clusterChainForClusterEj+0x4c>
+			chain_len += 32;
+     9a8:	8d 56 20             	lea    0x20(%esi),%edx
+ * Follows the cluster chain to find all clusters on which the specified
+ * starting cluster has data. This *can* be slow.
+ *
+ * Note that the array returned is terminated by FAT32_END_CHAIN.
+ */
+unsigned int *fs_fat32::clusterChainForCluster(unsigned int cluster) {
+     9ab:	89 d0                	mov    %edx,%eax
+     9ad:	c1 e0 02             	shl    $0x2,%eax
+		}
+
+		// Expand chain buffer
+		if(chain_offset == chain_len) {
+			chain_len += 32;
+			chain = (unsigned int *) krealloc(chain, sizeof(unsigned int) * chain_len);
+     9b0:	89 44 24 04          	mov    %eax,0x4(%esp)
+     9b4:	8b 45 d0             	mov    -0x30(%ebp),%eax
+			nextCluster = FAT32_END_CHAIN;
+		}
+
+		// Expand chain buffer
+		if(chain_offset == chain_len) {
+			chain_len += 32;
+     9b7:	89 55 cc             	mov    %edx,-0x34(%ebp)
+			chain = (unsigned int *) krealloc(chain, sizeof(unsigned int) * chain_len);
+     9ba:	89 04 24             	mov    %eax,(%esp)
+     9bd:	e8 fc ff ff ff       	call   9be <_ZN8fs_fat3222clusterChainForClusterEj+0xda>
+     9c2:	89 45 d0             	mov    %eax,-0x30(%ebp)
+		}
+
+		// Write into chain array
+		chain[chain_offset++] = nextCluster & FAT32_MASK;
+     9c5:	8b 45 d0             	mov    -0x30(%ebp),%eax
+     9c8:	89 3c b0             	mov    %edi,(%eax,%esi,4)
+     9cb:	46                   	inc    %esi
+	// Place the initial cluster as the first entry in the chain.
+	chain[chain_offset++] = cluster;
+
+	// Repeat until the end is reached (marked by FAT32_END_CHAIN)
+	unsigned int nextCluster = cluster;
+	while(nextCluster != FAT32_END_CHAIN) {
+     9cc:	81 ff f8 ff ff 0f    	cmp    $0xffffff8,%edi
+     9d2:	0f 85 6b ff ff ff    	jne    943 <_ZN8fs_fat3222clusterChainForClusterEj+0x5f>
+     9d8:	90                   	nop
+     9d9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+
+	// Handle an error condition
+	error: ;
+	kfree(chain);
+	return NULL;
+}
+     9e0:	8b 55 e4             	mov    -0x1c(%ebp),%edx
+     9e3:	33 15 00 00 00 00    	xor    0x0,%edx
+     9e9:	8b 45 d0             	mov    -0x30(%ebp),%eax
+     9ec:	75 62                	jne    a50 <_ZN8fs_fat3222clusterChainForClusterEj+0x16c>
+     9ee:	83 c4 4c             	add    $0x4c,%esp
+     9f1:	5b                   	pop    %ebx
+     9f2:	5e                   	pop    %esi
+     9f3:	5f                   	pop    %edi
+     9f4:	5d                   	pop    %ebp
+     9f5:	c3                   	ret    
+     9f6:	8d 76 00             	lea    0x0(%esi),%esi
+     9f9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+	if(cluster == 0) {
+		cluster = 2;
+	}
+
+	// Place the initial cluster as the first entry in the chain.
+	chain[chain_offset++] = cluster;
+     a00:	8b 45 d0             	mov    -0x30(%ebp),%eax
+
+	fat32_secoff_t off;
+
+	// Guard against broken FS implementations
+	if(cluster == 0) {
+		cluster = 2;
+     a03:	bf 02 00 00 00       	mov    $0x2,%edi
+	}
+
+	// Place the initial cluster as the first entry in the chain.
+	chain[chain_offset++] = cluster;
+     a08:	c7 00 02 00 00 00    	movl   $0x2,(%eax)
+     a0e:	e9 0f ff ff ff       	jmp    922 <_ZN8fs_fat3222clusterChainForClusterEj+0x3e>
+     a13:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+     a19:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+     a20:	8b 7d d4             	mov    -0x2c(%ebp),%edi
+
+		// Read out cluster
+		if(this->read_sectors(off.sector, bpb.sectors_per_cluster, fatBuffer, &err)) {
+			nextCluster = fatBuffer[off.offset];
+		} else { // read error?
+			KERROR("Couldn't read sector %u for FAT", off.sector);
+     a23:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+     a2a:	89 7c 24 08          	mov    %edi,0x8(%esp)
+     a2e:	bf e0 16 00 00       	mov    $0x16e0,%edi
+     a33:	89 7c 24 04          	mov    %edi,0x4(%esp)
+     a37:	e8 fc ff ff ff       	call   a38 <_ZN8fs_fat3222clusterChainForClusterEj+0x154>
+
+	return chain;
+
+	// Handle an error condition
+	error: ;
+	kfree(chain);
+     a3c:	8b 45 d0             	mov    -0x30(%ebp),%eax
+     a3f:	89 04 24             	mov    %eax,(%esp)
+     a42:	e8 fc ff ff ff       	call   a43 <_ZN8fs_fat3222clusterChainForClusterEj+0x15f>
+	return NULL;
+     a47:	c7 45 d0 00 00 00 00 	movl   $0x0,-0x30(%ebp)
+     a4e:	eb 90                	jmp    9e0 <_ZN8fs_fat3222clusterChainForClusterEj+0xfc>
+}
+     a50:	e8 fc ff ff ff       	call   a51 <_ZN8fs_fat3222clusterChainForClusterEj+0x16d>
+     a55:	90                   	nop
+     a56:	66 90                	xchg   %ax,%ax
+
+00000a58 <_ZN8fs_fat3211readClusterEjPvPj>:
+
+/*
+ * Reads the specified cluster.
+ */
+void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *error) {
+     a58:	55                   	push   %ebp
+     a59:	89 e5                	mov    %esp,%ebp
+     a5b:	53                   	push   %ebx
+     a5c:	83 ec 34             	sub    $0x34,%esp
+     a5f:	8b 55 08             	mov    0x8(%ebp),%edx
+     a62:	a1 00 00 00 00       	mov    0x0,%eax
+     a67:	89 45 f4             	mov    %eax,-0xc(%ebp)
+     a6a:	31 c0                	xor    %eax,%eax
+	unsigned int sector = ((cluster - 2) * bpb.sectors_per_cluster) + first_data_sector;
+
+	if(!this->read_sectors(sector, bpb.sectors_per_cluster, buffer, error)) {
+     a6c:	8b 45 14             	mov    0x14(%ebp),%eax
+}
+
+/*
+ * Reads the specified cluster.
+ */
+void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *error) {
+     a6f:	8b 5d 10             	mov    0x10(%ebp),%ebx
+	unsigned int sector = ((cluster - 2) * bpb.sectors_per_cluster) + first_data_sector;
+     a72:	0f b6 4a 25          	movzbl 0x25(%edx),%ecx
+
+	if(!this->read_sectors(sector, bpb.sectors_per_cluster, buffer, error)) {
+     a76:	89 44 24 10          	mov    %eax,0x10(%esp)
+
+/*
+ * Reads the specified cluster.
+ */
+void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *error) {
+	unsigned int sector = ((cluster - 2) * bpb.sectors_per_cluster) + first_data_sector;
+     a7a:	8b 45 0c             	mov    0xc(%ebp),%eax
+
+	if(!this->read_sectors(sector, bpb.sectors_per_cluster, buffer, error)) {
+     a7d:	89 5c 24 0c          	mov    %ebx,0xc(%esp)
+     a81:	89 4c 24 08          	mov    %ecx,0x8(%esp)
+
+/*
+ * Reads the specified cluster.
+ */
+void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *error) {
+	unsigned int sector = ((cluster - 2) * bpb.sectors_per_cluster) + first_data_sector;
+     a85:	83 e8 02             	sub    $0x2,%eax
+     a88:	0f af c1             	imul   %ecx,%eax
+     a8b:	8b 8a 80 02 00 00    	mov    0x280(%edx),%ecx
+
+	if(!this->read_sectors(sector, bpb.sectors_per_cluster, buffer, error)) {
+     a91:	89 14 24             	mov    %edx,(%esp)
+
+/*
+ * Reads the specified cluster.
+ */
+void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *error) {
+	unsigned int sector = ((cluster - 2) * bpb.sectors_per_cluster) + first_data_sector;
+     a94:	01 c8                	add    %ecx,%eax
+
+	if(!this->read_sectors(sector, bpb.sectors_per_cluster, buffer, error)) {
+     a96:	89 44 24 04          	mov    %eax,0x4(%esp)
+     a9a:	e8 fc ff ff ff       	call   a9b <_ZN8fs_fat3211readClusterEjPvPj+0x43>
+		return NULL;
+     a9f:	85 c0                	test   %eax,%eax
+     aa1:	b8 00 00 00 00       	mov    $0x0,%eax
+     aa6:	0f 44 d8             	cmove  %eax,%ebx
+	}
+
+	return buffer;
+}
+     aa9:	8b 55 f4             	mov    -0xc(%ebp),%edx
+     aac:	33 15 00 00 00 00    	xor    0x0,%edx
+     ab2:	89 d8                	mov    %ebx,%eax
+     ab4:	75 06                	jne    abc <_ZN8fs_fat3211readClusterEjPvPj+0x64>
+     ab6:	83 c4 34             	add    $0x34,%esp
+     ab9:	5b                   	pop    %ebx
+     aba:	5d                   	pop    %ebp
+     abb:	c3                   	ret    
+     abc:	e8 fc ff ff ff       	call   abd <_ZN8fs_fat3211readClusterEjPvPj+0x65>
+     ac1:	90                   	nop
+     ac2:	66 90                	xchg   %ax,%ax
+
+00000ac4 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj>:
+}
+
+/*
+ * Reads the directory file (index of files in the directory) of a directory.
+ */
+fat_dirent_t *fs_fat32::read_dir_file(fs_directory_t *parent, char *childName, unsigned int *entries) {
+     ac4:	55                   	push   %ebp
+     ac5:	89 e5                	mov    %esp,%ebp
+     ac7:	57                   	push   %edi
+     ac8:	56                   	push   %esi
+     ac9:	53                   	push   %ebx
+     aca:	83 ec 3c             	sub    $0x3c,%esp
+     acd:	8b 75 0c             	mov    0xc(%ebp),%esi
+     ad0:	8b 5d 14             	mov    0x14(%ebp),%ebx
+     ad3:	a1 00 00 00 00       	mov    0x0,%eax
+     ad8:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+     adb:	31 c0                	xor    %eax,%eax
+     add:	8b 55 10             	mov    0x10(%ebp),%edx
+     ae0:	8b 7d 08             	mov    0x8(%ebp),%edi
+	fs_directory_t *target = NULL;
+
+	// Locate the child
+	for(unsigned int i = 0; i < parent->children->num_entries; i++) {
+     ae3:	8b 46 30             	mov    0x30(%esi),%eax
+}
+
+/*
+ * Reads the directory file (index of files in the directory) of a directory.
+ */
+fat_dirent_t *fs_fat32::read_dir_file(fs_directory_t *parent, char *childName, unsigned int *entries) {
+     ae6:	89 5d cc             	mov    %ebx,-0x34(%ebp)
+     ae9:	89 55 d0             	mov    %edx,-0x30(%ebp)
+
+		return buffer;
+	}
+
+	// Directory not found
+	return NULL;
+     aec:	c7 45 d4 00 00 00 00 	movl   $0x0,-0x2c(%ebp)
+ */
+fat_dirent_t *fs_fat32::read_dir_file(fs_directory_t *parent, char *childName, unsigned int *entries) {
+	fs_directory_t *target = NULL;
+
+	// Locate the child
+	for(unsigned int i = 0; i < parent->children->num_entries; i++) {
+     af3:	8b 58 08             	mov    0x8(%eax),%ebx
+     af6:	85 db                	test   %ebx,%ebx
+     af8:	0f 84 31 01 00 00    	je     c2f <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x16b>
+     afe:	89 7d d4             	mov    %edi,-0x2c(%ebp)
+     b01:	31 db                	xor    %ebx,%ebx
+     b03:	89 f7                	mov    %esi,%edi
+     b05:	eb 16                	jmp    b1d <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x59>
+     b07:	89 f6                	mov    %esi,%esi
+     b09:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+     b10:	8b 47 30             	mov    0x30(%edi),%eax
+     b13:	43                   	inc    %ebx
+     b14:	39 58 08             	cmp    %ebx,0x8(%eax)
+     b17:	0f 86 0b 01 00 00    	jbe    c28 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x164>
+		fs_directory_t *dir = (fs_directory_t *) list_get(parent->children, i);
+     b1d:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+     b21:	89 04 24             	mov    %eax,(%esp)
+     b24:	e8 fc ff ff ff       	call   b25 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x61>
+
+		// Ignore non-directory files
+		if(dir->i.type == kFSItemTypeDirectory) {
+     b29:	81 38 45 52 49 44    	cmpl   $0x44495245,(%eax)
+fat_dirent_t *fs_fat32::read_dir_file(fs_directory_t *parent, char *childName, unsigned int *entries) {
+	fs_directory_t *target = NULL;
+
+	// Locate the child
+	for(unsigned int i = 0; i < parent->children->num_entries; i++) {
+		fs_directory_t *dir = (fs_directory_t *) list_get(parent->children, i);
+     b2f:	89 c6                	mov    %eax,%esi
+
+		// Ignore non-directory files
+		if(dir->i.type == kFSItemTypeDirectory) {
+     b31:	75 dd                	jne    b10 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x4c>
+			if(!strcasecmp(childName, dir->i.name)) {
+     b33:	8b 40 04             	mov    0x4(%eax),%eax
+     b36:	8b 55 d0             	mov    -0x30(%ebp),%edx
+     b39:	89 44 24 04          	mov    %eax,0x4(%esp)
+     b3d:	89 14 24             	mov    %edx,(%esp)
+     b40:	e8 fc ff ff ff       	call   b41 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x7d>
+     b45:	85 c0                	test   %eax,%eax
+     b47:	75 c7                	jne    b10 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x4c>
+		}
+	}
+
+	if(target) {
+		// Read cluster chain
+		unsigned int *chain = this->clusterChainForCluster(target->i.userData & FAT32_MASK);
+     b49:	8b 46 24             	mov    0x24(%esi),%eax
+     b4c:	8b 7d d4             	mov    -0x2c(%ebp),%edi
+     b4f:	25 ff ff ff 0f       	and    $0xfffffff,%eax
+     b54:	89 44 24 04          	mov    %eax,0x4(%esp)
+     b58:	89 3c 24             	mov    %edi,(%esp)
+     b5b:	e8 fc ff ff ff       	call   b5c <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x98>
+		unsigned int cnt = 0;
+		unsigned int err = 0;
+     b60:	c7 45 e0 00 00 00 00 	movl   $0x0,-0x20(%ebp)
+		}
+	}
+
+	if(target) {
+		// Read cluster chain
+		unsigned int *chain = this->clusterChainForCluster(target->i.userData & FAT32_MASK);
+     b67:	89 c2                	mov    %eax,%edx
+		unsigned int cnt = 0;
+     b69:	31 c0                	xor    %eax,%eax
+		unsigned int err = 0;
+
+		while(chain[cnt] != FAT32_END_CHAIN) {
+     b6b:	81 3a f8 ff ff 0f    	cmpl   $0xffffff8,(%edx)
+     b71:	74 17                	je     b8a <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0xc6>
+     b73:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+     b79:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+			cnt++;
+     b80:	40                   	inc    %eax
+		// Read cluster chain
+		unsigned int *chain = this->clusterChainForCluster(target->i.userData & FAT32_MASK);
+		unsigned int cnt = 0;
+		unsigned int err = 0;
+
+		while(chain[cnt] != FAT32_END_CHAIN) {
+     b81:	81 3c 82 f8 ff ff 0f 	cmpl   $0xffffff8,(%edx,%eax,4)
+     b88:	75 f6                	jne    b80 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0xbc>
+			cnt++;
+		}
+
+		// Allocate required buffer
+		unsigned int dir_length = cnt * cluster_size;
+     b8a:	8b 8f 84 02 00 00    	mov    0x284(%edi),%ecx
+		*entries = dir_length / sizeof(fat_dirent_t);
+     b90:	8b 5d cc             	mov    -0x34(%ebp),%ebx
+		while(chain[cnt] != FAT32_END_CHAIN) {
+			cnt++;
+		}
+
+		// Allocate required buffer
+		unsigned int dir_length = cnt * cluster_size;
+     b93:	0f af c1             	imul   %ecx,%eax
+		*entries = dir_length / sizeof(fat_dirent_t);
+     b96:	89 c1                	mov    %eax,%ecx
+     b98:	c1 e9 05             	shr    $0x5,%ecx
+     b9b:	89 0b                	mov    %ecx,(%ebx)
+
+		fat_dirent_t *buffer = (fat_dirent_t *) kmalloc(dir_length);
+     b9d:	89 55 c8             	mov    %edx,-0x38(%ebp)
+     ba0:	89 04 24             	mov    %eax,(%esp)
+     ba3:	e8 fc ff ff ff       	call   ba4 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0xe0>
+
+		// Perform read
+		cnt = 0;
+
+		while(true) {
+			if(chain[cnt] != FAT32_END_CHAIN) {
+     ba8:	8b 55 c8             	mov    -0x38(%ebp),%edx
+     bab:	8b 32                	mov    (%edx),%esi
+
+		// Allocate required buffer
+		unsigned int dir_length = cnt * cluster_size;
+		*entries = dir_length / sizeof(fat_dirent_t);
+
+		fat_dirent_t *buffer = (fat_dirent_t *) kmalloc(dir_length);
+     bad:	89 45 d4             	mov    %eax,-0x2c(%ebp)
+
+		// Perform read
+		cnt = 0;
+
+		while(true) {
+			if(chain[cnt] != FAT32_END_CHAIN) {
+     bb0:	81 fe f8 ff ff 0f    	cmp    $0xffffff8,%esi
+     bb6:	74 77                	je     c2f <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x16b>
+     bb8:	8b 87 84 02 00 00    	mov    0x284(%edi),%eax
+		*entries = dir_length / sizeof(fat_dirent_t);
+
+		fat_dirent_t *buffer = (fat_dirent_t *) kmalloc(dir_length);
+
+		// Perform read
+		cnt = 0;
+     bbe:	31 db                	xor    %ebx,%ebx
+     bc0:	89 55 d0             	mov    %edx,-0x30(%ebp)
+     bc3:	eb 20                	jmp    be5 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x121>
+     bc5:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+     bc9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+
+		while(true) {
+			if(chain[cnt] != FAT32_END_CHAIN) {
+     bd0:	8b 45 d0             	mov    -0x30(%ebp),%eax
+				}
+			} else {
+				break;
+			}
+
+			cnt++;
+     bd3:	43                   	inc    %ebx
+
+		// Perform read
+		cnt = 0;
+
+		while(true) {
+			if(chain[cnt] != FAT32_END_CHAIN) {
+     bd4:	8b 34 98             	mov    (%eax,%ebx,4),%esi
+     bd7:	81 fe f8 ff ff 0f    	cmp    $0xffffff8,%esi
+     bdd:	74 50                	je     c2f <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x16b>
+     bdf:	8b 87 84 02 00 00    	mov    0x284(%edi),%eax
+				unsigned int cluster = chain[cnt];
+
+				if(!this->readCluster(cluster, ((uint8_t *) buffer) + (cnt * cluster_size), &err)) {
+     be5:	8d 55 e0             	lea    -0x20(%ebp),%edx
+     be8:	89 54 24 0c          	mov    %edx,0xc(%esp)
+     bec:	0f af c3             	imul   %ebx,%eax
+     bef:	8b 55 d4             	mov    -0x2c(%ebp),%edx
+     bf2:	89 74 24 04          	mov    %esi,0x4(%esp)
+     bf6:	89 3c 24             	mov    %edi,(%esp)
+     bf9:	01 d0                	add    %edx,%eax
+     bfb:	89 44 24 08          	mov    %eax,0x8(%esp)
+     bff:	e8 fc ff ff ff       	call   c00 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x13c>
+     c04:	85 c0                	test   %eax,%eax
+     c06:	75 c8                	jne    bd0 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x10c>
+					KERROR("Error reading directory file %u: %u", cluster, err);
+     c08:	8b 45 e0             	mov    -0x20(%ebp),%eax
+     c0b:	bb 08 17 00 00       	mov    $0x1708,%ebx
+     c10:	89 74 24 08          	mov    %esi,0x8(%esp)
+     c14:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+     c18:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+     c1f:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     c23:	e8 fc ff ff ff       	call   c24 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x160>
+					return NULL;
+     c28:	c7 45 d4 00 00 00 00 	movl   $0x0,-0x2c(%ebp)
+		return buffer;
+	}
+
+	// Directory not found
+	return NULL;
+}
+     c2f:	8b 55 e4             	mov    -0x1c(%ebp),%edx
+     c32:	33 15 00 00 00 00    	xor    0x0,%edx
+     c38:	8b 45 d4             	mov    -0x2c(%ebp),%eax
+     c3b:	75 08                	jne    c45 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x181>
+     c3d:	83 c4 3c             	add    $0x3c,%esp
+     c40:	5b                   	pop    %ebx
+     c41:	5e                   	pop    %esi
+     c42:	5f                   	pop    %edi
+     c43:	5d                   	pop    %ebp
+     c44:	c3                   	ret    
+     c45:	e8 fc ff ff ff       	call   c46 <_ZN8fs_fat3213read_dir_fileEP12fs_directoryPcPj+0x182>
+     c4a:	66 90                	xchg   %ax,%ax
+
+00000c4c <_ZN8fs_fat3221contents_of_directoryEPc>:
+
+/*
+ * Reads a directory, and constructs an fs_directory_t object for it.
+ */
+fs_directory_t *fs_fat32::contents_of_directory(char *path) {
+     c4c:	55                   	push   %ebp
+     c4d:	89 e5                	mov    %esp,%ebp
+     c4f:	57                   	push   %edi
+     c50:	56                   	push   %esi
+     c51:	53                   	push   %ebx
+     c52:	83 ec 4c             	sub    $0x4c,%esp
+     c55:	8b 55 08             	mov    0x8(%ebp),%edx
+     c58:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+     c5b:	a1 00 00 00 00       	mov    0x0,%eax
+     c60:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+     c63:	31 c0                	xor    %eax,%eax
+	fat_dirent_t *dirBuf = NULL;
+	unsigned int num_entries = 0;
+     c65:	c7 45 e0 00 00 00 00 	movl   $0x0,-0x20(%ebp)
+}
+
+/*
+ * Reads a directory, and constructs an fs_directory_t object for it.
+ */
+fs_directory_t *fs_fat32::contents_of_directory(char *path) {
+     c6c:	89 55 d0             	mov    %edx,-0x30(%ebp)
+	fat_dirent_t *dirBuf = NULL;
+	unsigned int num_entries = 0;
+
+	fs_directory_t *directory = NULL;
+
+	char *currentPath = (char *) kmalloc(strlen(path) + 2);
+     c6f:	89 1c 24             	mov    %ebx,(%esp)
+     c72:	e8 fc ff ff ff       	call   c73 <_ZN8fs_fat3221contents_of_directoryEPc+0x27>
+     c77:	83 c0 02             	add    $0x2,%eax
+     c7a:	89 04 24             	mov    %eax,(%esp)
+     c7d:	e8 fc ff ff ff       	call   c7e <_ZN8fs_fat3221contents_of_directoryEPc+0x32>
+	unsigned int currentPathOffset = 0;
+
+	currentPath[currentPathOffset++] = '/';
+
+	// Separate path string
+	list_t *components = this->split_path(path);
+     c82:	8b 55 d0             	mov    -0x30(%ebp),%edx
+	fs_directory_t *directory = NULL;
+
+	char *currentPath = (char *) kmalloc(strlen(path) + 2);
+	unsigned int currentPathOffset = 0;
+
+	currentPath[currentPathOffset++] = '/';
+     c85:	c6 00 2f             	movb   $0x2f,(%eax)
+	fat_dirent_t *dirBuf = NULL;
+	unsigned int num_entries = 0;
+
+	fs_directory_t *directory = NULL;
+
+	char *currentPath = (char *) kmalloc(strlen(path) + 2);
+     c88:	89 c7                	mov    %eax,%edi
+	unsigned int currentPathOffset = 0;
+
+	currentPath[currentPathOffset++] = '/';
+
+	// Separate path string
+	list_t *components = this->split_path(path);
+     c8a:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+     c8e:	89 14 24             	mov    %edx,(%esp)
+     c91:	e8 fc ff ff ff       	call   c92 <_ZN8fs_fat3221contents_of_directoryEPc+0x46>
+
+	// Iterate over each component
+	for(unsigned int i = 0; i < components->num_entries; i++) {
+     c96:	8b 48 08             	mov    0x8(%eax),%ecx
+	unsigned int currentPathOffset = 0;
+
+	currentPath[currentPathOffset++] = '/';
+
+	// Separate path string
+	list_t *components = this->split_path(path);
+     c99:	89 45 cc             	mov    %eax,-0x34(%ebp)
+
+	// Iterate over each component
+	for(unsigned int i = 0; i < components->num_entries; i++) {
+     c9c:	85 c9                	test   %ecx,%ecx
+     c9e:	0f 84 1c 02 00 00    	je     ec0 <_ZN8fs_fat3221contents_of_directoryEPc+0x274>
+     ca4:	31 db                	xor    %ebx,%ebx
+     ca6:	c7 45 d4 01 00 00 00 	movl   $0x1,-0x2c(%ebp)
+     cad:	c7 45 c8 00 00 00 00 	movl   $0x0,-0x38(%ebp)
+     cb4:	e9 bc 00 00 00       	jmp    d75 <_ZN8fs_fat3221contents_of_directoryEPc+0x129>
+     cb9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+		currentPath[currentPathOffset++] = '/';
+
+		// Special case: root directory
+		if(i == 0) {
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+     cc0:	e8 fc ff ff ff       	call   cc1 <_ZN8fs_fat3221contents_of_directoryEPc+0x75>
+
+			// Verify the handle is valid
+			if(handle) {
+     cc5:	85 c0                	test   %eax,%eax
+     cc7:	0f 85 73 01 00 00    	jne    e40 <_ZN8fs_fat3221contents_of_directoryEPc+0x1f4>
+			}
+
+			// No handle (or invalid)
+			if(!handle) {
+				// Could we read the first child dir?
+				if(!(dirBuf = read_dir_file(root_directory, component, &num_entries))) {
+     ccd:	8b 55 d0             	mov    -0x30(%ebp),%edx
+     cd0:	8d 45 e0             	lea    -0x20(%ebp),%eax
+     cd3:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     cd7:	89 74 24 08          	mov    %esi,0x8(%esp)
+     cdb:	8b 42 10             	mov    0x10(%edx),%eax
+     cde:	89 14 24             	mov    %edx,(%esp)
+     ce1:	89 44 24 04          	mov    %eax,0x4(%esp)
+     ce5:	e8 fc ff ff ff       	call   ce6 <_ZN8fs_fat3221contents_of_directoryEPc+0x9a>
+     cea:	85 c0                	test   %eax,%eax
+     cec:	0f 84 ce 01 00 00    	je     ec0 <_ZN8fs_fat3221contents_of_directoryEPc+0x274>
+					return NULL;
+				}
+
+				// Convert to directory handle
+				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+     cf2:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
+     cf9:	89 45 c4             	mov    %eax,-0x3c(%ebp)
+     cfc:	e8 fc ff ff ff       	call   cfd <_ZN8fs_fat3221contents_of_directoryEPc+0xb1>
+				processFATDirEnt(dirBuf, num_entries, currentDir);
+     d01:	8b 55 c4             	mov    -0x3c(%ebp),%edx
+     d04:	89 54 24 04          	mov    %edx,0x4(%esp)
+     d08:	8b 55 d0             	mov    -0x30(%ebp),%edx
+				if(!(dirBuf = read_dir_file(root_directory, component, &num_entries))) {
+					return NULL;
+				}
+
+				// Convert to directory handle
+				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+     d0b:	89 c6                	mov    %eax,%esi
+				processFATDirEnt(dirBuf, num_entries, currentDir);
+     d0d:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     d11:	8b 45 e0             	mov    -0x20(%ebp),%eax
+     d14:	89 14 24             	mov    %edx,(%esp)
+     d17:	89 44 24 08          	mov    %eax,0x8(%esp)
+     d1b:	e8 fc ff ff ff       	call   d1c <_ZN8fs_fat3221contents_of_directoryEPc+0xd0>
+
+				currentDir->parent = root_directory->i.handle;
+     d20:	8b 55 d0             	mov    -0x30(%ebp),%edx
+     d23:	8b 42 10             	mov    0x10(%edx),%eax
+     d26:	8b 40 14             	mov    0x14(%eax),%eax
+     d29:	89 46 2c             	mov    %eax,0x2c(%esi)
+				hashmap_insert(dirHandleCache, currentPath, (void *) currentDir->i.handle);
+     d2c:	8b 46 14             	mov    0x14(%esi),%eax
+     d2f:	89 7c 24 04          	mov    %edi,0x4(%esp)
+     d33:	89 44 24 08          	mov    %eax,0x8(%esp)
+				// Convert to directory handle
+				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+				processFATDirEnt(dirBuf, num_entries, currentDir);
+
+				currentDir->parent = directory->i.handle;
+				hashmap_insert(dirHandleCache, currentPath, (void *) currentDir->i.handle);
+     d37:	8b 82 8c 02 00 00    	mov    0x28c(%edx),%eax
+     d3d:	89 04 24             	mov    %eax,(%esp)
+     d40:	e8 fc ff ff ff       	call   d41 <_ZN8fs_fat3221contents_of_directoryEPc+0xf5>
+
+				#if DEBUG_DIRECTORY_CACHING
+				KDEBUG("dir_cache add: %s: 0x%08X", currentPath, (unsigned int) currentDir->i.handle);
+     d45:	8b 46 14             	mov    0x14(%esi),%eax
+     d48:	89 7c 24 08          	mov    %edi,0x8(%esp)
+     d4c:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+     d53:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     d57:	b8 34 17 00 00       	mov    $0x1734,%eax
+     d5c:	89 44 24 04          	mov    %eax,0x4(%esp)
+     d60:	e8 fc ff ff ff       	call   d61 <_ZN8fs_fat3221contents_of_directoryEPc+0x115>
+     d65:	89 75 c8             	mov    %esi,-0x38(%ebp)
+
+	// Separate path string
+	list_t *components = this->split_path(path);
+
+	// Iterate over each component
+	for(unsigned int i = 0; i < components->num_entries; i++) {
+     d68:	8b 45 cc             	mov    -0x34(%ebp),%eax
+     d6b:	43                   	inc    %ebx
+     d6c:	39 58 08             	cmp    %ebx,0x8(%eax)
+     d6f:	0f 86 52 01 00 00    	jbe    ec7 <_ZN8fs_fat3221contents_of_directoryEPc+0x27b>
+		// Append path name
+		char *component = (char *) list_get(components, i);
+     d75:	8b 45 cc             	mov    -0x34(%ebp),%eax
+     d78:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+     d7c:	89 04 24             	mov    %eax,(%esp)
+     d7f:	e8 fc ff ff ff       	call   d80 <_ZN8fs_fat3221contents_of_directoryEPc+0x134>
+     d84:	89 c6                	mov    %eax,%esi
+
+		strcat(currentPath + currentPathOffset, component);
+     d86:	89 44 24 04          	mov    %eax,0x4(%esp)
+     d8a:	8b 45 d4             	mov    -0x2c(%ebp),%eax
+     d8d:	01 f8                	add    %edi,%eax
+     d8f:	89 04 24             	mov    %eax,(%esp)
+     d92:	e8 fc ff ff ff       	call   d93 <_ZN8fs_fat3221contents_of_directoryEPc+0x147>
+		currentPathOffset += strlen(component);
+     d97:	89 34 24             	mov    %esi,(%esp)
+     d9a:	e8 fc ff ff ff       	call   d9b <_ZN8fs_fat3221contents_of_directoryEPc+0x14f>
+     d9f:	8b 55 d4             	mov    -0x2c(%ebp),%edx
+     da2:	01 d0                	add    %edx,%eax
+		currentPath[currentPathOffset++] = '/';
+
+		// Special case: root directory
+		if(i == 0) {
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+     da4:	8b 55 d0             	mov    -0x30(%ebp),%edx
+		// Append path name
+		char *component = (char *) list_get(components, i);
+
+		strcat(currentPath + currentPathOffset, component);
+		currentPathOffset += strlen(component);
+		currentPath[currentPathOffset++] = '/';
+     da7:	c6 04 07 2f          	movb   $0x2f,(%edi,%eax,1)
+     dab:	40                   	inc    %eax
+
+		// Special case: root directory
+		if(i == 0) {
+     dac:	85 db                	test   %ebx,%ebx
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+     dae:	89 7c 24 04          	mov    %edi,0x4(%esp)
+		// Append path name
+		char *component = (char *) list_get(components, i);
+
+		strcat(currentPath + currentPathOffset, component);
+		currentPathOffset += strlen(component);
+		currentPath[currentPathOffset++] = '/';
+     db2:	89 45 d4             	mov    %eax,-0x2c(%ebp)
+
+		// Special case: root directory
+		if(i == 0) {
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+     db5:	8b 82 8c 02 00 00    	mov    0x28c(%edx),%eax
+     dbb:	89 04 24             	mov    %eax,(%esp)
+		strcat(currentPath + currentPathOffset, component);
+		currentPathOffset += strlen(component);
+		currentPath[currentPathOffset++] = '/';
+
+		// Special case: root directory
+		if(i == 0) {
+     dbe:	0f 84 fc fe ff ff    	je     cc0 <_ZN8fs_fat3221contents_of_directoryEPc+0x74>
+
+				directory = currentDir;
+			}
+		} else { // Do the same as above, but with "directory" as the parent.
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+     dc4:	e8 fc ff ff ff       	call   dc5 <_ZN8fs_fat3221contents_of_directoryEPc+0x179>
+
+			// Verify the handle is valid
+			if(handle) {
+     dc9:	85 c0                	test   %eax,%eax
+     dcb:	0f 85 af 00 00 00    	jne    e80 <_ZN8fs_fat3221contents_of_directoryEPc+0x234>
+			}
+
+			// No handle (or invalid)
+			if(!handle) {
+				// Could we read the child dir?
+				if(!(dirBuf = read_dir_file(directory, component, &num_entries))) {
+     dd1:	8d 45 e0             	lea    -0x20(%ebp),%eax
+     dd4:	8b 55 d0             	mov    -0x30(%ebp),%edx
+     dd7:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     ddb:	8b 45 c8             	mov    -0x38(%ebp),%eax
+     dde:	89 74 24 08          	mov    %esi,0x8(%esp)
+     de2:	89 14 24             	mov    %edx,(%esp)
+     de5:	89 44 24 04          	mov    %eax,0x4(%esp)
+     de9:	e8 fc ff ff ff       	call   dea <_ZN8fs_fat3221contents_of_directoryEPc+0x19e>
+     dee:	85 c0                	test   %eax,%eax
+     df0:	0f 84 ca 00 00 00    	je     ec0 <_ZN8fs_fat3221contents_of_directoryEPc+0x274>
+					return NULL;
+				}
+
+				// Convert to directory handle
+				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+     df6:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
+     dfd:	89 45 c4             	mov    %eax,-0x3c(%ebp)
+     e00:	e8 fc ff ff ff       	call   e01 <_ZN8fs_fat3221contents_of_directoryEPc+0x1b5>
+				processFATDirEnt(dirBuf, num_entries, currentDir);
+     e05:	8b 55 c4             	mov    -0x3c(%ebp),%edx
+     e08:	89 54 24 04          	mov    %edx,0x4(%esp)
+     e0c:	8b 55 d0             	mov    -0x30(%ebp),%edx
+				if(!(dirBuf = read_dir_file(directory, component, &num_entries))) {
+					return NULL;
+				}
+
+				// Convert to directory handle
+				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+     e0f:	89 c6                	mov    %eax,%esi
+				processFATDirEnt(dirBuf, num_entries, currentDir);
+     e11:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     e15:	8b 45 e0             	mov    -0x20(%ebp),%eax
+     e18:	89 14 24             	mov    %edx,(%esp)
+     e1b:	89 44 24 08          	mov    %eax,0x8(%esp)
+     e1f:	e8 fc ff ff ff       	call   e20 <_ZN8fs_fat3221contents_of_directoryEPc+0x1d4>
+
+				currentDir->parent = directory->i.handle;
+     e24:	8b 55 c8             	mov    -0x38(%ebp),%edx
+     e27:	8b 42 14             	mov    0x14(%edx),%eax
+				hashmap_insert(dirHandleCache, currentPath, (void *) currentDir->i.handle);
+     e2a:	8b 55 d0             	mov    -0x30(%ebp),%edx
+
+				// Convert to directory handle
+				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+				processFATDirEnt(dirBuf, num_entries, currentDir);
+
+				currentDir->parent = directory->i.handle;
+     e2d:	89 46 2c             	mov    %eax,0x2c(%esi)
+				hashmap_insert(dirHandleCache, currentPath, (void *) currentDir->i.handle);
+     e30:	8b 46 14             	mov    0x14(%esi),%eax
+     e33:	89 7c 24 04          	mov    %edi,0x4(%esp)
+     e37:	89 44 24 08          	mov    %eax,0x8(%esp)
+     e3b:	e9 f7 fe ff ff       	jmp    d37 <_ZN8fs_fat3221contents_of_directoryEPc+0xeb>
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+
+			// Verify the handle is valid
+			if(handle) {
+				if(hal_handle_get_type(handle) != kFSItemTypeDirectory) {
+     e40:	89 04 24             	mov    %eax,(%esp)
+     e43:	89 45 c4             	mov    %eax,-0x3c(%ebp)
+     e46:	e8 fc ff ff ff       	call   e47 <_ZN8fs_fat3221contents_of_directoryEPc+0x1fb>
+     e4b:	8b 55 c4             	mov    -0x3c(%ebp),%edx
+     e4e:	3d 45 52 49 44       	cmp    $0x44495245,%eax
+     e53:	75 72                	jne    ec7 <_ZN8fs_fat3221contents_of_directoryEPc+0x27b>
+					handle = 0;
+					break;
+				}
+
+				// Get object from the handle and verify it is good
+				directory = (fs_directory_t *) hal_handle_get_object(handle);
+     e55:	89 14 24             	mov    %edx,(%esp)
+     e58:	e8 fc ff ff ff       	call   e59 <_ZN8fs_fat3221contents_of_directoryEPc+0x20d>
+				if(directory->i.type != kFSItemTypeDirectory) {
+     e5d:	81 38 45 52 49 44    	cmpl   $0x44495245,(%eax)
+					handle = 0;
+					break;
+				}
+
+				// Get object from the handle and verify it is good
+				directory = (fs_directory_t *) hal_handle_get_object(handle);
+     e63:	89 45 c8             	mov    %eax,-0x38(%ebp)
+				if(directory->i.type != kFSItemTypeDirectory) {
+     e66:	0f 85 61 fe ff ff    	jne    ccd <_ZN8fs_fat3221contents_of_directoryEPc+0x81>
+     e6c:	e9 f7 fe ff ff       	jmp    d68 <_ZN8fs_fat3221contents_of_directoryEPc+0x11c>
+     e71:	eb 0d                	jmp    e80 <_ZN8fs_fat3221contents_of_directoryEPc+0x234>
+     e73:	90                   	nop
+     e74:	90                   	nop
+     e75:	90                   	nop
+     e76:	90                   	nop
+     e77:	90                   	nop
+     e78:	90                   	nop
+     e79:	90                   	nop
+     e7a:	90                   	nop
+     e7b:	90                   	nop
+     e7c:	90                   	nop
+     e7d:	90                   	nop
+     e7e:	90                   	nop
+     e7f:	90                   	nop
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+
+			// Verify the handle is valid
+			if(handle) {
+				if(hal_handle_get_type(handle) != kFSItemTypeDirectory) {
+     e80:	89 04 24             	mov    %eax,(%esp)
+     e83:	89 45 c4             	mov    %eax,-0x3c(%ebp)
+     e86:	e8 fc ff ff ff       	call   e87 <_ZN8fs_fat3221contents_of_directoryEPc+0x23b>
+     e8b:	8b 55 c4             	mov    -0x3c(%ebp),%edx
+     e8e:	3d 45 52 49 44       	cmp    $0x44495245,%eax
+     e93:	75 32                	jne    ec7 <_ZN8fs_fat3221contents_of_directoryEPc+0x27b>
+					handle = 0;
+					break;
+				}
+
+				// Get object from the handle and verify it is good
+				directory = (fs_directory_t *) hal_handle_get_object(handle);
+     e95:	89 14 24             	mov    %edx,(%esp)
+     e98:	e8 fc ff ff ff       	call   e99 <_ZN8fs_fat3221contents_of_directoryEPc+0x24d>
+				if(directory->i.type != kFSItemTypeDirectory) {
+     e9d:	81 38 45 52 49 44    	cmpl   $0x44495245,(%eax)
+					handle = 0;
+					break;
+				}
+
+				// Get object from the handle and verify it is good
+				directory = (fs_directory_t *) hal_handle_get_object(handle);
+     ea3:	89 45 c8             	mov    %eax,-0x38(%ebp)
+				if(directory->i.type != kFSItemTypeDirectory) {
+     ea6:	0f 85 25 ff ff ff    	jne    dd1 <_ZN8fs_fat3221contents_of_directoryEPc+0x185>
+     eac:	e9 b7 fe ff ff       	jmp    d68 <_ZN8fs_fat3221contents_of_directoryEPc+0x11c>
+     eb1:	eb 0d                	jmp    ec0 <_ZN8fs_fat3221contents_of_directoryEPc+0x274>
+     eb3:	90                   	nop
+     eb4:	90                   	nop
+     eb5:	90                   	nop
+     eb6:	90                   	nop
+     eb7:	90                   	nop
+     eb8:	90                   	nop
+     eb9:	90                   	nop
+     eba:	90                   	nop
+     ebb:	90                   	nop
+     ebc:	90                   	nop
+     ebd:	90                   	nop
+     ebe:	90                   	nop
+     ebf:	90                   	nop
+
+			// No handle (or invalid)
+			if(!handle) {
+				// Could we read the child dir?
+				if(!(dirBuf = read_dir_file(directory, component, &num_entries))) {
+					return NULL;
+     ec0:	c7 45 c8 00 00 00 00 	movl   $0x0,-0x38(%ebp)
+		}
+	}
+
+	// Return directory
+	return directory;
+}
+     ec7:	8b 55 e4             	mov    -0x1c(%ebp),%edx
+     eca:	33 15 00 00 00 00    	xor    0x0,%edx
+     ed0:	8b 45 c8             	mov    -0x38(%ebp),%eax
+     ed3:	75 08                	jne    edd <_ZN8fs_fat3221contents_of_directoryEPc+0x291>
+     ed5:	83 c4 4c             	add    $0x4c,%esp
+     ed8:	5b                   	pop    %ebx
+     ed9:	5e                   	pop    %esi
+     eda:	5f                   	pop    %edi
+     edb:	5d                   	pop    %ebp
+     edc:	c3                   	ret    
+     edd:	e8 fc ff ff ff       	call   ede <_ZN8fs_fat3221contents_of_directoryEPc+0x292>
+     ee2:	66 90                	xchg   %ax,%ax
+
+00000ee4 <_ZN8fs_fat3213read_root_dirEv>:
+}
+
+/*
+ * Read the root directory from the disk, bypassing caching.
+ */
+void fs_fat32::read_root_dir(void) {
+     ee4:	55                   	push   %ebp
+     ee5:	89 e5                	mov    %esp,%ebp
+     ee7:	57                   	push   %edi
+     ee8:	56                   	push   %esi
+     ee9:	53                   	push   %ebx
+     eea:	83 ec 3c             	sub    $0x3c,%esp
+     eed:	8b 7d 08             	mov    0x8(%ebp),%edi
+     ef0:	a1 00 00 00 00       	mov    0x0,%eax
+     ef5:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+     ef8:	31 c0                	xor    %eax,%eax
+	unsigned int err;
+
+	// Release previous root directory, if it exists
+	if(root_directory) {
+     efa:	8b 5f 10             	mov    0x10(%edi),%ebx
+     efd:	85 db                	test   %ebx,%ebx
+     eff:	0f 84 4b 01 00 00    	je     1050 <_ZN8fs_fat3213read_root_dirEv+0x16c>
+		fs_directory_t *new_root = hal_vfs_allocate_directory(false);
+     f05:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+     f0c:	e8 fc ff ff ff       	call   f0d <_ZN8fs_fat3213read_root_dirEv+0x29>
+
+		hal_vfs_deallocate_directory(root_directory, new_root);
+     f11:	89 44 24 04          	mov    %eax,0x4(%esp)
+void fs_fat32::read_root_dir(void) {
+	unsigned int err;
+
+	// Release previous root directory, if it exists
+	if(root_directory) {
+		fs_directory_t *new_root = hal_vfs_allocate_directory(false);
+     f15:	89 c3                	mov    %eax,%ebx
+
+		hal_vfs_deallocate_directory(root_directory, new_root);
+     f17:	8b 47 10             	mov    0x10(%edi),%eax
+     f1a:	89 04 24             	mov    %eax,(%esp)
+     f1d:	e8 fc ff ff ff       	call   f1e <_ZN8fs_fat3213read_root_dirEv+0x3a>
+
+		root_directory = new_root;
+     f22:	89 5f 10             	mov    %ebx,0x10(%edi)
+	} else {
+		root_directory = hal_vfs_allocate_directory(true);
+	}
+
+	// Follow the cluster chain for the root directory.
+	unsigned int *root_clusters = this->clusterChainForCluster(bpb.root_cluster & FAT32_MASK);
+     f25:	8b 47 44             	mov    0x44(%edi),%eax
+     f28:	89 3c 24             	mov    %edi,(%esp)
+     f2b:	25 ff ff ff 0f       	and    $0xfffffff,%eax
+     f30:	89 44 24 04          	mov    %eax,0x4(%esp)
+     f34:	e8 fc ff ff ff       	call   f35 <_ZN8fs_fat3213read_root_dirEv+0x51>
+	unsigned int cnt = 0;
+
+	while(root_clusters[cnt] != FAT32_END_CHAIN) {
+     f39:	81 38 f8 ff ff 0f    	cmpl   $0xffffff8,(%eax)
+	} else {
+		root_directory = hal_vfs_allocate_directory(true);
+	}
+
+	// Follow the cluster chain for the root directory.
+	unsigned int *root_clusters = this->clusterChainForCluster(bpb.root_cluster & FAT32_MASK);
+     f3f:	89 c2                	mov    %eax,%edx
+	unsigned int cnt = 0;
+
+	while(root_clusters[cnt] != FAT32_END_CHAIN) {
+     f41:	0f 84 1d 01 00 00    	je     1064 <_ZN8fs_fat3213read_root_dirEv+0x180>
+     f47:	31 c0                	xor    %eax,%eax
+     f49:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+		cnt++;
+     f50:	40                   	inc    %eax
+
+	// Follow the cluster chain for the root directory.
+	unsigned int *root_clusters = this->clusterChainForCluster(bpb.root_cluster & FAT32_MASK);
+	unsigned int cnt = 0;
+
+	while(root_clusters[cnt] != FAT32_END_CHAIN) {
+     f51:	81 3c 82 f8 ff ff 0f 	cmpl   $0xffffff8,(%edx,%eax,4)
+     f58:	75 f6                	jne    f50 <_ZN8fs_fat3213read_root_dirEv+0x6c>
+     f5a:	8b 8f 84 02 00 00    	mov    0x284(%edi),%ecx
+     f60:	0f af c1             	imul   %ecx,%eax
+     f63:	89 c1                	mov    %eax,%ecx
+     f65:	c1 e9 05             	shr    $0x5,%ecx
+     f68:	89 4d cc             	mov    %ecx,-0x34(%ebp)
+
+	// Allocate memory for root directory
+	unsigned int root_dir_len = cnt * cluster_size;
+	unsigned int root_dir_num_entries = root_dir_len / sizeof(fat_dirent_t);
+
+	fat_dirent_t *buffer = (fat_dirent_t *) kmalloc(root_dir_len);
+     f6b:	89 55 c8             	mov    %edx,-0x38(%ebp)
+     f6e:	89 04 24             	mov    %eax,(%esp)
+     f71:	e8 fc ff ff ff       	call   f72 <_ZN8fs_fat3213read_root_dirEv+0x8e>
+
+	// Read the root directory's sectors.
+	cnt = 0;
+
+	while(true) {
+		if(root_clusters[cnt] != FAT32_END_CHAIN) {
+     f76:	8b 55 c8             	mov    -0x38(%ebp),%edx
+     f79:	8b 32                	mov    (%edx),%esi
+
+	// Allocate memory for root directory
+	unsigned int root_dir_len = cnt * cluster_size;
+	unsigned int root_dir_num_entries = root_dir_len / sizeof(fat_dirent_t);
+
+	fat_dirent_t *buffer = (fat_dirent_t *) kmalloc(root_dir_len);
+     f7b:	89 45 d4             	mov    %eax,-0x2c(%ebp)
+
+	// Read the root directory's sectors.
+	cnt = 0;
+
+	while(true) {
+		if(root_clusters[cnt] != FAT32_END_CHAIN) {
+     f7e:	81 fe f8 ff ff 0f    	cmp    $0xffffff8,%esi
+     f84:	74 7d                	je     1003 <_ZN8fs_fat3213read_root_dirEv+0x11f>
+     f86:	8b 87 84 02 00 00    	mov    0x284(%edi),%eax
+	unsigned int root_dir_num_entries = root_dir_len / sizeof(fat_dirent_t);
+
+	fat_dirent_t *buffer = (fat_dirent_t *) kmalloc(root_dir_len);
+
+	// Read the root directory's sectors.
+	cnt = 0;
+     f8c:	31 db                	xor    %ebx,%ebx
+     f8e:	89 55 d0             	mov    %edx,-0x30(%ebp)
+     f91:	eb 22                	jmp    fb5 <_ZN8fs_fat3213read_root_dirEv+0xd1>
+     f93:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+     f99:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+
+	while(true) {
+		if(root_clusters[cnt] != FAT32_END_CHAIN) {
+     fa0:	8b 45 d0             	mov    -0x30(%ebp),%eax
+			}
+		} else {
+			break;
+		}
+
+		cnt++;
+     fa3:	43                   	inc    %ebx
+
+	// Read the root directory's sectors.
+	cnt = 0;
+
+	while(true) {
+		if(root_clusters[cnt] != FAT32_END_CHAIN) {
+     fa4:	8b 34 98             	mov    (%eax,%ebx,4),%esi
+     fa7:	81 fe f8 ff ff 0f    	cmp    $0xffffff8,%esi
+     fad:	74 51                	je     1000 <_ZN8fs_fat3213read_root_dirEv+0x11c>
+     faf:	8b 87 84 02 00 00    	mov    0x284(%edi),%eax
+			unsigned int cluster = root_clusters[cnt];
+
+			if(!this->readCluster(cluster, ((uint8_t *) buffer) + (cnt * cluster_size), &err)) {
+     fb5:	8d 55 e0             	lea    -0x20(%ebp),%edx
+     fb8:	89 54 24 0c          	mov    %edx,0xc(%esp)
+     fbc:	0f af c3             	imul   %ebx,%eax
+     fbf:	8b 55 d4             	mov    -0x2c(%ebp),%edx
+     fc2:	89 74 24 04          	mov    %esi,0x4(%esp)
+     fc6:	89 3c 24             	mov    %edi,(%esp)
+     fc9:	01 d0                	add    %edx,%eax
+     fcb:	89 44 24 08          	mov    %eax,0x8(%esp)
+     fcf:	e8 fc ff ff ff       	call   fd0 <_ZN8fs_fat3213read_root_dirEv+0xec>
+     fd4:	85 c0                	test   %eax,%eax
+     fd6:	75 c8                	jne    fa0 <_ZN8fs_fat3213read_root_dirEv+0xbc>
+				KERROR("Error reading root dir cluster %u: %u", cluster, err);
+     fd8:	8b 45 e0             	mov    -0x20(%ebp),%eax
+     fdb:	bb 58 17 00 00       	mov    $0x1758,%ebx
+     fe0:	89 74 24 08          	mov    %esi,0x8(%esp)
+     fe4:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+     fe8:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+     fef:	89 44 24 0c          	mov    %eax,0xc(%esp)
+     ff3:	e8 fc ff ff ff       	call   ff4 <_ZN8fs_fat3213read_root_dirEv+0x110>
+				return;
+     ff8:	eb 3f                	jmp    1039 <_ZN8fs_fat3213read_root_dirEv+0x155>
+     ffa:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+    1000:	8b 55 d0             	mov    -0x30(%ebp),%edx
+
+		cnt++;
+	}
+
+	// Process the read FAT directory entries into fs_file_t structs
+	this->processFATDirEnt(buffer, root_dir_num_entries, root_directory);
+    1003:	8b 47 10             	mov    0x10(%edi),%eax
+    1006:	8b 4d cc             	mov    -0x34(%ebp),%ecx
+    1009:	89 55 c8             	mov    %edx,-0x38(%ebp)
+    100c:	89 3c 24             	mov    %edi,(%esp)
+    100f:	89 44 24 0c          	mov    %eax,0xc(%esp)
+    1013:	8b 45 d4             	mov    -0x2c(%ebp),%eax
+    1016:	89 4c 24 08          	mov    %ecx,0x8(%esp)
+    101a:	89 44 24 04          	mov    %eax,0x4(%esp)
+    101e:	e8 fc ff ff ff       	call   101f <_ZN8fs_fat3213read_root_dirEv+0x13b>
+
+	// Clean up temporary buffers needed to read root directory
+	kfree(root_clusters);
+    1023:	8b 55 c8             	mov    -0x38(%ebp),%edx
+    1026:	89 14 24             	mov    %edx,(%esp)
+    1029:	e8 fc ff ff ff       	call   102a <_ZN8fs_fat3213read_root_dirEv+0x146>
+	kfree(buffer);
+    102e:	8b 45 d4             	mov    -0x2c(%ebp),%eax
+    1031:	89 04 24             	mov    %eax,(%esp)
+    1034:	e8 fc ff ff ff       	call   1035 <_ZN8fs_fat3213read_root_dirEv+0x151>
+}
+    1039:	8b 55 e4             	mov    -0x1c(%ebp),%edx
+    103c:	33 15 00 00 00 00    	xor    0x0,%edx
+    1042:	75 2e                	jne    1072 <_ZN8fs_fat3213read_root_dirEv+0x18e>
+    1044:	83 c4 3c             	add    $0x3c,%esp
+    1047:	5b                   	pop    %ebx
+    1048:	5e                   	pop    %esi
+    1049:	5f                   	pop    %edi
+    104a:	5d                   	pop    %ebp
+    104b:	c3                   	ret    
+    104c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+
+		hal_vfs_deallocate_directory(root_directory, new_root);
+
+		root_directory = new_root;
+	} else {
+		root_directory = hal_vfs_allocate_directory(true);
+    1050:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
+    1057:	e8 fc ff ff ff       	call   1058 <_ZN8fs_fat3213read_root_dirEv+0x174>
+    105c:	89 47 10             	mov    %eax,0x10(%edi)
+    105f:	e9 c1 fe ff ff       	jmp    f25 <_ZN8fs_fat3213read_root_dirEv+0x41>
+
+	// Follow the cluster chain for the root directory.
+	unsigned int *root_clusters = this->clusterChainForCluster(bpb.root_cluster & FAT32_MASK);
+	unsigned int cnt = 0;
+
+	while(root_clusters[cnt] != FAT32_END_CHAIN) {
+    1064:	c7 45 cc 00 00 00 00 	movl   $0x0,-0x34(%ebp)
+    106b:	31 c0                	xor    %eax,%eax
+    106d:	e9 f9 fe ff ff       	jmp    f6b <_ZN8fs_fat3213read_root_dirEv+0x87>
+	this->processFATDirEnt(buffer, root_dir_num_entries, root_directory);
+
+	// Clean up temporary buffers needed to read root directory
+	kfree(root_clusters);
+	kfree(buffer);
+}
+    1072:	e8 fc ff ff ff       	call   1073 <_ZN8fs_fat3213read_root_dirEv+0x18f>
+    1077:	90                   	nop
+
+00001078 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk>:
+#define DEBUG_DIRECTORY_CACHING	1
+
+/*
+ * Initialises a FAT32 filesystem from the specified partition table entry.
+ */
+fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d) {
+    1078:	55                   	push   %ebp
+    1079:	89 e5                	mov    %esp,%ebp
+    107b:	57                   	push   %edi
+    107c:	56                   	push   %esi
+    107d:	53                   	push   %ebx
+    107e:	83 ec 3c             	sub    $0x3c,%esp
+    1081:	a1 00 00 00 00       	mov    0x0,%eax
+    1086:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+    1089:	31 c0                	xor    %eax,%eax
+    108b:	8b 45 10             	mov    0x10(%ebp),%eax
+	unsigned int err = 0;
+
+	// Read sector 0 of partition synchronously
+	if(!read_sectors(0, 1, &bpb, &err)) {
+    108e:	8d 75 e0             	lea    -0x20(%ebp),%esi
+#define DEBUG_DIRECTORY_CACHING	1
+
+/*
+ * Initialises a FAT32 filesystem from the specified partition table entry.
+ */
+fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d) {
+    1091:	8b 5d 08             	mov    0x8(%ebp),%ebx
+    1094:	89 44 24 08          	mov    %eax,0x8(%esp)
+    1098:	8b 45 0c             	mov    0xc(%ebp),%eax
+    109b:	89 1c 24             	mov    %ebx,(%esp)
+    109e:	89 44 24 04          	mov    %eax,0x4(%esp)
+    10a2:	e8 fc ff ff ff       	call   10a3 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2b>
+	unsigned int err = 0;
+
+	// Read sector 0 of partition synchronously
+	if(!read_sectors(0, 1, &bpb, &err)) {
+    10a7:	8d 43 18             	lea    0x18(%ebx),%eax
+#define DEBUG_DIRECTORY_CACHING	1
+
+/*
+ * Initialises a FAT32 filesystem from the specified partition table entry.
+ */
+fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d) {
+    10aa:	c7 03 08 00 00 00    	movl   $0x8,(%ebx)
+	unsigned int err = 0;
+
+	// Read sector 0 of partition synchronously
+	if(!read_sectors(0, 1, &bpb, &err)) {
+    10b0:	89 44 24 0c          	mov    %eax,0xc(%esp)
+    10b4:	b8 01 00 00 00       	mov    $0x1,%eax
+    10b9:	89 44 24 08          	mov    %eax,0x8(%esp)
+    10bd:	31 c0                	xor    %eax,%eax
+
+/*
+ * Initialises a FAT32 filesystem from the specified partition table entry.
+ */
+fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d) {
+	unsigned int err = 0;
+    10bf:	c7 45 e0 00 00 00 00 	movl   $0x0,-0x20(%ebp)
+
+	// Read sector 0 of partition synchronously
+	if(!read_sectors(0, 1, &bpb, &err)) {
+    10c6:	89 74 24 10          	mov    %esi,0x10(%esp)
+    10ca:	89 44 24 04          	mov    %eax,0x4(%esp)
+    10ce:	89 1c 24             	mov    %ebx,(%esp)
+    10d1:	e8 fc ff ff ff       	call   10d2 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x5a>
+    10d6:	85 c0                	test   %eax,%eax
+    10d8:	0f 84 82 03 00 00    	je     1460 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3e8>
+		KERROR("Error reading BPB: %u", err);
+		return;
+	}
+
+	// Get data sector count
+	root_dir_sectors = ((bpb.root_entry_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;
+    10de:	0f b7 43 29          	movzwl 0x29(%ebx),%eax
+    10e2:	0f b7 4b 23          	movzwl 0x23(%ebx),%ecx
+
+	num_data_sectors = bpb.total_sectors_32 - (bpb.reserved_sector_count + (bpb.table_count * bpb.table_size_32)) + root_dir_sectors;
+    10e6:	0f b7 7b 26          	movzwl 0x26(%ebx),%edi
+		KERROR("Error reading BPB: %u", err);
+		return;
+	}
+
+	// Get data sector count
+	root_dir_sectors = ((bpb.root_entry_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;
+    10ea:	c1 e0 05             	shl    $0x5,%eax
+    10ed:	8d 44 01 ff          	lea    -0x1(%ecx,%eax,1),%eax
+    10f1:	99                   	cltd   
+    10f2:	f7 f9                	idiv   %ecx
+
+	num_data_sectors = bpb.total_sectors_32 - (bpb.reserved_sector_count + (bpb.table_count * bpb.table_size_32)) + root_dir_sectors;
+    10f4:	8b 53 38             	mov    0x38(%ebx),%edx
+    10f7:	29 fa                	sub    %edi,%edx
+    10f9:	0f b6 7b 28          	movzbl 0x28(%ebx),%edi
+    10fd:	0f af 7b 3c          	imul   0x3c(%ebx),%edi
+    1101:	29 fa                	sub    %edi,%edx
+	num_data_clusters = num_data_sectors / bpb.sectors_per_cluster;
+    1103:	0f b6 7b 25          	movzbl 0x25(%ebx),%edi
+
+	// Calculate size of a cluster (in bytes)
+	cluster_size = bpb.sectors_per_cluster * bpb.bytes_per_sector;
+    1107:	0f af cf             	imul   %edi,%ecx
+    110a:	89 8b 84 02 00 00    	mov    %ecx,0x284(%ebx)
+		KERROR("Error reading BPB: %u", err);
+		return;
+	}
+
+	// Get data sector count
+	root_dir_sectors = ((bpb.root_entry_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;
+    1110:	89 83 74 02 00 00    	mov    %eax,0x274(%ebx)
+
+	num_data_sectors = bpb.total_sectors_32 - (bpb.reserved_sector_count + (bpb.table_count * bpb.table_size_32)) + root_dir_sectors;
+    1116:	01 d0                	add    %edx,%eax
+	num_data_clusters = num_data_sectors / bpb.sectors_per_cluster;
+    1118:	31 d2                	xor    %edx,%edx
+	}
+
+	// Get data sector count
+	root_dir_sectors = ((bpb.root_entry_count * 32) + (bpb.bytes_per_sector - 1)) / bpb.bytes_per_sector;
+
+	num_data_sectors = bpb.total_sectors_32 - (bpb.reserved_sector_count + (bpb.table_count * bpb.table_size_32)) + root_dir_sectors;
+    111a:	89 83 7c 02 00 00    	mov    %eax,0x27c(%ebx)
+	num_data_clusters = num_data_sectors / bpb.sectors_per_cluster;
+    1120:	f7 f7                	div    %edi
+    1122:	89 83 78 02 00 00    	mov    %eax,0x278(%ebx)
+
+	// Calculate size of a cluster (in bytes)
+	cluster_size = bpb.sectors_per_cluster * bpb.bytes_per_sector;
+	KDEBUG("Cluster size of %u bytes", cluster_size);
+    1128:	b8 88 17 00 00       	mov    $0x1788,%eax
+    112d:	89 4c 24 08          	mov    %ecx,0x8(%esp)
+    1131:	89 44 24 04          	mov    %eax,0x4(%esp)
+    1135:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+    113c:	e8 fc ff ff ff       	call   113d <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0xc5>
+
+	// Calculate address of first data sector
+	first_data_sector = bpb.reserved_sector_count + (bpb.table_count * bpb.table_size_32) + root_dir_sectors;
+    1141:	0f b6 43 28          	movzbl 0x28(%ebx),%eax
+    1145:	8b 7b 3c             	mov    0x3c(%ebx),%edi
+    1148:	0f b7 53 26          	movzwl 0x26(%ebx),%edx
+    114c:	8b 8b 74 02 00 00    	mov    0x274(%ebx),%ecx
+    1152:	0f af c7             	imul   %edi,%eax
+    1155:	01 ca                	add    %ecx,%edx
+    1157:	01 d0                	add    %edx,%eax
+    1159:	89 83 80 02 00 00    	mov    %eax,0x280(%ebx)
+
+	// Determine volume type
+	if(num_data_clusters < 4085) {
+    115f:	8b 83 78 02 00 00    	mov    0x278(%ebx),%eax
+    1165:	3d f4 0f 00 00       	cmp    $0xff4,%eax
+    116a:	0f 86 b0 02 00 00    	jbe    1420 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3a8>
+		KERROR("Tried to initialise FAT12 volume as FAT32");
+		return;
+	} else if(num_data_clusters < 65525) { 
+    1170:	3d f4 ff 00 00       	cmp    $0xfff4,%eax
+    1175:	0f 86 95 01 00 00    	jbe    1310 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x298>
+		KERROR("Tried to initialise FAT16 volume as FAT32");
+		return;
+	}
+
+	// Read FSINFO sector
+	if(!read_sectors(bpb.fat_info, 1, &fs_info, &err)) {
+    117b:	8d 43 72             	lea    0x72(%ebx),%eax
+    117e:	bf 01 00 00 00       	mov    $0x1,%edi
+    1183:	89 74 24 10          	mov    %esi,0x10(%esp)
+    1187:	89 44 24 0c          	mov    %eax,0xc(%esp)
+    118b:	89 7c 24 08          	mov    %edi,0x8(%esp)
+    118f:	0f b7 43 48          	movzwl 0x48(%ebx),%eax
+    1193:	89 1c 24             	mov    %ebx,(%esp)
+    1196:	89 44 24 04          	mov    %eax,0x4(%esp)
+    119a:	e8 fc ff ff ff       	call   119b <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x123>
+    119f:	85 c0                	test   %eax,%eax
+    11a1:	0f 84 da 02 00 00    	je     1481 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x409>
+		KERROR("Error reading FSInfo: %u", err);
+		return;
+	}
+
+	// Verify FSInfo struct
+	if(fs_info.signature != 0x41615252 || fs_info.signature2 != 0x61417272 || fs_info.trailSig != 0xAA550000) {
+    11a7:	8b 43 72             	mov    0x72(%ebx),%eax
+    11aa:	3d 52 52 61 41       	cmp    $0x41615252,%eax
+    11af:	0f 84 bb 01 00 00    	je     1370 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2f8>
+    11b5:	8b 8b 6e 02 00 00    	mov    0x26e(%ebx),%ecx
+    11bb:	8b 93 56 02 00 00    	mov    0x256(%ebx),%edx
+		KWARNING("Corrupted FSInfo: 0x%08X 0x%08X 0x%08X", 
+			(unsigned int) fs_info.signature, (unsigned int) fs_info.signature2,
+			(unsigned int) fs_info.trailSig);
+    11c1:	89 4c 24 10          	mov    %ecx,0x10(%esp)
+    11c5:	b9 38 18 00 00       	mov    $0x1838,%ecx
+    11ca:	89 54 24 0c          	mov    %edx,0xc(%esp)
+    11ce:	89 44 24 08          	mov    %eax,0x8(%esp)
+    11d2:	89 4c 24 04          	mov    %ecx,0x4(%esp)
+    11d6:	c7 04 24 03 00 00 00 	movl   $0x3,(%esp)
+    11dd:	e8 fc ff ff ff       	call   11de <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x166>
+			}
+		}
+	}
+
+	// Allocate more memory for the filesystem
+	fatBuffer = (uint32_t *) kmalloc(cluster_size);
+    11e2:	8b 83 84 02 00 00    	mov    0x284(%ebx),%eax
+    11e8:	89 04 24             	mov    %eax,(%esp)
+    11eb:	e8 fc ff ff ff       	call   11ec <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x174>
+    11f0:	89 83 88 02 00 00    	mov    %eax,0x288(%ebx)
+	dirHandleCache = hashmap_allocate();
+    11f6:	e8 fc ff ff ff       	call   11f7 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x17f>
+    11fb:	89 83 8c 02 00 00    	mov    %eax,0x28c(%ebx)
+
+	// Read FAT sector 0 to get dirty flags
+	if(!this->read_sectors(bpb.reserved_sector_count, 1, fatBuffer, &err)) {
+    1201:	89 74 24 10          	mov    %esi,0x10(%esp)
+    1205:	be 01 00 00 00       	mov    $0x1,%esi
+    120a:	8b 83 88 02 00 00    	mov    0x288(%ebx),%eax
+    1210:	89 74 24 08          	mov    %esi,0x8(%esp)
+    1214:	89 44 24 0c          	mov    %eax,0xc(%esp)
+    1218:	0f b7 43 26          	movzwl 0x26(%ebx),%eax
+    121c:	89 1c 24             	mov    %ebx,(%esp)
+    121f:	89 44 24 04          	mov    %eax,0x4(%esp)
+    1223:	e8 fc ff ff ff       	call   1224 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1ac>
+    1228:	85 c0                	test   %eax,%eax
+    122a:	0f 84 72 02 00 00    	je     14a2 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x42a>
+		KERROR("Error reading FAT: %u", err);
+		return;
+	} else {
+		fs_clealyUnmounted = (fatBuffer[1] & FAT32_VOLUME_DIRTY_MASK);
+    1230:	8b 83 88 02 00 00    	mov    0x288(%ebx),%eax
+    1236:	f6 40 07 08          	testb  $0x8,0x7(%eax)
+    123a:	0f 95 c0             	setne  %al
+
+		if(!fs_clealyUnmounted) {
+    123d:	84 c0                	test   %al,%al
+	// Read FAT sector 0 to get dirty flags
+	if(!this->read_sectors(bpb.reserved_sector_count, 1, fatBuffer, &err)) {
+		KERROR("Error reading FAT: %u", err);
+		return;
+	} else {
+		fs_clealyUnmounted = (fatBuffer[1] & FAT32_VOLUME_DIRTY_MASK);
+    123f:	88 43 04             	mov    %al,0x4(%ebx)
+
+		if(!fs_clealyUnmounted) {
+    1242:	0f 84 f8 01 00 00    	je     1440 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3c8>
+			KWARNING("Filesystem not cleanly unmounted after last use!");
+		}
+	}
+
+	// Read root directory
+	this->read_root_dir();
+    1248:	89 1c 24             	mov    %ebx,(%esp)
+    124b:	e8 fc ff ff ff       	call   124c <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1d4>
+
+			KDEBUG(" Dir: %s", dir->i.name);
+		}
+	}*/
+
+	fs_directory_t *dir = this->contents_of_directory((char *) "/test/test2/folder/");
+    1250:	b8 84 16 00 00       	mov    $0x1684,%eax
+    1255:	89 44 24 04          	mov    %eax,0x4(%esp)
+    1259:	89 1c 24             	mov    %ebx,(%esp)
+    125c:	e8 fc ff ff ff       	call   125d <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1e5>
+	dir = this->contents_of_directory((char *) "/test/test2/folder/");
+    1261:	b8 84 16 00 00       	mov    $0x1684,%eax
+    1266:	89 44 24 04          	mov    %eax,0x4(%esp)
+    126a:	89 1c 24             	mov    %ebx,(%esp)
+    126d:	e8 fc ff ff ff       	call   126e <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1f6>
+    1272:	89 c6                	mov    %eax,%esi
+
+	for(unsigned int i = 0; i < dir->children->num_entries; i++) {
+    1274:	8b 40 30             	mov    0x30(%eax),%eax
+    1277:	8b 50 08             	mov    0x8(%eax),%edx
+    127a:	85 d2                	test   %edx,%edx
+    127c:	74 72                	je     12f0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x278>
+    127e:	31 db                	xor    %ebx,%ebx
+    1280:	eb 23                	jmp    12a5 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x22d>
+    1282:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+    1289:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+
+		if(item->type == kFSItemTypeFile) {
+			fs_file_t *file = (fs_file_t *) item;
+
+			KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
+		} else if(item->type == kFSItemTypeDirectory) {
+    1290:	81 fa 45 52 49 44    	cmp    $0x44495245,%edx
+    1296:	0f 84 a4 00 00 00    	je     1340 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2c8>
+	}*/
+
+	fs_directory_t *dir = this->contents_of_directory((char *) "/test/test2/folder/");
+	dir = this->contents_of_directory((char *) "/test/test2/folder/");
+
+	for(unsigned int i = 0; i < dir->children->num_entries; i++) {
+    129c:	8b 46 30             	mov    0x30(%esi),%eax
+    129f:	43                   	inc    %ebx
+    12a0:	39 58 08             	cmp    %ebx,0x8(%eax)
+    12a3:	76 4b                	jbe    12f0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x278>
+		fs_item_t *item = (fs_item_t *) list_get(dir->children, i);
+    12a5:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+    12a9:	89 04 24             	mov    %eax,(%esp)
+    12ac:	e8 fc ff ff ff       	call   12ad <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x235>
+
+		if(item->type == kFSItemTypeFile) {
+    12b1:	8b 10                	mov    (%eax),%edx
+    12b3:	81 fa 45 4c 49 46    	cmp    $0x46494c45,%edx
+    12b9:	75 d5                	jne    1290 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x218>
+			fs_file_t *file = (fs_file_t *) item;
+
+			KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
+    12bb:	8b 50 34             	mov    0x34(%eax),%edx
+	}*/
+
+	fs_directory_t *dir = this->contents_of_directory((char *) "/test/test2/folder/");
+	dir = this->contents_of_directory((char *) "/test/test2/folder/");
+
+	for(unsigned int i = 0; i < dir->children->num_entries; i++) {
+    12be:	43                   	inc    %ebx
+		fs_item_t *item = (fs_item_t *) list_get(dir->children, i);
+
+		if(item->type == kFSItemTypeFile) {
+			fs_file_t *file = (fs_file_t *) item;
+
+			KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
+    12bf:	89 54 24 0c          	mov    %edx,0xc(%esp)
+    12c3:	8b 40 04             	mov    0x4(%eax),%eax
+    12c6:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+    12cd:	89 44 24 08          	mov    %eax,0x8(%esp)
+    12d1:	b8 98 16 00 00       	mov    $0x1698,%eax
+    12d6:	89 44 24 04          	mov    %eax,0x4(%esp)
+    12da:	e8 fc ff ff ff       	call   12db <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x263>
+	}*/
+
+	fs_directory_t *dir = this->contents_of_directory((char *) "/test/test2/folder/");
+	dir = this->contents_of_directory((char *) "/test/test2/folder/");
+
+	for(unsigned int i = 0; i < dir->children->num_entries; i++) {
+    12df:	8b 46 30             	mov    0x30(%esi),%eax
+    12e2:	39 58 08             	cmp    %ebx,0x8(%eax)
+    12e5:	77 be                	ja     12a5 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x22d>
+    12e7:	89 f6                	mov    %esi,%esi
+    12e9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+
+			KDEBUG(" Dir: %s", dir->i.name);
+		}
+	}
+
+	KSUCCESS("Volume initialised.");
+    12f0:	be c3 16 00 00       	mov    $0x16c3,%esi
+    12f5:	89 74 24 04          	mov    %esi,0x4(%esp)
+    12f9:	c7 04 24 02 00 00 00 	movl   $0x2,(%esp)
+    1300:	e8 fc ff ff ff       	call   1301 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x289>
+    1305:	eb 1e                	jmp    1325 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2ad>
+    1307:	89 f6                	mov    %esi,%esi
+    1309:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+	// Determine volume type
+	if(num_data_clusters < 4085) {
+		KERROR("Tried to initialise FAT12 volume as FAT32");
+		return;
+	} else if(num_data_clusters < 65525) { 
+		KERROR("Tried to initialise FAT16 volume as FAT32");
+    1310:	b8 e0 17 00 00       	mov    $0x17e0,%eax
+    1315:	89 44 24 04          	mov    %eax,0x4(%esp)
+    1319:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+    1320:	e8 fc ff ff ff       	call   1321 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2a9>
+			KDEBUG(" Dir: %s", dir->i.name);
+		}
+	}
+
+	KSUCCESS("Volume initialised.");
+}
+    1325:	8b 45 e4             	mov    -0x1c(%ebp),%eax
+    1328:	33 05 00 00 00 00    	xor    0x0,%eax
+    132e:	0f 85 8f 01 00 00    	jne    14c3 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x44b>
+    1334:	83 c4 3c             	add    $0x3c,%esp
+    1337:	5b                   	pop    %ebx
+    1338:	5e                   	pop    %esi
+    1339:	5f                   	pop    %edi
+    133a:	5d                   	pop    %ebp
+    133b:	c3                   	ret    
+    133c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+
+			KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
+		} else if(item->type == kFSItemTypeDirectory) {
+			fs_directory_t *dir = (fs_directory_t *) item;
+
+			KDEBUG(" Dir: %s", dir->i.name);
+    1340:	8b 40 04             	mov    0x4(%eax),%eax
+    1343:	bf b2 16 00 00       	mov    $0x16b2,%edi
+    1348:	89 7c 24 04          	mov    %edi,0x4(%esp)
+    134c:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+    1353:	89 44 24 08          	mov    %eax,0x8(%esp)
+    1357:	e8 fc ff ff ff       	call   1358 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2e0>
+    135c:	e9 3b ff ff ff       	jmp    129c <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x224>
+    1361:	eb 0d                	jmp    1370 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2f8>
+    1363:	90                   	nop
+    1364:	90                   	nop
+    1365:	90                   	nop
+    1366:	90                   	nop
+    1367:	90                   	nop
+    1368:	90                   	nop
+    1369:	90                   	nop
+    136a:	90                   	nop
+    136b:	90                   	nop
+    136c:	90                   	nop
+    136d:	90                   	nop
+    136e:	90                   	nop
+    136f:	90                   	nop
+		KERROR("Error reading FSInfo: %u", err);
+		return;
+	}
+
+	// Verify FSInfo struct
+	if(fs_info.signature != 0x41615252 || fs_info.signature2 != 0x61417272 || fs_info.trailSig != 0xAA550000) {
+    1370:	8b 93 56 02 00 00    	mov    0x256(%ebx),%edx
+    1376:	8b 8b 6e 02 00 00    	mov    0x26e(%ebx),%ecx
+    137c:	81 fa 72 72 41 61    	cmp    $0x61417272,%edx
+    1382:	0f 85 39 fe ff ff    	jne    11c1 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x149>
+    1388:	81 f9 00 00 55 aa    	cmp    $0xaa550000,%ecx
+    138e:	0f 85 2d fe ff ff    	jne    11c1 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x149>
+			(unsigned int) fs_info.trailSig);
+	} else {
+		KDEBUG("%u clusters, %u free, start search at %u",
+			(unsigned int) num_data_clusters,
+			(unsigned int) fs_info.last_known_free_sec_cnt,
+			(unsigned int) fs_info.free_cluster_search_start);
+    1394:	8b 83 5e 02 00 00    	mov    0x25e(%ebx),%eax
+    139a:	bf 68 18 00 00       	mov    $0x1868,%edi
+    139f:	89 44 24 10          	mov    %eax,0x10(%esp)
+    13a3:	8b 83 5a 02 00 00    	mov    0x25a(%ebx),%eax
+    13a9:	89 44 24 0c          	mov    %eax,0xc(%esp)
+    13ad:	8b 83 78 02 00 00    	mov    0x278(%ebx),%eax
+    13b3:	89 7c 24 04          	mov    %edi,0x4(%esp)
+    13b7:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+    13be:	89 44 24 08          	mov    %eax,0x8(%esp)
+    13c2:	e8 fc ff ff ff       	call   13c3 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x34b>
+
+		// Set up pointer to legacy volume label
+		volumeLabel = (char *) kmalloc(16);
+    13c7:	c7 04 24 10 00 00 00 	movl   $0x10,(%esp)
+    13ce:	e8 fc ff ff ff       	call   13cf <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x357>
+		memcpy(volumeLabel, &bpb.volume_label, 11);
+    13d3:	ba 0b 00 00 00       	mov    $0xb,%edx
+			(unsigned int) num_data_clusters,
+			(unsigned int) fs_info.last_known_free_sec_cnt,
+			(unsigned int) fs_info.free_cluster_search_start);
+
+		// Set up pointer to legacy volume label
+		volumeLabel = (char *) kmalloc(16);
+    13d8:	89 43 14             	mov    %eax,0x14(%ebx)
+		memcpy(volumeLabel, &bpb.volume_label, 11);
+    13db:	89 54 24 08          	mov    %edx,0x8(%esp)
+    13df:	8d 53 5f             	lea    0x5f(%ebx),%edx
+    13e2:	89 54 24 04          	mov    %edx,0x4(%esp)
+    13e6:	89 04 24             	mov    %eax,(%esp)
+    13e9:	e8 fc ff ff ff       	call   13ea <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x372>
+
+		// Trim spaces at the end
+		for(unsigned int i = 10; i > 0; i--) {
+    13ee:	b8 0a 00 00 00       	mov    $0xa,%eax
+    13f3:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+    13f9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+			if(volumeLabel[i] == ' ') {
+    1400:	8b 53 14             	mov    0x14(%ebx),%edx
+    1403:	01 c2                	add    %eax,%edx
+    1405:	80 3a 20             	cmpb   $0x20,(%edx)
+    1408:	0f 85 d4 fd ff ff    	jne    11e2 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x16a>
+		// Set up pointer to legacy volume label
+		volumeLabel = (char *) kmalloc(16);
+		memcpy(volumeLabel, &bpb.volume_label, 11);
+
+		// Trim spaces at the end
+		for(unsigned int i = 10; i > 0; i--) {
+    140e:	48                   	dec    %eax
+			if(volumeLabel[i] == ' ') {
+				volumeLabel[i] = 0x00;
+    140f:	c6 02 00             	movb   $0x0,(%edx)
+		// Set up pointer to legacy volume label
+		volumeLabel = (char *) kmalloc(16);
+		memcpy(volumeLabel, &bpb.volume_label, 11);
+
+		// Trim spaces at the end
+		for(unsigned int i = 10; i > 0; i--) {
+    1412:	75 ec                	jne    1400 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x388>
+    1414:	e9 c9 fd ff ff       	jmp    11e2 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x16a>
+    1419:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+	// Calculate address of first data sector
+	first_data_sector = bpb.reserved_sector_count + (bpb.table_count * bpb.table_size_32) + root_dir_sectors;
+
+	// Determine volume type
+	if(num_data_clusters < 4085) {
+		KERROR("Tried to initialise FAT12 volume as FAT32");
+    1420:	b8 ac 17 00 00       	mov    $0x17ac,%eax
+    1425:	89 44 24 04          	mov    %eax,0x4(%esp)
+    1429:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+    1430:	e8 fc ff ff ff       	call   1431 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3b9>
+		return;
+    1435:	e9 eb fe ff ff       	jmp    1325 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2ad>
+    143a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+		return;
+	} else {
+		fs_clealyUnmounted = (fatBuffer[1] & FAT32_VOLUME_DIRTY_MASK);
+
+		if(!fs_clealyUnmounted) {
+			KWARNING("Filesystem not cleanly unmounted after last use!");
+    1440:	b9 9c 18 00 00       	mov    $0x189c,%ecx
+    1445:	89 4c 24 04          	mov    %ecx,0x4(%esp)
+    1449:	c7 04 24 03 00 00 00 	movl   $0x3,(%esp)
+    1450:	e8 fc ff ff ff       	call   1451 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3d9>
+    1455:	e9 ee fd ff ff       	jmp    1248 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1d0>
+    145a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d) {
+	unsigned int err = 0;
+
+	// Read sector 0 of partition synchronously
+	if(!read_sectors(0, 1, &bpb, &err)) {
+		KERROR("Error reading BPB: %u", err);
+    1460:	8b 45 e0             	mov    -0x20(%ebp),%eax
+    1463:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+    146a:	89 44 24 08          	mov    %eax,0x8(%esp)
+    146e:	b8 48 16 00 00       	mov    $0x1648,%eax
+    1473:	89 44 24 04          	mov    %eax,0x4(%esp)
+    1477:	e8 fc ff ff ff       	call   1478 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x400>
+		return;
+    147c:	e9 a4 fe ff ff       	jmp    1325 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2ad>
+		return;
+	}
+
+	// Read FSINFO sector
+	if(!read_sectors(bpb.fat_info, 1, &fs_info, &err)) {
+		KERROR("Error reading FSInfo: %u", err);
+    1481:	8b 45 e0             	mov    -0x20(%ebp),%eax
+    1484:	bb 14 18 00 00       	mov    $0x1814,%ebx
+    1489:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+    148d:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+    1494:	89 44 24 08          	mov    %eax,0x8(%esp)
+    1498:	e8 fc ff ff ff       	call   1499 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x421>
+		return;
+    149d:	e9 83 fe ff ff       	jmp    1325 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2ad>
+	fatBuffer = (uint32_t *) kmalloc(cluster_size);
+	dirHandleCache = hashmap_allocate();
+
+	// Read FAT sector 0 to get dirty flags
+	if(!this->read_sectors(bpb.reserved_sector_count, 1, fatBuffer, &err)) {
+		KERROR("Error reading FAT: %u", err);
+    14a2:	8b 45 e0             	mov    -0x20(%ebp),%eax
+    14a5:	bb 66 16 00 00       	mov    $0x1666,%ebx
+    14aa:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+    14ae:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+    14b5:	89 44 24 08          	mov    %eax,0x8(%esp)
+    14b9:	e8 fc ff ff ff       	call   14ba <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x442>
+		return;
+    14be:	e9 62 fe ff ff       	jmp    1325 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2ad>
+			KDEBUG(" Dir: %s", dir->i.name);
+		}
+	}
+
+	KSUCCESS("Volume initialised.");
+}
+    14c3:	e8 fc ff ff ff       	call   14c4 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x44c>
+
+000014c8 <_ZL17fat32_part_verifyP18hal_disk_partition>:
+}
+
+/*
+ * Verifies if the FAT32 driver can support the partition.
+ */
+static bool fat32_part_verify(hal_disk_partition_t *part) {
+    14c8:	55                   	push   %ebp
+    14c9:	89 e5                	mov    %esp,%ebp
+    14cb:	83 ec 18             	sub    $0x18,%esp
+    14ce:	a1 00 00 00 00       	mov    0x0,%eax
+    14d3:	89 45 f4             	mov    %eax,-0xc(%ebp)
+    14d6:	31 c0                	xor    %eax,%eax
+    14d8:	8b 45 08             	mov    0x8(%ebp),%eax
+    14db:	80 38 0c             	cmpb   $0xc,(%eax)
+    14de:	0f 94 c0             	sete   %al
+	if(part->type == 0x0C) {
+		return true;
+	}
+
+	return false;
+}
+    14e1:	8b 55 f4             	mov    -0xc(%ebp),%edx
+    14e4:	33 15 00 00 00 00    	xor    0x0,%edx
+    14ea:	75 02                	jne    14ee <_ZL17fat32_part_verifyP18hal_disk_partition+0x26>
+    14ec:	c9                   	leave  
+    14ed:	c3                   	ret    
+    14ee:	e8 fc ff ff ff       	call   14ef <_ZL17fat32_part_verifyP18hal_disk_partition+0x27>
+    14f3:	90                   	nop
+
+000014f4 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk>:
+ * Creates a superblock (in this case, the fat32/fat16 classes) for the
+ * appropriate partition.
+ *
+ * This code assumes it's only called if it's a FAT fs, which is usually true.
+ */
+static void *fat32_create_superblocK(hal_disk_partition_t *part, hal_disk_t *disk) {
+    14f4:	55                   	push   %ebp
+    14f5:	89 e5                	mov    %esp,%ebp
+    14f7:	83 ec 38             	sub    $0x38,%esp
+    14fa:	89 5d f8             	mov    %ebx,-0x8(%ebp)
+    14fd:	8b 5d 08             	mov    0x8(%ebp),%ebx
+    1500:	89 75 fc             	mov    %esi,-0x4(%ebp)
+    1503:	8b 75 0c             	mov    0xc(%ebp),%esi
+    1506:	a1 00 00 00 00       	mov    0x0,%eax
+    150b:	89 45 f4             	mov    %eax,-0xc(%ebp)
+    150e:	31 c0                	xor    %eax,%eax
+	// FAT32
+	if(part->type == 0x0C) {
+    1510:	80 3b 0c             	cmpb   $0xc,(%ebx)
+    1513:	75 22                	jne    1537 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x43>
+		return (void *) new fs_fat32(part, disk);
+    1515:	c7 04 24 90 02 00 00 	movl   $0x290,(%esp)
+    151c:	e8 fc ff ff ff       	call   151d <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x29>
+    1521:	89 74 24 08          	mov    %esi,0x8(%esp)
+    1525:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+    1529:	89 04 24             	mov    %eax,(%esp)
+    152c:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+    152f:	e8 fc ff ff ff       	call   1530 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x3c>
+    1534:	8b 45 e4             	mov    -0x1c(%ebp),%eax
+	}
+
+	return NULL;
+    1537:	8b 55 f4             	mov    -0xc(%ebp),%edx
+    153a:	33 15 00 00 00 00    	xor    0x0,%edx
+    1540:	75 0a                	jne    154c <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x58>
+    1542:	8b 5d f8             	mov    -0x8(%ebp),%ebx
+    1545:	8b 75 fc             	mov    -0x4(%ebp),%esi
+    1548:	89 ec                	mov    %ebp,%esp
+    154a:	5d                   	pop    %ebp
+    154b:	c3                   	ret    
+    154c:	e8 fc ff ff ff       	call   154d <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x59>
+    1551:	8d 76 00             	lea    0x0(%esi),%esi
+
+00001554 <start>:
+
+/*
+ * Initialisation function for the FAT32 driver (called by kernel)
+ */
+extern "C" {
+	module_t *start(void) {
+    1554:	55                   	push   %ebp
+    1555:	89 e5                	mov    %esp,%ebp
+    1557:	83 ec 28             	sub    $0x28,%esp
+    155a:	a1 00 00 00 00       	mov    0x0,%eax
+    155f:	89 45 f4             	mov    %eax,-0xc(%ebp)
+    1562:	31 c0                	xor    %eax,%eax
+		hal_vfs_register((hal_vfs_t *) &vfs);
+    1564:	c7 04 24 a0 15 00 00 	movl   $0x15a0,(%esp)
+    156b:	e8 fc ff ff ff       	call   156c <start+0x18>
+		return (module_t *) &mod;
+	}
+    1570:	b8 e0 15 00 00       	mov    $0x15e0,%eax
+    1575:	8b 55 f4             	mov    -0xc(%ebp),%edx
+    1578:	33 15 00 00 00 00    	xor    0x0,%edx
+    157e:	75 02                	jne    1582 <start+0x2e>
+    1580:	c9                   	leave  
+    1581:	c3                   	ret    
+    1582:	e8 fc ff ff ff       	call   1583 <start+0x2f>
+	...
+
+000015a0 <_ZL3vfs>:
+    15a0:	46 41 54 33 32 00 00 00 00 00 00 00 00 00 00 00     FAT32...........
+	...
+    15c0:	c8 14 00 00 f4 14 00 00 00 00 00 00 00 00 00 00     ................
+	...
+
+000015e0 <_ZL3mod>:
+    15e0:	66 73 5f 66 61 74 00 00 00 00 00 00 00 00 00 00     fs_fat..........
+	...
+    162c:	2e 00 2e 2e 00 72 6f 6f 74 00 66 61 74 33 32 2e     .....root.fat32.
+    163c:	63 70 70 00 65 6e 74 72 69 65 73 00 66 73 5f 66     cpp.entries.fs_f
+    164c:	61 74 3a 20 45 72 72 6f 72 20 72 65 61 64 69 6e     at: Error readin
+    165c:	67 20 42 50 42 3a 20 25 75 00 66 73 5f 66 61 74     g BPB: %u.fs_fat
+    166c:	3a 20 45 72 72 6f 72 20 72 65 61 64 69 6e 67 20     : Error reading 
+    167c:	46 41 54 3a 20 25 75 00 2f 74 65 73 74 2f 74 65     FAT: %u./test/te
+    168c:	73 74 32 2f 66 6f 6c 64 65 72 2f 00 66 73 5f 66     st2/folder/.fs_f
+    169c:	61 74 3a 20 46 69 6c 65 3a 20 25 73 20 25 75 20     at: File: %s %u 
+    16ac:	42 79 74 65 73 00 66 73 5f 66 61 74 3a 20 20 44     Bytes.fs_fat:  D
+    16bc:	69 72 3a 20 25 73 00 66 73 5f 66 61 74 3a 20 56     ir: %s.fs_fat: V
+    16cc:	6f 6c 75 6d 65 20 69 6e 69 74 69 61 6c 69 73 65     olume initialise
+    16dc:	64 2e 00 00 66 73 5f 66 61 74 3a 20 43 6f 75 6c     d...fs_fat: Coul
+    16ec:	64 6e 27 74 20 72 65 61 64 20 73 65 63 74 6f 72     dn't read sector
+    16fc:	20 25 75 20 66 6f 72 20 46 41 54 00 66 73 5f 66      %u for FAT.fs_f
+    170c:	61 74 3a 20 45 72 72 6f 72 20 72 65 61 64 69 6e     at: Error readin
+    171c:	67 20 64 69 72 65 63 74 6f 72 79 20 66 69 6c 65     g directory file
+    172c:	20 25 75 3a 20 25 75 00 66 73 5f 66 61 74 3a 20      %u: %u.fs_fat: 
+    173c:	64 69 72 5f 63 61 63 68 65 20 61 64 64 3a 20 25     dir_cache add: %
+    174c:	73 3a 20 30 78 25 30 38 58 00 00 00 66 73 5f 66     s: 0x%08X...fs_f
+    175c:	61 74 3a 20 45 72 72 6f 72 20 72 65 61 64 69 6e     at: Error readin
+    176c:	67 20 72 6f 6f 74 20 64 69 72 20 63 6c 75 73 74     g root dir clust
+    177c:	65 72 20 25 75 3a 20 25 75 00 00 00 66 73 5f 66     er %u: %u...fs_f
+    178c:	61 74 3a 20 43 6c 75 73 74 65 72 20 73 69 7a 65     at: Cluster size
+    179c:	20 6f 66 20 25 75 20 62 79 74 65 73 00 00 00 00      of %u bytes....
+    17ac:	66 73 5f 66 61 74 3a 20 54 72 69 65 64 20 74 6f     fs_fat: Tried to
+    17bc:	20 69 6e 69 74 69 61 6c 69 73 65 20 46 41 54 31      initialise FAT1
+    17cc:	32 20 76 6f 6c 75 6d 65 20 61 73 20 46 41 54 33     2 volume as FAT3
+    17dc:	32 00 00 00 66 73 5f 66 61 74 3a 20 54 72 69 65     2...fs_fat: Trie
+    17ec:	64 20 74 6f 20 69 6e 69 74 69 61 6c 69 73 65 20     d to initialise 
+    17fc:	46 41 54 31 36 20 76 6f 6c 75 6d 65 20 61 73 20     FAT16 volume as 
+    180c:	46 41 54 33 32 00 00 00 66 73 5f 66 61 74 3a 20     FAT32...fs_fat: 
+    181c:	45 72 72 6f 72 20 72 65 61 64 69 6e 67 20 46 53     Error reading FS
+    182c:	49 6e 66 6f 3a 20 25 75 00 00 00 00 66 73 5f 66     Info: %u....fs_f
+    183c:	61 74 3a 20 43 6f 72 72 75 70 74 65 64 20 46 53     at: Corrupted FS
+    184c:	49 6e 66 6f 3a 20 30 78 25 30 38 58 20 30 78 25     Info: 0x%08X 0x%
+    185c:	30 38 58 20 30 78 25 30 38 58 00 00 66 73 5f 66     08X 0x%08X..fs_f
+    186c:	61 74 3a 20 25 75 20 63 6c 75 73 74 65 72 73 2c     at: %u clusters,
+    187c:	20 25 75 20 66 72 65 65 2c 20 73 74 61 72 74 20      %u free, start 
+    188c:	73 65 61 72 63 68 20 61 74 20 25 75 00 00 00 00     search at %u....
+    189c:	66 73 5f 66 61 74 3a 20 46 69 6c 65 73 79 73 74     fs_fat: Filesyst
+    18ac:	65 6d 20 6e 6f 74 20 63 6c 65 61 6e 6c 79 20 75     em not cleanly u
+    18bc:	6e 6d 6f 75 6e 74 65 64 20 61 66 74 65 72 20 6c     nmounted after l
+    18cc:	61 73 74 20 75 73 65 21 00                          ast use!.

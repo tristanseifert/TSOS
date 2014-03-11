@@ -39,6 +39,14 @@ struct fs_item {
 
 	// Kernel handle for this object
 	hal_handle_t handle;
+
+	// Timestamps
+	time_t time_created;
+	time_t time_written;
+	time_t time_accessed;
+
+	// User data
+	unsigned long long userData;
 };
 
 /*
@@ -82,6 +90,9 @@ struct fs_file {
 
 	// Directory this file is contained in
 	hal_handle_t parent;
+
+	// Size (in bytes)
+	unsigned long long size;
 };
 
 // Structure defining a VFS driver

@@ -14,6 +14,8 @@ extern "C" {
 
 #import <errno.h>
 
+#import <time.h>
+
 // Console support (printing, panic, etc)
 #import "console/console.h"
 #import "console/panic.h"

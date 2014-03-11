@@ -67,12 +67,11 @@ class fs_fat32 : public hal_fs {
 
 		unsigned int cluster_size;
 
-		// Root directory
-		unsigned int root_dir_num_entries;
-		fat_dirent_t *root_dir;
-
 		// Buffer for a single sector of FAT data
 		uint32_t *fatBuffer;
+
+		// Small cache for directory handles
+		hashmap_t *dirHandleCache;
 
 		void read_root_dir(void);
 
@@ -82,9 +81,15 @@ class fs_fat32 : public hal_fs {
 		// Read a cluster from the filesystem
 		void *readCluster(unsigned int cluster, void* buffer, unsigned int* error);
 
+		// Reads an entire directory table into memory.
+		fat_dirent_t *read_dir_file(fs_directory_t *parent, char *childName, unsigned int *entries);
+
 		// Takes an input buffer of FAT directory entries and "prettifies" them.
 		void processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *dir);
 
 		// Compute checksum for long filenames
 		uint8_t lfnCheckSum(unsigned char *shortName);
+
+		// Converts a FAT timestamp to a UNIX timestamp
+		time_t convert_timestamp(uint16_t date, uint16_t time, uint8_t millis);
 };

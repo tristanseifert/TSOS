@@ -1,3 +1,4 @@
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,7 +11,9 @@ extern "C" {
 
 #import <stddef.h>
 #import <stdint.h>
-#import <stdlib.h>
+
+#import "includes/stdlib.h"
+#import "includes/time.h"
 
 // Console support (printing, panic, etc)
 #import "console/console.h"

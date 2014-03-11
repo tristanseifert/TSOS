@@ -7,7 +7,7 @@ LD=i686-pc-elf-ld
 CURRENT_DIR=$(shell pwd)
 
 # Name of this kernel module
-MODULE_NAME=fs_fat32
+MODULE_NAME=fs_fat
 
 # General flags
 ARCH_ARGS=-march=i686 -mtune=pentium3 -msoft-float -mno-sse

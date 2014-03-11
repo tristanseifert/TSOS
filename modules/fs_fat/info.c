@@ -12,7 +12,8 @@ extern "C" {
 const __attribute__((section (".info") visibility("default"))) char name[] = MODULE_NAME;
 const __attribute__((section (".info") visibility("default"))) char version[] = "1.0";
 const __attribute__((section (".info") visibility("default"))) char license[] = "BSD";
-const __attribute__((section (".info") visibility("default"))) char note[] = "Support for reading and writing FAT32 filesystems.";
+const __attribute__((section (".info") visibility("default"))) char note[] = "Support for reading and writing FAT filesystems.";
+const __attribute__((section (".info") visibility("default"))) char author[] = "Tristan Seifert <tristan@squee.co>";
 
 const __attribute__((section (".info") visibility("default"))) char compiler[] = "GNU GCC " __VERSION__;
 const __attribute__((section (".info") visibility("default"))) char supported_kernel[] = "0.1";

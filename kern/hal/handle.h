@@ -14,6 +14,8 @@ extern "C" {
 
 	// Retrieves the object pointed to by a handle.
 	void *hal_handle_get_object(hal_handle_t handle);
+	// Retrieves the type of the handle.
+	unsigned int hal_handle_get_type(hal_handle_t handle);
 
 	// Updates the object pointed to by the handle, freeing the old if requested.
 	void hal_handle_update_object(hal_handle_t handle, void *obj, bool free);

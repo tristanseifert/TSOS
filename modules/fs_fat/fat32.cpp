@@ -9,6 +9,8 @@
 #import <module.h>
 #import <fat32.hpp>
 
+#define DEBUG_DIRECTORY_CACHING	1
+
 /*
  * Initialises a FAT32 filesystem from the specified partition table entry.
  */
@@ -59,30 +61,72 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 			(unsigned int) num_data_clusters,
 			(unsigned int) fs_info.last_known_free_sec_cnt,
 			(unsigned int) fs_info.free_cluster_search_start);
+
+		// Set up pointer to legacy volume label
+		volumeLabel = (char *) kmalloc(16);
+		memcpy(volumeLabel, &bpb.volume_label, 11);
+
+		// Trim spaces at the end
+		for(unsigned int i = 10; i > 0; i--) {
+			if(volumeLabel[i] == ' ') {
+				volumeLabel[i] = 0x00;
+			} else {
+				break;
+			}
+		}
 	}
 
-	// Allocate various kinds of buffers
+	// Allocate more memory for the filesystem
 	fatBuffer = (uint32_t *) kmalloc(cluster_size);
+	dirHandleCache = hashmap_allocate();
 
+	// Read FAT sector 0 to get dirty flags
+	if(!this->read_sectors(bpb.reserved_sector_count, 1, fatBuffer, &err)) {
+		KERROR("Error reading FAT: %u", err);
+		return;
+	} else {
+		fs_clealyUnmounted = (fatBuffer[1] & FAT32_VOLUME_DIRTY_MASK);
+
+		if(!fs_clealyUnmounted) {
+			KWARNING("Filesystem not cleanly unmounted after last use!");
+		}
+	}
+
+	// Read root directory
 	this->read_root_dir();
 
 	// List it
-	KDEBUG("Root directory: %u items", root_directory->children->num_entries);
+/*	KDEBUG("Root directory of '%s': %u items (handle: %u)", volumeLabel, root_directory->children->num_entries, root_directory->i.handle);
 	for(unsigned int i = 0; i < root_directory->children->num_entries; i++) {
 		fs_item_t *item = (fs_item_t *) list_get(root_directory->children, i);
 
 		if(item->type == kFSItemTypeFile) {
 			fs_file_t *file = (fs_file_t *) item;
 
-			KDEBUG("File: %s", file->i.name);
+			KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
+		} else if(item->type == kFSItemTypeDirectory) {
+			fs_directory_t *dir = (fs_directory_t *) item;
+
+			KDEBUG(" Dir: %s", dir->i.name);
+		}
+	}*/
+
+	fs_directory_t *dir = this->contents_of_directory((char *) "/test/test2/folder/");
+	dir = this->contents_of_directory((char *) "/test/test2/folder/");
+
+	for(unsigned int i = 0; i < dir->children->num_entries; i++) {
+		fs_item_t *item = (fs_item_t *) list_get(dir->children, i);
+
+		if(item->type == kFSItemTypeFile) {
+			fs_file_t *file = (fs_file_t *) item;
+
+			KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
 		} else if(item->type == kFSItemTypeDirectory) {
 			fs_directory_t *dir = (fs_directory_t *) item;
 
 			KDEBUG(" Dir: %s", dir->i.name);
 		}
 	}
-
-	// root_directory = this->contents_of_directory((char *) "/boot/grub/");
 
 	KSUCCESS("Volume initialised.");
 }
@@ -105,7 +149,6 @@ void fs_fat32::read_root_dir(void) {
 		fs_directory_t *new_root = hal_vfs_allocate_directory(false);
 
 		hal_vfs_deallocate_directory(root_directory, new_root);
-		kfree(root_dir);
 
 		root_directory = new_root;
 	} else {
@@ -122,17 +165,19 @@ void fs_fat32::read_root_dir(void) {
 
 	// Allocate memory for root directory
 	unsigned int root_dir_len = cnt * cluster_size;
-	root_dir = (fat_dirent_t *) kmalloc(root_dir_len);
-	root_dir_num_entries = root_dir_len / sizeof(fat_dirent_t);
+	unsigned int root_dir_num_entries = root_dir_len / sizeof(fat_dirent_t);
+
+	fat_dirent_t *buffer = (fat_dirent_t *) kmalloc(root_dir_len);
 
 	// Read the root directory's sectors.
 	cnt = 0;
+
 	while(true) {
 		if(root_clusters[cnt] != FAT32_END_CHAIN) {
-			unsigned int sector = root_clusters[cnt];
+			unsigned int cluster = root_clusters[cnt];
 
-			if(!this->readCluster(root_clusters[cnt], root_dir + (cnt * cluster_size), &err)) {
-				KERROR("Error reading root dir sector %u: %u", sector, err);
+			if(!this->readCluster(cluster, ((uint8_t *) buffer) + (cnt * cluster_size), &err)) {
+				KERROR("Error reading root dir cluster %u: %u", cluster, err);
 				return;
 			}
 		} else {
@@ -143,26 +188,177 @@ void fs_fat32::read_root_dir(void) {
 	}
 
 	// Process the read FAT directory entries into fs_file_t structs
-	this->processFATDirEnt(root_dir, root_dir_num_entries, root_directory);
+	this->processFATDirEnt(buffer, root_dir_num_entries, root_directory);
 
 	// Clean up temporary buffers needed to read root directory
 	kfree(root_clusters);
+	kfree(buffer);
+}
+
+/*
+ * Reads the directory file (index of files in the directory) of a directory.
+ */
+fat_dirent_t *fs_fat32::read_dir_file(fs_directory_t *parent, char *childName, unsigned int *entries) {
+	fs_directory_t *target = NULL;
+
+	// Locate the child
+	for(unsigned int i = 0; i < parent->children->num_entries; i++) {
+		fs_directory_t *dir = (fs_directory_t *) list_get(parent->children, i);
+
+		// Ignore non-directory files
+		if(dir->i.type == kFSItemTypeDirectory) {
+			if(!strcasecmp(childName, dir->i.name)) {
+				target = dir;
+				break;
+			}
+		}
+	}
+
+	if(target) {
+		// Read cluster chain
+		unsigned int *chain = this->clusterChainForCluster(target->i.userData & FAT32_MASK);
+		unsigned int cnt = 0;
+		unsigned int err = 0;
+
+		while(chain[cnt] != FAT32_END_CHAIN) {
+			cnt++;
+		}
+
+		// Allocate required buffer
+		unsigned int dir_length = cnt * cluster_size;
+		*entries = dir_length / sizeof(fat_dirent_t);
+
+		fat_dirent_t *buffer = (fat_dirent_t *) kmalloc(dir_length);
+
+		// Perform read
+		cnt = 0;
+
+		while(true) {
+			if(chain[cnt] != FAT32_END_CHAIN) {
+				unsigned int cluster = chain[cnt];
+
+				if(!this->readCluster(cluster, ((uint8_t *) buffer) + (cnt * cluster_size), &err)) {
+					KERROR("Error reading directory file %u: %u", cluster, err);
+					return NULL;
+				}
+			} else {
+				break;
+			}
+
+			cnt++;
+		}
+
+		return buffer;
+	}
+
+	// Directory not found
+	return NULL;
 }
 
 /*
  * Reads a directory, and constructs an fs_directory_t object for it.
  */
 fs_directory_t *fs_fat32::contents_of_directory(char *path) {
-	// Allocate a directory entry
-	fs_directory_t *directory = hal_vfs_allocate_directory(true);
+	fat_dirent_t *dirBuf = NULL;
+	unsigned int num_entries = 0;
+
+	fs_directory_t *directory = NULL;
+
+	char *currentPath = (char *) kmalloc(strlen(path) + 2);
+	unsigned int currentPathOffset = 0;
+
+	currentPath[currentPathOffset++] = '/';
 
 	// Separate path string
 	list_t *components = this->split_path(path);
 
 	// Iterate over each component
 	for(unsigned int i = 0; i < components->num_entries; i++) {
+		// Append path name
 		char *component = (char *) list_get(components, i);
-		KDEBUG("%s", component);
+
+		strcat(currentPath + currentPathOffset, component);
+		currentPathOffset += strlen(component);
+		currentPath[currentPathOffset++] = '/';
+
+		// Special case: root directory
+		if(i == 0) {
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+
+			// Verify the handle is valid
+			if(handle) {
+				if(hal_handle_get_type(handle) != kFSItemTypeDirectory) {
+					handle = 0;
+					break;
+				}
+
+				// Get object from the handle and verify it is good
+				directory = (fs_directory_t *) hal_handle_get_object(handle);
+				if(directory->i.type != kFSItemTypeDirectory) {
+					handle = 0;
+				}
+			}
+
+			// No handle (or invalid)
+			if(!handle) {
+				// Could we read the first child dir?
+				if(!(dirBuf = read_dir_file(root_directory, component, &num_entries))) {
+					return NULL;
+				}
+
+				// Convert to directory handle
+				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+				processFATDirEnt(dirBuf, num_entries, currentDir);
+
+				currentDir->parent = root_directory->i.handle;
+				hashmap_insert(dirHandleCache, currentPath, (void *) currentDir->i.handle);
+
+				#if DEBUG_DIRECTORY_CACHING
+				KDEBUG("dir_cache add: %s: 0x%08X", currentPath, (unsigned int) currentDir->i.handle);
+				#endif
+
+				directory = currentDir;
+			}
+		} else { // Do the same as above, but with "directory" as the parent.
+			// Check if this path is in the directory handle cache
+			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
+
+			// Verify the handle is valid
+			if(handle) {
+				if(hal_handle_get_type(handle) != kFSItemTypeDirectory) {
+					handle = 0;
+					break;
+				}
+
+				// Get object from the handle and verify it is good
+				directory = (fs_directory_t *) hal_handle_get_object(handle);
+				if(directory->i.type != kFSItemTypeDirectory) {
+					handle = 0;
+				}
+			}
+
+			// No handle (or invalid)
+			if(!handle) {
+				// Could we read the child dir?
+				if(!(dirBuf = read_dir_file(directory, component, &num_entries))) {
+					return NULL;
+				}
+
+				// Convert to directory handle
+				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+				processFATDirEnt(dirBuf, num_entries, currentDir);
+
+				currentDir->parent = directory->i.handle;
+				hashmap_insert(dirHandleCache, currentPath, (void *) currentDir->i.handle);
+
+				#if DEBUG_DIRECTORY_CACHING
+				KDEBUG("dir_cache add: %s: 0x%08X", currentPath, (unsigned int) currentDir->i.handle);
+				#endif
+
+				directory = currentDir;
+			}
+		}
 	}
 
 	// Return directory
@@ -205,7 +401,7 @@ void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_d
 			// Clear state
 			item = NULL;
 
-			// Long name
+			// Long Filenames
 			if((entry->attributes & FAT_ATTR_LFN) == FAT_ATTR_LFN) {
 				// Get longname entry
 				fat_longname_dirent_t *ln = (fat_longname_dirent_t *) entry;
@@ -244,6 +440,13 @@ void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_d
 
 				// Ignore dot and dotdot
 				if(strcmp(".", name) && strcmp("..", name)) {
+					// Lowercase directory name?
+					if((entry->nt_reserved & 0x08) || (entry->nt_reserved & 0x10)) {
+						for(unsigned int c = 0; c < 11; c++) {
+							name[c] = tolower(name[c]);
+						}
+					}
+
 					fs_directory_t *dir = hal_vfs_allocate_directory(true);
 					dir->i.name = name;
 					dir->parent = root->i.handle;
@@ -252,9 +455,26 @@ void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_d
 					// Add directory as child
 					list_add(root->children, dir);
 				}
+			} else if(entry->attributes & FAT_ATTR_VOLUME_ID) { // Volume label
+				if(volumeLabel) {
+					memclr(volumeLabel, 16);
+				}
+
+				memcpy(volumeLabel, &entry->name, 11);
+
+				// Trim spaces at the end
+				for(unsigned int i = 10; i > 0; i--) {
+					if(volumeLabel[i] == ' ') {
+						volumeLabel[i] = 0x00;
+					} else {
+						break;
+					}
+				}
 			} else { // regular file
 				// Allocate a file object
 				fs_file_t *file = hal_vfs_allocate_file(root);
+				file->size = entry->filesize;
+
 				unsigned int c = 0;
 
 				// Handle long name
@@ -330,6 +550,17 @@ void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_d
 				item->is_hidden = (entry->attributes & FAT_ATTR_HIDDEN);
 				item->is_system = (entry->attributes & FAT_ATTR_SYSTEM);
 				item->is_readonly = (entry->attributes & FAT_ATTR_READ_ONLY);
+
+				// Convert the timestamps
+				item->time_created = this->convert_timestamp(entry->created_date, entry->created_time, 0);
+				item->time_written = this->convert_timestamp(entry->write_date, entry->write_time, 0);
+				item->time_created = this->convert_timestamp(entry->accessed_date, 0, 0);
+
+				/*
+				 * To speed up file reads, store the first cluster of this file
+				 * in the low 32 bits of the userData field of the item.
+				 */
+				item->userData = (entry->cluster_high << 16) | (entry->cluster_low);
 			}
 		} else if(entry->name[0] == 0x00) {
 			// Byte 0 being 0x00 indicates the entry is free.
@@ -357,6 +588,36 @@ uint8_t fs_fat32::lfnCheckSum(unsigned char *shortName) {
 }
 
 /*
+ * Converts from the FAT timestamp format (separate date, time, and millis) to
+ * more acceptable, sane, (and indubitably) less shitty UNIX epoch.
+ */
+time_t fs_fat32::convert_timestamp(uint16_t date, uint16_t time, uint8_t millis) {
+	time_t t = 315532800;
+
+	// Process date
+	if(date) {
+		unsigned int month = (date & 0x1E0) >> 5;
+		unsigned int year = (date & 0xFE00) >> 9;
+
+		t += (date & 0x1F) * 86400; // day
+	}
+
+	// Process time
+	if(time) {
+		t += (time & 0x1F) * 2; // stored as multiples of twos
+		t += ((time & 0x7E0) >> 5) * 60;
+		t += ((time & 0xF800) >> 11) * 3600;
+	}
+
+	// Milliseconds
+	if(millis) {
+		if(millis > 99) t++;
+	}
+
+	return t;
+}
+
+/*
  * Calculates a cluster's offset into the FAT. The returned structure indicates
  * the sector to read, and the dword offset into that sector. In other words,
  * if the sector is read as an array of bytes, the offset must be multiplied
@@ -365,9 +626,12 @@ uint8_t fs_fat32::lfnCheckSum(unsigned char *shortName) {
 fat32_secoff_t fs_fat32::fatEntryOffsetForCluster(unsigned int cluster) {
 	fat32_secoff_t offset;
 
+	// Number of FAT entries per cluster
+	unsigned int entries_per_cluster = cluster_size / 4;
+
 	// Determine size of FAT and normalise cluster
-	offset.sector = bpb.reserved_sector_count + (cluster / cluster_size);
-	offset.offset = cluster % cluster_size;
+	offset.sector = bpb.reserved_sector_count + (cluster / entries_per_cluster);
+	offset.offset = cluster % entries_per_cluster;
 
 	return offset;
 }
@@ -403,7 +667,7 @@ unsigned int *fs_fat32::clusterChainForCluster(unsigned int cluster) {
 		// Read out cluster
 		if(this->read_sectors(off.sector, bpb.sectors_per_cluster, fatBuffer, &err)) {
 			nextCluster = fatBuffer[off.offset];
-		} else { // error reading
+		} else { // read error?
 			KERROR("Couldn't read sector %u for FAT", off.sector);
 			goto error;
 		}
