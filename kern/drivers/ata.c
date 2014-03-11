@@ -121,6 +121,8 @@ ata_driver_t* ata_init_pci(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t
 		return NULL;
 	}
 
+	IRQ_OFF();
+
 	// Allocate some buffer memory
 	uint8_t *ide_buf = (uint8_t *) kmalloc(2048);
 	memclr(ide_buf, 2048);
@@ -373,6 +375,7 @@ ata_driver_t* ata_init_pci(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t
 	// Clean up allocated memory
 	kfree(ide_buf);
 
+	IRQ_RES();
 	ata_drivers_loaded++;
 	return driver;
 }

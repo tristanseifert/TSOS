@@ -36,271 +36,655 @@ Disassembly of section .text:
   52:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
   59:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
-00000060 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk>:
+00000060 <_ZN8fs_fat32D1Ev>:
   60:	55                   	push   %ebp
   61:	89 e5                	mov    %esp,%ebp
-  63:	57                   	push   %edi
-  64:	56                   	push   %esi
-  65:	53                   	push   %ebx
-  66:	83 ec 3c             	sub    $0x3c,%esp
-  69:	8b 5d 08             	mov    0x8(%ebp),%ebx
-  6c:	a1 00 00 00 00       	mov    0x0,%eax
-  71:	89 45 e4             	mov    %eax,-0x1c(%ebp)
-  74:	31 c0                	xor    %eax,%eax
-  76:	8b 75 0c             	mov    0xc(%ebp),%esi
-  79:	8b 45 10             	mov    0x10(%ebp),%eax
-  7c:	89 1c 24             	mov    %ebx,(%esp)
-  7f:	89 74 24 04          	mov    %esi,0x4(%esp)
-  83:	89 44 24 08          	mov    %eax,0x8(%esp)
-  87:	e8 fc ff ff ff       	call   88 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x28>
-  8c:	c7 03 08 00 00 00    	movl   $0x8,(%ebx)
-  92:	c7 04 24 00 02 00 00 	movl   $0x200,(%esp)
-  99:	e8 fc ff ff ff       	call   9a <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3a>
-  9e:	85 c0                	test   %eax,%eax
-  a0:	89 43 0c             	mov    %eax,0xc(%ebx)
-  a3:	0f 84 47 01 00 00    	je     1f0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x190>
-  a9:	8b 46 04             	mov    0x4(%esi),%eax
-  ac:	ba 54 04 00 00       	mov    $0x454,%edx
-  b1:	31 ff                	xor    %edi,%edi
-  b3:	89 54 24 04          	mov    %edx,0x4(%esp)
-  b7:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
-  be:	89 44 24 08          	mov    %eax,0x8(%esp)
-  c2:	e8 fc ff ff ff       	call   c3 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x63>
-  c7:	31 c9                	xor    %ecx,%ecx
-  c9:	31 c0                	xor    %eax,%eax
-  cb:	89 4c 24 18          	mov    %ecx,0x18(%esp)
-  cf:	89 7c 24 14          	mov    %edi,0x14(%esp)
-  d3:	89 44 24 10          	mov    %eax,0x10(%esp)
-  d7:	8b 43 0c             	mov    0xc(%ebx),%eax
-  da:	89 44 24 0c          	mov    %eax,0xc(%esp)
-  de:	b8 01 00 00 00       	mov    $0x1,%eax
-  e3:	89 44 24 08          	mov    %eax,0x8(%esp)
-  e7:	8b 46 04             	mov    0x4(%esi),%eax
-  ea:	89 44 24 04          	mov    %eax,0x4(%esp)
-  ee:	8b 43 08             	mov    0x8(%ebx),%eax
-  f1:	89 04 24             	mov    %eax,(%esp)
-  f4:	e8 fc ff ff ff       	call   f5 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x95>
-  f9:	8b 4b 0c             	mov    0xc(%ebx),%ecx
-  fc:	0f b7 41 11          	movzwl 0x11(%ecx),%eax
- 100:	0f b7 79 0b          	movzwl 0xb(%ecx),%edi
- 104:	0f b7 71 0e          	movzwl 0xe(%ecx),%esi
- 108:	c1 e0 05             	shl    $0x5,%eax
- 10b:	8d 44 07 ff          	lea    -0x1(%edi,%eax,1),%eax
- 10f:	99                   	cltd   
- 110:	f7 ff                	idiv   %edi
- 112:	8b 51 20             	mov    0x20(%ecx),%edx
- 115:	29 f2                	sub    %esi,%edx
- 117:	89 43 10             	mov    %eax,0x10(%ebx)
- 11a:	0f b6 71 10          	movzbl 0x10(%ecx),%esi
- 11e:	0f af 71 24          	imul   0x24(%ecx),%esi
- 122:	29 f2                	sub    %esi,%edx
- 124:	01 d0                	add    %edx,%eax
- 126:	31 d2                	xor    %edx,%edx
- 128:	89 43 14             	mov    %eax,0x14(%ebx)
- 12b:	0f b6 71 0d          	movzbl 0xd(%ecx),%esi
- 12f:	f7 f6                	div    %esi
- 131:	3d f4 0f 00 00       	cmp    $0xff4,%eax
- 136:	89 43 18             	mov    %eax,0x18(%ebx)
- 139:	0f 86 91 00 00 00    	jbe    1d0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x170>
- 13f:	3d f4 ff 00 00       	cmp    $0xfff4,%eax
- 144:	76 5a                	jbe    1a0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x140>
- 146:	89 7c 24 10          	mov    %edi,0x10(%esp)
- 14a:	0f b6 51 0d          	movzbl 0xd(%ecx),%edx
- 14e:	89 44 24 08          	mov    %eax,0x8(%esp)
- 152:	b8 e8 04 00 00       	mov    $0x4e8,%eax
- 157:	89 44 24 04          	mov    %eax,0x4(%esp)
- 15b:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
- 162:	89 54 24 0c          	mov    %edx,0xc(%esp)
- 166:	e8 fc ff ff ff       	call   167 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x107>
- 16b:	8b 45 e4             	mov    -0x1c(%ebp),%eax
- 16e:	33 05 00 00 00 00    	xor    0x0,%eax
- 174:	0f 85 99 00 00 00    	jne    213 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1b3>
- 17a:	8b 43 0c             	mov    0xc(%ebx),%eax
- 17d:	c7 45 0c 3a 04 00 00 	movl   $0x43a,0xc(%ebp)
- 184:	c7 45 08 00 00 00 00 	movl   $0x0,0x8(%ebp)
- 18b:	89 45 10             	mov    %eax,0x10(%ebp)
- 18e:	83 c4 3c             	add    $0x3c,%esp
- 191:	5b                   	pop    %ebx
- 192:	5e                   	pop    %esi
- 193:	5f                   	pop    %edi
- 194:	5d                   	pop    %ebp
- 195:	e9 fc ff ff ff       	jmp    196 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x136>
- 19a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
- 1a0:	8b 45 e4             	mov    -0x1c(%ebp),%eax
- 1a3:	33 05 00 00 00 00    	xor    0x0,%eax
- 1a9:	75 68                	jne    213 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1b3>
- 1ab:	c7 45 0c b4 04 00 00 	movl   $0x4b4,0xc(%ebp)
- 1b2:	c7 45 08 04 00 00 00 	movl   $0x4,0x8(%ebp)
- 1b9:	83 c4 3c             	add    $0x3c,%esp
- 1bc:	5b                   	pop    %ebx
- 1bd:	5e                   	pop    %esi
- 1be:	5f                   	pop    %edi
- 1bf:	5d                   	pop    %ebp
- 1c0:	e9 fc ff ff ff       	jmp    1c1 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x161>
- 1c5:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
- 1c9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
- 1d0:	8b 45 e4             	mov    -0x1c(%ebp),%eax
- 1d3:	33 05 00 00 00 00    	xor    0x0,%eax
- 1d9:	75 38                	jne    213 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1b3>
- 1db:	c7 45 0c 80 04 00 00 	movl   $0x480,0xc(%ebp)
- 1e2:	eb ce                	jmp    1b2 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x152>
- 1e4:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
- 1ea:	8d bf 00 00 00 00    	lea    0x0(%edi),%edi
- 1f0:	b8 2c 04 00 00       	mov    $0x42c,%eax
- 1f5:	ba 0a 00 00 00       	mov    $0xa,%edx
- 1fa:	89 44 24 08          	mov    %eax,0x8(%esp)
- 1fe:	89 54 24 04          	mov    %edx,0x4(%esp)
- 202:	c7 04 24 30 04 00 00 	movl   $0x430,(%esp)
- 209:	e8 fc ff ff ff       	call   20a <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1aa>
- 20e:	e9 96 fe ff ff       	jmp    a9 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x49>
- 213:	e8 fc ff ff ff       	call   214 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1b4>
- 218:	90                   	nop
- 219:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+  63:	83 ec 18             	sub    $0x18,%esp
+  66:	a1 00 00 00 00       	mov    0x0,%eax
+  6b:	89 45 f4             	mov    %eax,-0xc(%ebp)
+  6e:	31 c0                	xor    %eax,%eax
+  70:	8b 45 08             	mov    0x8(%ebp),%eax
+  73:	c7 00 08 00 00 00    	movl   $0x8,(%eax)
+  79:	8b 45 f4             	mov    -0xc(%ebp),%eax
+  7c:	33 05 00 00 00 00    	xor    0x0,%eax
+  82:	75 02                	jne    86 <_ZN8fs_fat32D1Ev+0x26>
+  84:	c9                   	leave  
+  85:	c3                   	ret    
+  86:	e8 fc ff ff ff       	call   87 <_ZN8fs_fat32D1Ev+0x27>
+  8b:	90                   	nop
+  8c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
 
-00000220 <_ZN8fs_fat32D1Ev>:
- 220:	55                   	push   %ebp
- 221:	89 e5                	mov    %esp,%ebp
- 223:	83 ec 18             	sub    $0x18,%esp
- 226:	8b 15 00 00 00 00    	mov    0x0,%edx
- 22c:	89 55 f4             	mov    %edx,-0xc(%ebp)
- 22f:	31 d2                	xor    %edx,%edx
- 231:	8b 45 08             	mov    0x8(%ebp),%eax
- 234:	c7 00 08 00 00 00    	movl   $0x8,(%eax)
- 23a:	8b 55 f4             	mov    -0xc(%ebp),%edx
- 23d:	33 15 00 00 00 00    	xor    0x0,%edx
- 243:	75 0c                	jne    251 <_ZN8fs_fat32D1Ev+0x31>
- 245:	8b 40 0c             	mov    0xc(%eax),%eax
- 248:	89 45 08             	mov    %eax,0x8(%ebp)
- 24b:	c9                   	leave  
- 24c:	e9 fc ff ff ff       	jmp    24d <_ZN8fs_fat32D1Ev+0x2d>
- 251:	e8 fc ff ff ff       	call   252 <_ZN8fs_fat32D1Ev+0x32>
- 256:	8d 76 00             	lea    0x0(%esi),%esi
- 259:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+00000090 <_ZN8fs_fat3224fatEntryOffsetForClusterEj>:
+  90:	55                   	push   %ebp
+  91:	89 e5                	mov    %esp,%ebp
+  93:	53                   	push   %ebx
+  94:	83 ec 14             	sub    $0x14,%esp
+  97:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+  9a:	8b 45 10             	mov    0x10(%ebp),%eax
+  9d:	8b 15 00 00 00 00    	mov    0x0,%edx
+  a3:	89 55 f4             	mov    %edx,-0xc(%ebp)
+  a6:	31 d2                	xor    %edx,%edx
+  a8:	31 d2                	xor    %edx,%edx
+  aa:	8b 4d 08             	mov    0x8(%ebp),%ecx
+  ad:	f7 b3 78 02 00 00    	divl   0x278(%ebx)
+  b3:	0f b7 5b 1a          	movzwl 0x1a(%ebx),%ebx
+  b7:	89 51 04             	mov    %edx,0x4(%ecx)
+  ba:	01 d8                	add    %ebx,%eax
+  bc:	8b 55 f4             	mov    -0xc(%ebp),%edx
+  bf:	33 15 00 00 00 00    	xor    0x0,%edx
+  c5:	89 01                	mov    %eax,(%ecx)
+  c7:	89 c8                	mov    %ecx,%eax
+  c9:	75 08                	jne    d3 <_ZN8fs_fat3224fatEntryOffsetForClusterEj+0x43>
+  cb:	83 c4 14             	add    $0x14,%esp
+  ce:	5b                   	pop    %ebx
+  cf:	5d                   	pop    %ebp
+  d0:	c2 04 00             	ret    $0x4
+  d3:	e8 fc ff ff ff       	call   d4 <_ZN8fs_fat3224fatEntryOffsetForClusterEj+0x44>
+  d8:	90                   	nop
+  d9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
 
-00000260 <_ZN8fs_fat3224fatEntryOffsetForClusterEj>:
- 260:	55                   	push   %ebp
- 261:	89 e5                	mov    %esp,%ebp
- 263:	83 ec 18             	sub    $0x18,%esp
- 266:	8b 55 0c             	mov    0xc(%ebp),%edx
- 269:	89 5d f8             	mov    %ebx,-0x8(%ebp)
- 26c:	8b 4d 08             	mov    0x8(%ebp),%ecx
- 26f:	a1 00 00 00 00       	mov    0x0,%eax
- 274:	89 45 f4             	mov    %eax,-0xc(%ebp)
- 277:	31 c0                	xor    %eax,%eax
- 279:	8b 45 10             	mov    0x10(%ebp),%eax
- 27c:	89 75 fc             	mov    %esi,-0x4(%ebp)
- 27f:	8b 5a 0c             	mov    0xc(%edx),%ebx
- 282:	31 d2                	xor    %edx,%edx
- 284:	c1 e0 02             	shl    $0x2,%eax
- 287:	0f b7 73 0b          	movzwl 0xb(%ebx),%esi
- 28b:	0f b7 5b 0e          	movzwl 0xe(%ebx),%ebx
- 28f:	f7 f6                	div    %esi
- 291:	01 d8                	add    %ebx,%eax
- 293:	89 51 04             	mov    %edx,0x4(%ecx)
- 296:	8b 55 f4             	mov    -0xc(%ebp),%edx
- 299:	33 15 00 00 00 00    	xor    0x0,%edx
- 29f:	89 01                	mov    %eax,(%ecx)
- 2a1:	89 c8                	mov    %ecx,%eax
- 2a3:	75 0c                	jne    2b1 <_ZN8fs_fat3224fatEntryOffsetForClusterEj+0x51>
- 2a5:	8b 5d f8             	mov    -0x8(%ebp),%ebx
- 2a8:	8b 75 fc             	mov    -0x4(%ebp),%esi
- 2ab:	89 ec                	mov    %ebp,%esp
- 2ad:	5d                   	pop    %ebp
- 2ae:	c2 04 00             	ret    $0x4
- 2b1:	e8 fc ff ff ff       	call   2b2 <_ZN8fs_fat3224fatEntryOffsetForClusterEj+0x52>
+000000e0 <_ZN8fs_fat3222clusterChainForClusterEj>:
+  e0:	55                   	push   %ebp
+  e1:	89 e5                	mov    %esp,%ebp
+  e3:	57                   	push   %edi
+  e4:	56                   	push   %esi
+  e5:	53                   	push   %ebx
+  e6:	83 ec 4c             	sub    $0x4c,%esp
+  e9:	8b 75 0c             	mov    0xc(%ebp),%esi
+  ec:	a1 00 00 00 00       	mov    0x0,%eax
+  f1:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+  f4:	31 c0                	xor    %eax,%eax
+  f6:	8b 5d 08             	mov    0x8(%ebp),%ebx
+  f9:	c7 04 24 80 00 00 00 	movl   $0x80,(%esp)
+ 100:	e8 fc ff ff ff       	call   101 <_ZN8fs_fat3222clusterChainForClusterEj+0x21>
+ 105:	85 f6                	test   %esi,%esi
+ 107:	89 c7                	mov    %eax,%edi
+ 109:	0f 84 f1 00 00 00    	je     200 <_ZN8fs_fat3222clusterChainForClusterEj+0x120>
+ 10f:	81 fe f8 ff ff 0f    	cmp    $0xffffff8,%esi
+ 115:	89 f2                	mov    %esi,%edx
+ 117:	89 30                	mov    %esi,(%eax)
+ 119:	0f 84 c1 00 00 00    	je     1e0 <_ZN8fs_fat3222clusterChainForClusterEj+0x100>
+ 11f:	be 01 00 00 00       	mov    $0x1,%esi
+ 124:	89 d1                	mov    %edx,%ecx
+ 126:	c7 45 cc 20 00 00 00 	movl   $0x20,-0x34(%ebp)
+ 12d:	eb 11                	jmp    140 <_ZN8fs_fat3222clusterChainForClusterEj+0x60>
+ 12f:	90                   	nop
+ 130:	89 0c b7             	mov    %ecx,(%edi,%esi,4)
+ 133:	46                   	inc    %esi
+ 134:	81 f9 f8 ff ff 0f    	cmp    $0xffffff8,%ecx
+ 13a:	0f 84 a0 00 00 00    	je     1e0 <_ZN8fs_fat3222clusterChainForClusterEj+0x100>
+ 140:	89 c8                	mov    %ecx,%eax
+ 142:	31 d2                	xor    %edx,%edx
+ 144:	f7 b3 78 02 00 00    	divl   0x278(%ebx)
+ 14a:	89 55 d0             	mov    %edx,-0x30(%ebp)
+ 14d:	0f b7 53 1a          	movzwl 0x1a(%ebx),%edx
+ 151:	01 c2                	add    %eax,%edx
+ 153:	8d 45 e0             	lea    -0x20(%ebp),%eax
+ 156:	89 44 24 10          	mov    %eax,0x10(%esp)
+ 15a:	8b 83 84 02 00 00    	mov    0x284(%ebx),%eax
+ 160:	89 55 d4             	mov    %edx,-0x2c(%ebp)
+ 163:	89 44 24 0c          	mov    %eax,0xc(%esp)
+ 167:	0f b6 43 19          	movzbl 0x19(%ebx),%eax
+ 16b:	89 54 24 04          	mov    %edx,0x4(%esp)
+ 16f:	89 1c 24             	mov    %ebx,(%esp)
+ 172:	89 44 24 08          	mov    %eax,0x8(%esp)
+ 176:	e8 fc ff ff ff       	call   177 <_ZN8fs_fat3222clusterChainForClusterEj+0x97>
+ 17b:	85 c0                	test   %eax,%eax
+ 17d:	0f 84 8d 00 00 00    	je     210 <_ZN8fs_fat3222clusterChainForClusterEj+0x130>
+ 183:	8b 93 84 02 00 00    	mov    0x284(%ebx),%edx
+ 189:	8b 45 d0             	mov    -0x30(%ebp),%eax
+ 18c:	8d 04 82             	lea    (%edx,%eax,4),%eax
+ 18f:	ba f8 ff ff 0f       	mov    $0xffffff8,%edx
+ 194:	8b 08                	mov    (%eax),%ecx
+ 196:	81 f9 f8 ff ff 0f    	cmp    $0xffffff8,%ecx
+ 19c:	0f 43 ca             	cmovae %edx,%ecx
+ 19f:	3b 75 cc             	cmp    -0x34(%ebp),%esi
+ 1a2:	75 8c                	jne    130 <_ZN8fs_fat3222clusterChainForClusterEj+0x50>
+ 1a4:	8d 46 20             	lea    0x20(%esi),%eax
+ 1a7:	89 45 cc             	mov    %eax,-0x34(%ebp)
+ 1aa:	c1 e0 02             	shl    $0x2,%eax
+ 1ad:	89 3c 24             	mov    %edi,(%esp)
+ 1b0:	89 4d c8             	mov    %ecx,-0x38(%ebp)
+ 1b3:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 1b7:	e8 fc ff ff ff       	call   1b8 <_ZN8fs_fat3222clusterChainForClusterEj+0xd8>
+ 1bc:	8b 4d c8             	mov    -0x38(%ebp),%ecx
+ 1bf:	89 c7                	mov    %eax,%edi
+ 1c1:	89 0c b7             	mov    %ecx,(%edi,%esi,4)
+ 1c4:	46                   	inc    %esi
+ 1c5:	81 f9 f8 ff ff 0f    	cmp    $0xffffff8,%ecx
+ 1cb:	0f 85 6f ff ff ff    	jne    140 <_ZN8fs_fat3222clusterChainForClusterEj+0x60>
+ 1d1:	eb 0d                	jmp    1e0 <_ZN8fs_fat3222clusterChainForClusterEj+0x100>
+ 1d3:	90                   	nop
+ 1d4:	90                   	nop
+ 1d5:	90                   	nop
+ 1d6:	90                   	nop
+ 1d7:	90                   	nop
+ 1d8:	90                   	nop
+ 1d9:	90                   	nop
+ 1da:	90                   	nop
+ 1db:	90                   	nop
+ 1dc:	90                   	nop
+ 1dd:	90                   	nop
+ 1de:	90                   	nop
+ 1df:	90                   	nop
+ 1e0:	8b 55 e4             	mov    -0x1c(%ebp),%edx
+ 1e3:	33 15 00 00 00 00    	xor    0x0,%edx
+ 1e9:	89 f8                	mov    %edi,%eax
+ 1eb:	75 4b                	jne    238 <_ZN8fs_fat3222clusterChainForClusterEj+0x158>
+ 1ed:	83 c4 4c             	add    $0x4c,%esp
+ 1f0:	5b                   	pop    %ebx
+ 1f1:	5e                   	pop    %esi
+ 1f2:	5f                   	pop    %edi
+ 1f3:	5d                   	pop    %ebp
+ 1f4:	c3                   	ret    
+ 1f5:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+ 1f9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+ 200:	c7 00 02 00 00 00    	movl   $0x2,(%eax)
+ 206:	ba 02 00 00 00       	mov    $0x2,%edx
+ 20b:	e9 0f ff ff ff       	jmp    11f <_ZN8fs_fat3222clusterChainForClusterEj+0x3f>
+ 210:	8b 55 d4             	mov    -0x2c(%ebp),%edx
+ 213:	b8 0c 09 00 00       	mov    $0x90c,%eax
+ 218:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 21c:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+ 223:	89 54 24 08          	mov    %edx,0x8(%esp)
+ 227:	e8 fc ff ff ff       	call   228 <_ZN8fs_fat3222clusterChainForClusterEj+0x148>
+ 22c:	89 3c 24             	mov    %edi,(%esp)
+ 22f:	31 ff                	xor    %edi,%edi
+ 231:	e8 fc ff ff ff       	call   232 <_ZN8fs_fat3222clusterChainForClusterEj+0x152>
+ 236:	eb a8                	jmp    1e0 <_ZN8fs_fat3222clusterChainForClusterEj+0x100>
+ 238:	e8 fc ff ff ff       	call   239 <_ZN8fs_fat3222clusterChainForClusterEj+0x159>
+ 23d:	90                   	nop
+ 23e:	66 90                	xchg   %ax,%ax
+
+00000240 <_ZN8fs_fat3211readClusterEjPvPj>:
+ 240:	55                   	push   %ebp
+ 241:	89 e5                	mov    %esp,%ebp
+ 243:	53                   	push   %ebx
+ 244:	83 ec 34             	sub    $0x34,%esp
+ 247:	8b 55 08             	mov    0x8(%ebp),%edx
+ 24a:	a1 00 00 00 00       	mov    0x0,%eax
+ 24f:	89 45 f4             	mov    %eax,-0xc(%ebp)
+ 252:	31 c0                	xor    %eax,%eax
+ 254:	8b 45 14             	mov    0x14(%ebp),%eax
+ 257:	8b 5d 10             	mov    0x10(%ebp),%ebx
+ 25a:	0f b6 4a 19          	movzbl 0x19(%edx),%ecx
+ 25e:	89 44 24 10          	mov    %eax,0x10(%esp)
+ 262:	8b 45 0c             	mov    0xc(%ebp),%eax
+ 265:	89 5c 24 0c          	mov    %ebx,0xc(%esp)
+ 269:	89 4c 24 08          	mov    %ecx,0x8(%esp)
+ 26d:	83 e8 02             	sub    $0x2,%eax
+ 270:	0f af c1             	imul   %ecx,%eax
+ 273:	8b 8a 74 02 00 00    	mov    0x274(%edx),%ecx
+ 279:	89 14 24             	mov    %edx,(%esp)
+ 27c:	01 c8                	add    %ecx,%eax
+ 27e:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 282:	e8 fc ff ff ff       	call   283 <_ZN8fs_fat3211readClusterEjPvPj+0x43>
+ 287:	85 c0                	test   %eax,%eax
+ 289:	b8 00 00 00 00       	mov    $0x0,%eax
+ 28e:	0f 44 d8             	cmove  %eax,%ebx
+ 291:	8b 55 f4             	mov    -0xc(%ebp),%edx
+ 294:	33 15 00 00 00 00    	xor    0x0,%edx
+ 29a:	89 d8                	mov    %ebx,%eax
+ 29c:	75 06                	jne    2a4 <_ZN8fs_fat3211readClusterEjPvPj+0x64>
+ 29e:	83 c4 34             	add    $0x34,%esp
+ 2a1:	5b                   	pop    %ebx
+ 2a2:	5d                   	pop    %ebp
+ 2a3:	c3                   	ret    
+ 2a4:	e8 fc ff ff ff       	call   2a5 <_ZN8fs_fat3211readClusterEjPvPj+0x65>
+ 2a9:	90                   	nop
+ 2aa:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+
+000002b0 <_ZN8fs_fat3213read_root_dirEv>:
+ 2b0:	55                   	push   %ebp
+ 2b1:	89 e5                	mov    %esp,%ebp
+ 2b3:	57                   	push   %edi
+ 2b4:	56                   	push   %esi
+ 2b5:	53                   	push   %ebx
+ 2b6:	83 ec 3c             	sub    $0x3c,%esp
+ 2b9:	8b 75 08             	mov    0x8(%ebp),%esi
+ 2bc:	a1 00 00 00 00       	mov    0x0,%eax
+ 2c1:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+ 2c4:	31 c0                	xor    %eax,%eax
+ 2c6:	8b 46 38             	mov    0x38(%esi),%eax
+ 2c9:	89 34 24             	mov    %esi,(%esp)
+ 2cc:	25 ff ff ff 0f       	and    $0xfffffff,%eax
+ 2d1:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 2d5:	e8 fc ff ff ff       	call   2d6 <_ZN8fs_fat3213read_root_dirEv+0x26>
+ 2da:	81 38 f8 ff ff 0f    	cmpl   $0xffffff8,(%eax)
+ 2e0:	89 c2                	mov    %eax,%edx
+ 2e2:	0f 84 d6 00 00 00    	je     3be <_ZN8fs_fat3213read_root_dirEv+0x10e>
+ 2e8:	31 c0                	xor    %eax,%eax
+ 2ea:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+ 2f0:	40                   	inc    %eax
+ 2f1:	81 3c 82 f8 ff ff 0f 	cmpl   $0xffffff8,(%edx,%eax,4)
+ 2f8:	75 f6                	jne    2f0 <_ZN8fs_fat3213read_root_dirEv+0x40>
+ 2fa:	8b be 78 02 00 00    	mov    0x278(%esi),%edi
+ 300:	0f af c7             	imul   %edi,%eax
+ 303:	89 c3                	mov    %eax,%ebx
+ 305:	c1 eb 05             	shr    $0x5,%ebx
+ 308:	89 55 d0             	mov    %edx,-0x30(%ebp)
+ 30b:	89 04 24             	mov    %eax,(%esp)
+ 30e:	e8 fc ff ff ff       	call   30f <_ZN8fs_fat3213read_root_dirEv+0x5f>
+ 313:	8b 55 d0             	mov    -0x30(%ebp),%edx
+ 316:	89 9e 7c 02 00 00    	mov    %ebx,0x27c(%esi)
+ 31c:	8b 3a                	mov    (%edx),%edi
+ 31e:	89 86 80 02 00 00    	mov    %eax,0x280(%esi)
+ 324:	81 ff f8 ff ff 0f    	cmp    $0xffffff8,%edi
+ 32a:	74 77                	je     3a3 <_ZN8fs_fat3213read_root_dirEv+0xf3>
+ 32c:	8b 8e 78 02 00 00    	mov    0x278(%esi),%ecx
+ 332:	31 db                	xor    %ebx,%ebx
+ 334:	89 55 d4             	mov    %edx,-0x2c(%ebp)
+ 337:	eb 22                	jmp    35b <_ZN8fs_fat3213read_root_dirEv+0xab>
+ 339:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+ 340:	8b 45 d4             	mov    -0x2c(%ebp),%eax
+ 343:	43                   	inc    %ebx
+ 344:	8b 3c 98             	mov    (%eax,%ebx,4),%edi
+ 347:	81 ff f8 ff ff 0f    	cmp    $0xffffff8,%edi
+ 34d:	74 51                	je     3a0 <_ZN8fs_fat3213read_root_dirEv+0xf0>
+ 34f:	8b 86 80 02 00 00    	mov    0x280(%esi),%eax
+ 355:	8b 8e 78 02 00 00    	mov    0x278(%esi),%ecx
+ 35b:	0f af cb             	imul   %ebx,%ecx
+ 35e:	8d 55 e0             	lea    -0x20(%ebp),%edx
+ 361:	89 54 24 0c          	mov    %edx,0xc(%esp)
+ 365:	89 7c 24 04          	mov    %edi,0x4(%esp)
+ 369:	c1 e1 05             	shl    $0x5,%ecx
+ 36c:	01 c1                	add    %eax,%ecx
+ 36e:	89 4c 24 08          	mov    %ecx,0x8(%esp)
+ 372:	89 34 24             	mov    %esi,(%esp)
+ 375:	e8 fc ff ff ff       	call   376 <_ZN8fs_fat3213read_root_dirEv+0xc6>
+ 37a:	85 c0                	test   %eax,%eax
+ 37c:	75 c2                	jne    340 <_ZN8fs_fat3213read_root_dirEv+0x90>
+ 37e:	8b 45 e0             	mov    -0x20(%ebp),%eax
+ 381:	bb 38 09 00 00       	mov    $0x938,%ebx
+ 386:	89 7c 24 08          	mov    %edi,0x8(%esp)
+ 38a:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+ 38e:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+ 395:	89 44 24 0c          	mov    %eax,0xc(%esp)
+ 399:	e8 fc ff ff ff       	call   39a <_ZN8fs_fat3213read_root_dirEv+0xea>
+ 39e:	eb 0b                	jmp    3ab <_ZN8fs_fat3213read_root_dirEv+0xfb>
+ 3a0:	8b 55 d4             	mov    -0x2c(%ebp),%edx
+ 3a3:	89 14 24             	mov    %edx,(%esp)
+ 3a6:	e8 fc ff ff ff       	call   3a7 <_ZN8fs_fat3213read_root_dirEv+0xf7>
+ 3ab:	8b 55 e4             	mov    -0x1c(%ebp),%edx
+ 3ae:	33 15 00 00 00 00    	xor    0x0,%edx
+ 3b4:	75 11                	jne    3c7 <_ZN8fs_fat3213read_root_dirEv+0x117>
+ 3b6:	83 c4 3c             	add    $0x3c,%esp
+ 3b9:	5b                   	pop    %ebx
+ 3ba:	5e                   	pop    %esi
+ 3bb:	5f                   	pop    %edi
+ 3bc:	5d                   	pop    %ebp
+ 3bd:	c3                   	ret    
+ 3be:	31 db                	xor    %ebx,%ebx
+ 3c0:	31 c0                	xor    %eax,%eax
+ 3c2:	e9 41 ff ff ff       	jmp    308 <_ZN8fs_fat3213read_root_dirEv+0x58>
+ 3c7:	e8 fc ff ff ff       	call   3c8 <_ZN8fs_fat3213read_root_dirEv+0x118>
+ 3cc:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+
+000003d0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk>:
+ 3d0:	55                   	push   %ebp
+ 3d1:	89 e5                	mov    %esp,%ebp
+ 3d3:	57                   	push   %edi
+ 3d4:	56                   	push   %esi
+ 3d5:	53                   	push   %ebx
+ 3d6:	83 ec 4c             	sub    $0x4c,%esp
+ 3d9:	a1 00 00 00 00       	mov    0x0,%eax
+ 3de:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+ 3e1:	31 c0                	xor    %eax,%eax
+ 3e3:	8b 45 10             	mov    0x10(%ebp),%eax
+ 3e6:	8d 7d e0             	lea    -0x20(%ebp),%edi
+ 3e9:	8b 5d 08             	mov    0x8(%ebp),%ebx
+ 3ec:	89 44 24 08          	mov    %eax,0x8(%esp)
+ 3f0:	8b 45 0c             	mov    0xc(%ebp),%eax
+ 3f3:	89 1c 24             	mov    %ebx,(%esp)
+ 3f6:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 3fa:	e8 fc ff ff ff       	call   3fb <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2b>
+ 3ff:	8d 43 0c             	lea    0xc(%ebx),%eax
+ 402:	c7 03 08 00 00 00    	movl   $0x8,(%ebx)
+ 408:	89 44 24 0c          	mov    %eax,0xc(%esp)
+ 40c:	b8 01 00 00 00       	mov    $0x1,%eax
+ 411:	89 44 24 08          	mov    %eax,0x8(%esp)
+ 415:	31 c0                	xor    %eax,%eax
+ 417:	c7 45 e0 00 00 00 00 	movl   $0x0,-0x20(%ebp)
+ 41e:	89 7c 24 10          	mov    %edi,0x10(%esp)
+ 422:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 426:	89 1c 24             	mov    %ebx,(%esp)
+ 429:	e8 fc ff ff ff       	call   42a <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x5a>
+ 42e:	85 c0                	test   %eax,%eax
+ 430:	0f 84 2a 03 00 00    	je     760 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x390>
+ 436:	0f b7 43 1d          	movzwl 0x1d(%ebx),%eax
+ 43a:	0f b7 4b 17          	movzwl 0x17(%ebx),%ecx
+ 43e:	0f b7 73 1a          	movzwl 0x1a(%ebx),%esi
+ 442:	c1 e0 05             	shl    $0x5,%eax
+ 445:	8d 44 01 ff          	lea    -0x1(%ecx,%eax,1),%eax
+ 449:	99                   	cltd   
+ 44a:	f7 f9                	idiv   %ecx
+ 44c:	8b 53 2c             	mov    0x2c(%ebx),%edx
+ 44f:	29 f2                	sub    %esi,%edx
+ 451:	0f b6 73 1c          	movzbl 0x1c(%ebx),%esi
+ 455:	0f af 73 30          	imul   0x30(%ebx),%esi
+ 459:	29 f2                	sub    %esi,%edx
+ 45b:	0f b6 73 19          	movzbl 0x19(%ebx),%esi
+ 45f:	0f af ce             	imul   %esi,%ecx
+ 462:	89 8b 78 02 00 00    	mov    %ecx,0x278(%ebx)
+ 468:	89 83 68 02 00 00    	mov    %eax,0x268(%ebx)
+ 46e:	01 d0                	add    %edx,%eax
+ 470:	31 d2                	xor    %edx,%edx
+ 472:	89 83 70 02 00 00    	mov    %eax,0x270(%ebx)
+ 478:	f7 f6                	div    %esi
+ 47a:	89 83 6c 02 00 00    	mov    %eax,0x26c(%ebx)
+ 480:	b8 88 09 00 00       	mov    $0x988,%eax
+ 485:	89 4c 24 08          	mov    %ecx,0x8(%esp)
+ 489:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 48d:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+ 494:	e8 fc ff ff ff       	call   495 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0xc5>
+ 499:	8b 8b 68 02 00 00    	mov    0x268(%ebx),%ecx
+ 49f:	0f b7 53 1a          	movzwl 0x1a(%ebx),%edx
+ 4a3:	0f b6 43 1c          	movzbl 0x1c(%ebx),%eax
+ 4a7:	8b 73 30             	mov    0x30(%ebx),%esi
+ 4aa:	01 ca                	add    %ecx,%edx
+ 4ac:	8b 8b 6c 02 00 00    	mov    0x26c(%ebx),%ecx
+ 4b2:	0f af c6             	imul   %esi,%eax
+ 4b5:	01 d0                	add    %edx,%eax
+ 4b7:	81 f9 f4 0f 00 00    	cmp    $0xff4,%ecx
+ 4bd:	89 83 74 02 00 00    	mov    %eax,0x274(%ebx)
+ 4c3:	0f 86 67 02 00 00    	jbe    730 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x360>
+ 4c9:	81 f9 f4 ff 00 00    	cmp    $0xfff4,%ecx
+ 4cf:	0f 86 cb 01 00 00    	jbe    6a0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2d0>
+ 4d5:	89 4c 24 08          	mov    %ecx,0x8(%esp)
+ 4d9:	b9 14 0a 00 00       	mov    $0xa14,%ecx
+ 4de:	be 01 00 00 00       	mov    $0x1,%esi
+ 4e3:	89 4c 24 04          	mov    %ecx,0x4(%esp)
+ 4e7:	89 44 24 0c          	mov    %eax,0xc(%esp)
+ 4eb:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+ 4f2:	e8 fc ff ff ff       	call   4f3 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x123>
+ 4f7:	8d 43 66             	lea    0x66(%ebx),%eax
+ 4fa:	89 7c 24 10          	mov    %edi,0x10(%esp)
+ 4fe:	89 44 24 0c          	mov    %eax,0xc(%esp)
+ 502:	89 74 24 08          	mov    %esi,0x8(%esp)
+ 506:	0f b7 43 3c          	movzwl 0x3c(%ebx),%eax
+ 50a:	89 1c 24             	mov    %ebx,(%esp)
+ 50d:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 511:	e8 fc ff ff ff       	call   512 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x142>
+ 516:	85 c0                	test   %eax,%eax
+ 518:	0f 84 63 02 00 00    	je     781 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3b1>
+ 51e:	8b 43 66             	mov    0x66(%ebx),%eax
+ 521:	3d 52 52 61 41       	cmp    $0x41615252,%eax
+ 526:	0f 84 a4 01 00 00    	je     6d0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x300>
+ 52c:	8b 8b 62 02 00 00    	mov    0x262(%ebx),%ecx
+ 532:	8b 93 4a 02 00 00    	mov    0x24a(%ebx),%edx
+ 538:	89 44 24 08          	mov    %eax,0x8(%esp)
+ 53c:	b8 6c 0a 00 00       	mov    $0xa6c,%eax
+ 541:	89 4c 24 10          	mov    %ecx,0x10(%esp)
+ 545:	89 54 24 0c          	mov    %edx,0xc(%esp)
+ 549:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 54d:	c7 04 24 03 00 00 00 	movl   $0x3,(%esp)
+ 554:	e8 fc ff ff ff       	call   555 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x185>
+ 559:	8b 83 78 02 00 00    	mov    0x278(%ebx),%eax
+ 55f:	89 04 24             	mov    %eax,(%esp)
+ 562:	e8 fc ff ff ff       	call   563 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x193>
+ 567:	89 83 84 02 00 00    	mov    %eax,0x284(%ebx)
+ 56d:	89 1c 24             	mov    %ebx,(%esp)
+ 570:	e8 fc ff ff ff       	call   571 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1a1>
+ 575:	8b 83 7c 02 00 00    	mov    0x27c(%ebx),%eax
+ 57b:	85 c0                	test   %eax,%eax
+ 57d:	0f 84 fd 00 00 00    	je     680 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2b0>
+ 583:	31 ff                	xor    %edi,%edi
+ 585:	89 d9                	mov    %ebx,%ecx
+ 587:	eb 14                	jmp    59d <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1cd>
+ 589:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+ 590:	47                   	inc    %edi
+ 591:	39 b9 7c 02 00 00    	cmp    %edi,0x27c(%ecx)
+ 597:	0f 86 e3 00 00 00    	jbe    680 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2b0>
+ 59d:	8b 81 80 02 00 00    	mov    0x280(%ecx),%eax
+ 5a3:	89 fb                	mov    %edi,%ebx
+ 5a5:	c1 e3 05             	shl    $0x5,%ebx
+ 5a8:	01 c3                	add    %eax,%ebx
+ 5aa:	0f b6 43 0b          	movzbl 0xb(%ebx),%eax
+ 5ae:	83 e0 0f             	and    $0xf,%eax
+ 5b1:	83 f8 0f             	cmp    $0xf,%eax
+ 5b4:	74 da                	je     590 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1c0>
+ 5b6:	80 3b 00             	cmpb   $0x0,(%ebx)
+ 5b9:	74 d5                	je     590 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1c0>
+ 5bb:	89 4d cc             	mov    %ecx,-0x34(%ebp)
+ 5be:	c7 04 24 10 00 00 00 	movl   $0x10,(%esp)
+ 5c5:	e8 fc ff ff ff       	call   5c6 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1f6>
+ 5ca:	8b 4d cc             	mov    -0x34(%ebp),%ecx
+ 5cd:	89 c6                	mov    %eax,%esi
+ 5cf:	31 c0                	xor    %eax,%eax
+ 5d1:	eb 0d                	jmp    5e0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x210>
+ 5d3:	90                   	nop
+ 5d4:	90                   	nop
+ 5d5:	90                   	nop
+ 5d6:	90                   	nop
+ 5d7:	90                   	nop
+ 5d8:	90                   	nop
+ 5d9:	90                   	nop
+ 5da:	90                   	nop
+ 5db:	90                   	nop
+ 5dc:	90                   	nop
+ 5dd:	90                   	nop
+ 5de:	90                   	nop
+ 5df:	90                   	nop
+ 5e0:	0f b6 14 03          	movzbl (%ebx,%eax,1),%edx
+ 5e4:	80 fa 20             	cmp    $0x20,%dl
+ 5e7:	74 09                	je     5f2 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x222>
+ 5e9:	88 14 06             	mov    %dl,(%esi,%eax,1)
+ 5ec:	40                   	inc    %eax
+ 5ed:	83 f8 08             	cmp    $0x8,%eax
+ 5f0:	75 ee                	jne    5e0 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x210>
+ 5f2:	8d 50 01             	lea    0x1(%eax),%edx
+ 5f5:	89 55 c8             	mov    %edx,-0x38(%ebp)
+ 5f8:	8d 50 04             	lea    0x4(%eax),%edx
+ 5fb:	89 55 d4             	mov    %edx,-0x2c(%ebp)
+ 5fe:	89 da                	mov    %ebx,%edx
+ 600:	29 c2                	sub    %eax,%edx
+ 602:	c6 04 06 2e          	movb   $0x2e,(%esi,%eax,1)
+ 606:	89 d0                	mov    %edx,%eax
+ 608:	8b 55 c8             	mov    -0x38(%ebp),%edx
+ 60b:	89 5d d0             	mov    %ebx,-0x30(%ebp)
+ 60e:	89 c3                	mov    %eax,%ebx
+ 610:	0f b6 44 13 07       	movzbl 0x7(%ebx,%edx,1),%eax
+ 615:	3c 20                	cmp    $0x20,%al
+ 617:	0f 84 33 01 00 00    	je     750 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x380>
+ 61d:	88 04 16             	mov    %al,(%esi,%edx,1)
+ 620:	42                   	inc    %edx
+ 621:	3b 55 d4             	cmp    -0x2c(%ebp),%edx
+ 624:	75 ea                	jne    610 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x240>
+ 626:	8b 5d d0             	mov    -0x30(%ebp),%ebx
+ 629:	0f b7 43 14          	movzwl 0x14(%ebx),%eax
+ 62d:	47                   	inc    %edi
+ 62e:	0f b7 53 1a          	movzwl 0x1a(%ebx),%edx
+ 632:	c1 e0 10             	shl    $0x10,%eax
+ 635:	09 d0                	or     %edx,%eax
+ 637:	89 44 24 10          	mov    %eax,0x10(%esp)
+ 63b:	8b 43 1c             	mov    0x1c(%ebx),%eax
+ 63e:	89 4d cc             	mov    %ecx,-0x34(%ebp)
+ 641:	89 74 24 08          	mov    %esi,0x8(%esp)
+ 645:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+ 64c:	89 44 24 0c          	mov    %eax,0xc(%esp)
+ 650:	b8 d4 0a 00 00       	mov    $0xad4,%eax
+ 655:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 659:	e8 fc ff ff ff       	call   65a <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x28a>
+ 65e:	89 34 24             	mov    %esi,(%esp)
+ 661:	e8 fc ff ff ff       	call   662 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x292>
+ 666:	8b 4d cc             	mov    -0x34(%ebp),%ecx
+ 669:	39 b9 7c 02 00 00    	cmp    %edi,0x27c(%ecx)
+ 66f:	0f 87 28 ff ff ff    	ja     59d <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x1cd>
+ 675:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+ 679:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+ 680:	b8 fb 0a 00 00       	mov    $0xafb,%eax
+ 685:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 689:	c7 04 24 02 00 00 00 	movl   $0x2,(%esp)
+ 690:	e8 fc ff ff ff       	call   691 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2c1>
+ 695:	eb 1e                	jmp    6b5 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2e5>
+ 697:	89 f6                	mov    %esi,%esi
+ 699:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+ 6a0:	bf e0 09 00 00       	mov    $0x9e0,%edi
+ 6a5:	89 7c 24 04          	mov    %edi,0x4(%esp)
+ 6a9:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+ 6b0:	e8 fc ff ff ff       	call   6b1 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2e1>
+ 6b5:	8b 45 e4             	mov    -0x1c(%ebp),%eax
+ 6b8:	33 05 00 00 00 00    	xor    0x0,%eax
+ 6be:	0f 85 de 00 00 00    	jne    7a2 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3d2>
+ 6c4:	83 c4 4c             	add    $0x4c,%esp
+ 6c7:	5b                   	pop    %ebx
+ 6c8:	5e                   	pop    %esi
+ 6c9:	5f                   	pop    %edi
+ 6ca:	5d                   	pop    %ebp
+ 6cb:	c3                   	ret    
+ 6cc:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+ 6d0:	8b 93 4a 02 00 00    	mov    0x24a(%ebx),%edx
+ 6d6:	8b 8b 62 02 00 00    	mov    0x262(%ebx),%ecx
+ 6dc:	81 fa 72 72 41 61    	cmp    $0x61417272,%edx
+ 6e2:	0f 85 50 fe ff ff    	jne    538 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x168>
+ 6e8:	81 f9 00 00 55 aa    	cmp    $0xaa550000,%ecx
+ 6ee:	0f 85 44 fe ff ff    	jne    538 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x168>
+ 6f4:	8b 83 52 02 00 00    	mov    0x252(%ebx),%eax
+ 6fa:	89 44 24 0c          	mov    %eax,0xc(%esp)
+ 6fe:	8b 83 4e 02 00 00    	mov    0x24e(%ebx),%eax
+ 704:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+ 70b:	89 44 24 08          	mov    %eax,0x8(%esp)
+ 70f:	b8 a0 0a 00 00       	mov    $0xaa0,%eax
+ 714:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 718:	e8 fc ff ff ff       	call   719 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x349>
+ 71d:	e9 37 fe ff ff       	jmp    559 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x189>
+ 722:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+ 729:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+ 730:	b8 ac 09 00 00       	mov    $0x9ac,%eax
+ 735:	89 44 24 04          	mov    %eax,0x4(%esp)
+ 739:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+ 740:	e8 fc ff ff ff       	call   741 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x371>
+ 745:	e9 6b ff ff ff       	jmp    6b5 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2e5>
+ 74a:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
+ 750:	8b 5d d0             	mov    -0x30(%ebp),%ebx
+ 753:	c6 04 16 00          	movb   $0x0,(%esi,%edx,1)
+ 757:	e9 cd fe ff ff       	jmp    629 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x259>
+ 75c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+ 760:	8b 45 e0             	mov    -0x20(%ebp),%eax
+ 763:	bf 68 09 00 00       	mov    $0x968,%edi
+ 768:	89 7c 24 04          	mov    %edi,0x4(%esp)
+ 76c:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+ 773:	89 44 24 08          	mov    %eax,0x8(%esp)
+ 777:	e8 fc ff ff ff       	call   778 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3a8>
+ 77c:	e9 34 ff ff ff       	jmp    6b5 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2e5>
+ 781:	8b 45 e0             	mov    -0x20(%ebp),%eax
+ 784:	ba 48 0a 00 00       	mov    $0xa48,%edx
+ 789:	89 54 24 04          	mov    %edx,0x4(%esp)
+ 78d:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+ 794:	89 44 24 08          	mov    %eax,0x8(%esp)
+ 798:	e8 fc ff ff ff       	call   799 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3c9>
+ 79d:	e9 13 ff ff ff       	jmp    6b5 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x2e5>
+ 7a2:	e8 fc ff ff ff       	call   7a3 <_ZN8fs_fat32C1EP18hal_disk_partitionP8hal_disk+0x3d3>
 	...
 
-000002c0 <_ZL17fat32_part_verifyP18hal_disk_partition>:
- 2c0:	55                   	push   %ebp
- 2c1:	89 e5                	mov    %esp,%ebp
- 2c3:	83 ec 18             	sub    $0x18,%esp
- 2c6:	a1 00 00 00 00       	mov    0x0,%eax
- 2cb:	89 45 f4             	mov    %eax,-0xc(%ebp)
- 2ce:	31 c0                	xor    %eax,%eax
- 2d0:	8b 45 08             	mov    0x8(%ebp),%eax
- 2d3:	80 38 0c             	cmpb   $0xc,(%eax)
- 2d6:	0f 94 c0             	sete   %al
- 2d9:	8b 55 f4             	mov    -0xc(%ebp),%edx
- 2dc:	33 15 00 00 00 00    	xor    0x0,%edx
- 2e2:	75 02                	jne    2e6 <_ZL17fat32_part_verifyP18hal_disk_partition+0x26>
- 2e4:	c9                   	leave  
- 2e5:	c3                   	ret    
- 2e6:	e8 fc ff ff ff       	call   2e7 <_ZL17fat32_part_verifyP18hal_disk_partition+0x27>
- 2eb:	90                   	nop
- 2ec:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+000007b0 <_ZL17fat32_part_verifyP18hal_disk_partition>:
+ 7b0:	55                   	push   %ebp
+ 7b1:	89 e5                	mov    %esp,%ebp
+ 7b3:	83 ec 18             	sub    $0x18,%esp
+ 7b6:	a1 00 00 00 00       	mov    0x0,%eax
+ 7bb:	89 45 f4             	mov    %eax,-0xc(%ebp)
+ 7be:	31 c0                	xor    %eax,%eax
+ 7c0:	8b 45 08             	mov    0x8(%ebp),%eax
+ 7c3:	80 38 0c             	cmpb   $0xc,(%eax)
+ 7c6:	0f 94 c0             	sete   %al
+ 7c9:	8b 55 f4             	mov    -0xc(%ebp),%edx
+ 7cc:	33 15 00 00 00 00    	xor    0x0,%edx
+ 7d2:	75 02                	jne    7d6 <_ZL17fat32_part_verifyP18hal_disk_partition+0x26>
+ 7d4:	c9                   	leave  
+ 7d5:	c3                   	ret    
+ 7d6:	e8 fc ff ff ff       	call   7d7 <_ZL17fat32_part_verifyP18hal_disk_partition+0x27>
+ 7db:	90                   	nop
+ 7dc:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
 
-000002f0 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk>:
- 2f0:	55                   	push   %ebp
- 2f1:	89 e5                	mov    %esp,%ebp
- 2f3:	83 ec 38             	sub    $0x38,%esp
- 2f6:	89 5d f8             	mov    %ebx,-0x8(%ebp)
- 2f9:	8b 5d 08             	mov    0x8(%ebp),%ebx
- 2fc:	89 75 fc             	mov    %esi,-0x4(%ebp)
- 2ff:	8b 75 0c             	mov    0xc(%ebp),%esi
- 302:	a1 00 00 00 00       	mov    0x0,%eax
- 307:	89 45 f4             	mov    %eax,-0xc(%ebp)
- 30a:	31 c0                	xor    %eax,%eax
- 30c:	80 3b 0c             	cmpb   $0xc,(%ebx)
- 30f:	75 22                	jne    333 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x43>
- 311:	c7 04 24 1c 00 00 00 	movl   $0x1c,(%esp)
- 318:	e8 fc ff ff ff       	call   319 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x29>
- 31d:	89 74 24 08          	mov    %esi,0x8(%esp)
- 321:	89 5c 24 04          	mov    %ebx,0x4(%esp)
- 325:	89 04 24             	mov    %eax,(%esp)
- 328:	89 45 e4             	mov    %eax,-0x1c(%ebp)
- 32b:	e8 fc ff ff ff       	call   32c <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x3c>
- 330:	8b 45 e4             	mov    -0x1c(%ebp),%eax
- 333:	8b 55 f4             	mov    -0xc(%ebp),%edx
- 336:	33 15 00 00 00 00    	xor    0x0,%edx
- 33c:	75 0a                	jne    348 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x58>
- 33e:	8b 5d f8             	mov    -0x8(%ebp),%ebx
- 341:	8b 75 fc             	mov    -0x4(%ebp),%esi
- 344:	89 ec                	mov    %ebp,%esp
- 346:	5d                   	pop    %ebp
- 347:	c3                   	ret    
- 348:	e8 fc ff ff ff       	call   349 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x59>
- 34d:	8d 76 00             	lea    0x0(%esi),%esi
+000007e0 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk>:
+ 7e0:	55                   	push   %ebp
+ 7e1:	89 e5                	mov    %esp,%ebp
+ 7e3:	83 ec 38             	sub    $0x38,%esp
+ 7e6:	89 5d f8             	mov    %ebx,-0x8(%ebp)
+ 7e9:	8b 5d 08             	mov    0x8(%ebp),%ebx
+ 7ec:	89 75 fc             	mov    %esi,-0x4(%ebp)
+ 7ef:	8b 75 0c             	mov    0xc(%ebp),%esi
+ 7f2:	a1 00 00 00 00       	mov    0x0,%eax
+ 7f7:	89 45 f4             	mov    %eax,-0xc(%ebp)
+ 7fa:	31 c0                	xor    %eax,%eax
+ 7fc:	80 3b 0c             	cmpb   $0xc,(%ebx)
+ 7ff:	75 22                	jne    823 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x43>
+ 801:	c7 04 24 88 02 00 00 	movl   $0x288,(%esp)
+ 808:	e8 fc ff ff ff       	call   809 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x29>
+ 80d:	89 74 24 08          	mov    %esi,0x8(%esp)
+ 811:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+ 815:	89 04 24             	mov    %eax,(%esp)
+ 818:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+ 81b:	e8 fc ff ff ff       	call   81c <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x3c>
+ 820:	8b 45 e4             	mov    -0x1c(%ebp),%eax
+ 823:	8b 55 f4             	mov    -0xc(%ebp),%edx
+ 826:	33 15 00 00 00 00    	xor    0x0,%edx
+ 82c:	75 0a                	jne    838 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x58>
+ 82e:	8b 5d f8             	mov    -0x8(%ebp),%ebx
+ 831:	8b 75 fc             	mov    -0x4(%ebp),%esi
+ 834:	89 ec                	mov    %ebp,%esp
+ 836:	5d                   	pop    %ebp
+ 837:	c3                   	ret    
+ 838:	e8 fc ff ff ff       	call   839 <_ZL23fat32_create_superblocKP18hal_disk_partitionP8hal_disk+0x59>
+ 83d:	8d 76 00             	lea    0x0(%esi),%esi
 
-00000350 <start>:
- 350:	55                   	push   %ebp
- 351:	89 e5                	mov    %esp,%ebp
- 353:	83 ec 28             	sub    $0x28,%esp
- 356:	a1 00 00 00 00       	mov    0x0,%eax
- 35b:	89 45 f4             	mov    %eax,-0xc(%ebp)
- 35e:	31 c0                	xor    %eax,%eax
- 360:	c7 04 24 a0 03 00 00 	movl   $0x3a0,(%esp)
- 367:	e8 fc ff ff ff       	call   368 <start+0x18>
- 36c:	b8 e0 03 00 00       	mov    $0x3e0,%eax
- 371:	8b 55 f4             	mov    -0xc(%ebp),%edx
- 374:	33 15 00 00 00 00    	xor    0x0,%edx
- 37a:	75 02                	jne    37e <start+0x2e>
- 37c:	c9                   	leave  
- 37d:	c3                   	ret    
- 37e:	e8 fc ff ff ff       	call   37f <start+0x2f>
+00000840 <start>:
+ 840:	55                   	push   %ebp
+ 841:	89 e5                	mov    %esp,%ebp
+ 843:	83 ec 28             	sub    $0x28,%esp
+ 846:	a1 00 00 00 00       	mov    0x0,%eax
+ 84b:	89 45 f4             	mov    %eax,-0xc(%ebp)
+ 84e:	31 c0                	xor    %eax,%eax
+ 850:	c7 04 24 80 08 00 00 	movl   $0x880,(%esp)
+ 857:	e8 fc ff ff ff       	call   858 <start+0x18>
+ 85c:	b8 c0 08 00 00       	mov    $0x8c0,%eax
+ 861:	8b 55 f4             	mov    -0xc(%ebp),%edx
+ 864:	33 15 00 00 00 00    	xor    0x0,%edx
+ 86a:	75 02                	jne    86e <start+0x2e>
+ 86c:	c9                   	leave  
+ 86d:	c3                   	ret    
+ 86e:	e8 fc ff ff ff       	call   86f <start+0x2f>
 	...
 
-000003a0 <_ZL3vfs>:
- 3a0:	46 41 54 33 32 00 00 00 00 00 00 00 00 00 00 00     FAT32...........
+00000880 <_ZL3vfs>:
+ 880:	46 41 54 33 32 00 00 00 00 00 00 00 00 00 00 00     FAT32...........
 	...
- 3c0:	c0 02 00 00 f0 02 00 00 00 00 00 00 00 00 00 00     ................
+ 8a0:	b0 07 00 00 e0 07 00 00 00 00 00 00 00 00 00 00     ................
 	...
 
-000003e0 <_ZL3mod>:
- 3e0:	66 73 5f 66 61 74 33 32 00 00 00 00 00 00 00 00     fs_fat32........
+000008c0 <_ZL3mod>:
+ 8c0:	66 73 5f 66 61 74 33 32 00 00 00 00 00 00 00 00     fs_fat32........
 	...
- 42c:	62 70 62 00 66 61 74 33 32 2e 63 70 70 00 66 73     bpb.fat32.cpp.fs
- 43c:	5f 66 61 74 33 32 3a 20 42 50 42 20 61 74 20 30     _fat32: BPB at 0
- 44c:	78 25 30 38 58 00 00 00 66 73 5f 66 61 74 33 32     x%08X...fs_fat32
- 45c:	3a 20 52 65 61 64 69 6e 67 20 46 41 54 20 42 50     : Reading FAT BP
- 46c:	42 20 66 72 6f 6d 20 73 65 63 74 6f 72 20 25 75     B from sector %u
- 47c:	00 00 00 00 66 73 5f 66 61 74 33 32 3a 20 54 72     ....fs_fat32: Tr
- 48c:	69 65 64 20 74 6f 20 69 6e 69 74 69 61 6c 69 73     ied to initialis
- 49c:	65 20 46 41 54 31 32 20 76 6f 6c 75 6d 65 20 61     e FAT12 volume a
- 4ac:	73 20 46 41 54 33 32 00 66 73 5f 66 61 74 33 32     s FAT32.fs_fat32
- 4bc:	3a 20 54 72 69 65 64 20 74 6f 20 69 6e 69 74 69     : Tried to initi
- 4cc:	61 6c 69 73 65 20 46 41 54 31 36 20 76 6f 6c 75     alise FAT16 volu
- 4dc:	6d 65 20 61 73 20 46 41 54 33 32 00 66 73 5f 66     me as FAT32.fs_f
- 4ec:	61 74 33 32 3a 20 25 75 20 63 6c 75 73 74 65 72     at32: %u cluster
- 4fc:	73 20 28 25 75 20 73 65 63 2f 63 6c 75 73 74 65     s (%u sec/cluste
- 50c:	72 2c 20 25 75 20 62 79 74 65 73 2f 73 65 63 74     r, %u bytes/sect
- 51c:	6f 72 29 00                                         or).
+ 90c:	66 73 5f 66 61 74 33 32 3a 20 43 6f 75 6c 64 6e     fs_fat32: Couldn
+ 91c:	27 74 20 72 65 61 64 20 73 65 63 74 6f 72 20 25     't read sector %
+ 92c:	75 20 66 6f 72 20 46 41 54 00 00 00 66 73 5f 66     u for FAT...fs_f
+ 93c:	61 74 33 32 3a 20 45 72 72 6f 72 20 72 65 61 64     at32: Error read
+ 94c:	69 6e 67 20 72 6f 6f 74 20 64 69 72 20 73 65 63     ing root dir sec
+ 95c:	74 6f 72 20 25 75 3a 20 25 75 00 00 66 73 5f 66     tor %u: %u..fs_f
+ 96c:	61 74 33 32 3a 20 45 72 72 6f 72 20 72 65 61 64     at32: Error read
+ 97c:	69 6e 67 20 42 50 42 3a 20 25 75 00 66 73 5f 66     ing BPB: %u.fs_f
+ 98c:	61 74 33 32 3a 20 43 6c 75 73 74 65 72 20 73 69     at32: Cluster si
+ 99c:	7a 65 20 6f 66 20 25 75 20 62 79 74 65 73 00 00     ze of %u bytes..
+ 9ac:	66 73 5f 66 61 74 33 32 3a 20 54 72 69 65 64 20     fs_fat32: Tried 
+ 9bc:	74 6f 20 69 6e 69 74 69 61 6c 69 73 65 20 46 41     to initialise FA
+ 9cc:	54 31 32 20 76 6f 6c 75 6d 65 20 61 73 20 46 41     T12 volume as FA
+ 9dc:	54 33 32 00 66 73 5f 66 61 74 33 32 3a 20 54 72     T32.fs_fat32: Tr
+ 9ec:	69 65 64 20 74 6f 20 69 6e 69 74 69 61 6c 69 73     ied to initialis
+ 9fc:	65 20 46 41 54 31 36 20 76 6f 6c 75 6d 65 20 61     e FAT16 volume a
+ a0c:	73 20 46 41 54 33 32 00 66 73 5f 66 61 74 33 32     s FAT32.fs_fat32
+ a1c:	3a 20 25 75 20 63 6c 75 73 74 65 72 73 20 28 66     : %u clusters (f
+ a2c:	69 72 73 74 20 64 61 74 61 20 63 6c 75 73 74 65     irst data cluste
+ a3c:	72 20 61 74 20 25 75 29 00 00 00 00 66 73 5f 66     r at %u)....fs_f
+ a4c:	61 74 33 32 3a 20 45 72 72 6f 72 20 72 65 61 64     at32: Error read
+ a5c:	69 6e 67 20 46 53 49 6e 66 6f 3a 20 25 75 00 00     ing FSInfo: %u..
+ a6c:	66 73 5f 66 61 74 33 32 3a 20 43 6f 72 72 75 70     fs_fat32: Corrup
+ a7c:	74 65 64 20 46 53 49 6e 66 6f 3a 20 30 78 25 30     ted FSInfo: 0x%0
+ a8c:	38 58 20 30 78 25 30 38 58 20 30 78 25 30 38 58     8X 0x%08X 0x%08X
+ a9c:	00 00 00 00 66 73 5f 66 61 74 33 32 3a 20 25 75     ....fs_fat32: %u
+ aac:	20 63 6c 75 73 74 65 72 73 20 66 72 65 65 2c 20      clusters free, 
+ abc:	73 74 61 72 74 20 66 72 65 65 20 73 65 61 72 63     start free searc
+ acc:	68 20 61 74 20 25 75 00 66 73 5f 66 61 74 33 32     h at %u.fs_fat32
+ adc:	3a 20 25 73 3a 20 25 30 39 75 20 62 79 74 65 73     : %s: %09u bytes
+ aec:	2c 20 63 6c 75 73 74 65 72 20 25 30 38 58 00 66     , cluster %08X.f
+ afc:	73 5f 66 61 74 33 32 3a 20 56 6f 6c 75 6d 65 20     s_fat32: Volume 
+ b0c:	69 6e 69 74 69 61 6c 69 73 65 64 2e 00              initialised..

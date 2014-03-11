@@ -20,6 +20,10 @@ class hal_fs {
 		virtual unsigned int sector_for_file(char *path, unsigned int offset) =0;
 		virtual list_t *contents_of_directory(char *directory) =0;
 
+	// Sector read/write functions
+	protected:
+		void *read_sectors(unsigned int start, unsigned int numSectors, void *buffer, unsigned int *error);
+
 	protected:
 		hal_disk_partition_t *partition;
 		hal_disk_t *disk;

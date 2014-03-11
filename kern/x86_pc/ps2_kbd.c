@@ -111,7 +111,7 @@ static void ps2_kbd_byte_received(uint8_t b) {
 				lastKey = b;
 
 				if(!ps2_kbd_special_key_down(lastKey)) {
-					KDEBUG("Key down: 0x%04X", (unsigned int) lastKey);
+					// KDEBUG("Key down: 0x%04X", (unsigned int) lastKey);
 				}
 			}
 

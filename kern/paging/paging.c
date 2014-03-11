@@ -237,7 +237,7 @@ void paging_init() {
 	for(i = 0; i < kern_end_phys; i += 0x1000) {
 		set_frame(i);
 	}
-	KDEBUG("Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
+	// KDEBUG("Memory from 0x00000000 to 0x%08X marked as used", kern_end_phys);
 
 
 	// Mark kernel data as present
