@@ -11,13 +11,13 @@ MODULE_NAME=fs_fat32
 
 # General flags
 ARCH_ARGS=-march=i686 -mtune=pentium3 -msoft-float -mno-sse
-WARNINGS=-Werror -Wall -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wformat -Wno-format-extra-args -Wformat-security -Wformat-nonliteral -Wformat=2
+WARNINGS=-Werror -Wall -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -Wno-multichar -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wno-format-extra-args
 INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/../../kern/ -I$(CURRENT_DIR)/../include/
-OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer -fvisibility=hidden -DMODULE_NAME=\"$(MODULE_NAME)\"
+OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer -falign-functions=4 -fvisibility=hidden -DMODULE_NAME=\"$(MODULE_NAME)\"
 
 # C and C++ specifics
 CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -nostartfiles -nodefaultlibs -ffreestanding -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
-CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions
+CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions -std=gnu++0x
 
 # Linker and assembler flags
 LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,../module.ld -lgcc -Wl,--unresolved-symbols=ignore-all -Wl,--relocatable
@@ -35,7 +35,7 @@ all: $(SOURCES) $(EXECUTABLE)
 $(EXECUTABLE): $(OBJECTS)
 	$(CPP) $(LDFLAGS) $(OBJECTS) -o $@
 
-	@i686-pc-elf-objdump -b elf32-i386 -d $@ > $@_symbols.txt
+	@i686-pc-elf-objdump -b elf32-i386 -d -S $@ > $@_symbols.txt
 	@i686-pc-elf-objcopy --strip-debug $@
 
 .c.o:

@@ -38,7 +38,7 @@ typedef struct fat_fs_fsinfo32 {
 // Various BPB types
 typedef struct fat_extBS_32 {
 	uint8_t bootjmp[3];
-	char oem_name[8];
+	unsigned char oem_name[8];
 	uint16_t bytes_per_sector;
 	uint8_t sectors_per_cluster;
 	uint16_t reserved_sector_count;
@@ -69,7 +69,7 @@ typedef struct fat_extBS_32 {
 
 typedef struct fat_extBS_16 {
 	uint8_t bootjmp[3];
-	char oem_name[8];
+	unsigned char oem_name[8];
 	uint16_t bytes_per_sector;
 	uint8_t sectors_per_cluster;
 	uint16_t reserved_sector_count;
@@ -94,7 +94,7 @@ typedef struct fat_extBS_16 {
 
 typedef struct {
 	uint8_t bootjmp[3];
-	char oem_name[8];
+	unsigned char oem_name[8];
 	uint16_t bytes_per_sector;
 	uint8_t sectors_per_cluster;
 	uint16_t reserved_sector_count;
@@ -110,12 +110,12 @@ typedef struct {
 } __attribute__((packed)) fat_fs_bpb_t;
 
 typedef struct {
-	char name[8];
-	char ext[3];
+	unsigned char name[8];
+	unsigned char ext[3];
 	
 	uint8_t attributes;
 	
-	uint8_t reserved_0;
+	uint8_t nt_reserved; // all uppercase/lowercase state
 
 	uint8_t time_created_seconds; // tenths of seconds, 0-199
 	uint16_t created_time;
@@ -132,3 +132,17 @@ typedef struct {
 
 	uint32_t filesize; // in bytes
 } __attribute__((packed)) fat_dirent_t;
+
+typedef struct {
+	uint8_t order;
+	uint16_t name1[5]; // characters 1-5
+
+	uint8_t attributes;
+	uint8_t type; // should be zero
+	uint8_t checksum; // checksum of name of short dir
+
+	uint16_t name2[6]; // characters 6-11
+	uint16_t zero;
+	uint16_t name3[2]; // characters 12-13
+
+} __attribute__((packed)) fat_longname_dirent_t;

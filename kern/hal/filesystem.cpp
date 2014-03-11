@@ -47,18 +47,48 @@ list_t* hal_fs::list_directory(char* dirname) {
 }
 
 // File opening
-FILE *hal_fs::file_open(char *path) {
+fs_file_t *hal_fs::file_open(char *path) {
 	return NULL;
 }
 
-void hal_fs::file_close(FILE *) {
+void hal_fs::file_close(fs_file_t *file) {
 
 }
 
-void *hal_fs::file_read(void *buffer, unsigned int offset, unsigned int bytes, FILE *file) {
+void *hal_fs::file_read(void *buffer, unsigned int offset, unsigned int bytes, fs_file_t *file) {
 	return NULL;
 }
 
-void *hal_fs::file_write(void *buffer, unsigned int offset, unsigned int bytes, FILE *file) {
+void *hal_fs::file_write(void *buffer, unsigned int offset, unsigned int bytes, fs_file_t *file) {
 	return NULL;
+}
+
+/*
+ * Splits a string with the slash ("/") character, and returns a string array
+ * containing the individual pieces.
+ *
+ * Note: This function makes a copy of the path internally, as it is modified.
+ * Therefore, to release its memory, you must free the first string, then the
+ * array itself to relinquish all memory.
+ */
+list_t *hal_fs::split_path(char *in) {
+	// Copy string
+	size_t length = strlen(in) + 1;
+	char *path = (char *) kmalloc(length);
+	strncpy(path, in, length);
+
+	// Allocate list
+	list_t *list = list_allocate();
+	ASSERT(list);
+
+	// Perform separation by token
+	char *component = strtok(path, "/");
+	unsigned int i = 0;
+
+	while(component) {
+		list_add(list, component);
+		component = strtok(NULL, "/");
+	}
+
+	return list;
 }

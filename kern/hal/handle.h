@@ -3,12 +3,14 @@
 // Handle type
 typedef unsigned int hal_handle_t;
 
+#define	BAD_HANDLE_TYPE		'BADH'
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 	// Request the allocation of a new handle pointing to obj
-	hal_handle_t hal_handle_allocate(void *obj);
+	hal_handle_t hal_handle_allocate(void *obj, unsigned int type);
 
 	// Retrieves the object pointed to by a handle.
 	void *hal_handle_get_object(hal_handle_t handle);

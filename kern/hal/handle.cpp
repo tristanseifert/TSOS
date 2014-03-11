@@ -12,12 +12,12 @@
  * This is the private internal handle type: It points to some kind of object.
  */
 struct khandle {
+	unsigned int type;
 	void *object;
-	unsigned int reserved;
 };
 
 // Pointer to the handle array
-unsigned int handle_array_size;
+static unsigned int handle_array_size;
 static struct khandle *handle_array;
 
 // A shortlist of handles to allocate
@@ -33,8 +33,14 @@ static int hal_handle_init(void) {
 
 	// Fill free handle table (speeds up allocation)
 	for(unsigned int i = 0; i < FREE_HANDLE_TABLE_LEN; i++) {
-		free_handles[i] = i;
+		free_handles[i] = i+1;
 	}
+
+	// Fill handle 0
+	handle_array[0].type = BAD_HANDLE_TYPE;
+
+	// this most definitely will pagefault
+	handle_array[0].object = (void *) 0xFFFFFFFF;
 
 	return 0;
 }
@@ -44,7 +50,7 @@ extern "C" {
 	/*
 	 * Request the allocation of a new handle, pointing to obj.
 	 */
-	hal_handle_t hal_handle_allocate(void *obj) {
+	hal_handle_t hal_handle_allocate(void *obj, unsigned int type) {
 		hal_handle_t handle = 0;
 
 		// Try to get a handle from the handle table
@@ -58,7 +64,7 @@ extern "C" {
 		// If the handle is still zero, traverse the array for an empty slot.
 		for(unsigned int i = 0; i < handle_array_size; i++) {
 			// Found an empty handle
-			if(unlikely(!handle_array[i].object)) {
+			if(unlikely(!handle_array[i].object && handle_array[i].type == BAD_HANDLE_TYPE)) {
 				handle = i;
 				break;
 			}
@@ -84,6 +90,7 @@ extern "C" {
 
 		// Actually save object in the handle
 		handle_array[handle].object = obj;
+		handle_array[handle].type = type;
 		return handle;
 	}
 
@@ -112,6 +119,7 @@ extern "C" {
 
 		// Mark handle as free (pointer == NULL)
 		handle_array[handle].object = NULL;
+		handle_array[handle].type = BAD_HANDLE_TYPE;
 
 		// Optionally mark as free in the free handles table, if there's space
 		for(unsigned int i = 0; i < FREE_HANDLE_TABLE_LEN; i++) {

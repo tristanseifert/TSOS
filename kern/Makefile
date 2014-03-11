@@ -10,8 +10,8 @@ CURRENT_DIR=$(shell pwd)
 ARCH_ARGS=-march=i686 -mtune=pentium3 -msoft-float -mno-sse
 WARNINGS=-Werror -Wall -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -Wno-multichar -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wno-format-extra-args
 INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/
-OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer
-CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions
+OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer -falign-functions=4
+CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions -std=gnu++0x
 
 CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -nostartfiles -nodefaultlibs -ffreestanding -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
 LDFLAGS=-T kern.ld -ffreestanding -O2 -nostdlib -lgcc

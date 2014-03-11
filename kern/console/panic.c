@@ -2,7 +2,7 @@
 #import "panic.h"
 #import "runtime/error.h"
 
-void panic_assert(char *file, unsigned int line, char *desc) {
+void panic_assert(const char *file, unsigned int line, const char *desc) {
 	// An assertion failed, and we have to panic.
 	IRQ_OFF();
 
@@ -16,7 +16,7 @@ void panic_assert(char *file, unsigned int line, char *desc) {
 	for(;;);
 }
 
-void panic(char *message, char *file, unsigned int line) {
+void panic(const char *message, const char *file, unsigned int line) {
 	// We encountered a massive problem and have to stop.
 	IRQ_OFF();
 

@@ -41,9 +41,6 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 	} else if(num_data_clusters < 65525) { 
 		KERROR("Tried to initialise FAT16 volume as FAT32");
 		return;
-	} else {
-		KDEBUG("%u clusters (first data cluster at %u)", (unsigned int) num_data_clusters,
-		first_data_sector);
 	}
 
 	// Read FSINFO sector
@@ -58,7 +55,8 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 			(unsigned int) fs_info.signature, (unsigned int) fs_info.signature2,
 			(unsigned int) fs_info.trailSig);
 	} else {
-		KDEBUG("%u clusters free, start free search at %u", 
+		KDEBUG("%u clusters, %u free, start search at %u",
+			(unsigned int) num_data_clusters,
 			(unsigned int) fs_info.last_known_free_sec_cnt,
 			(unsigned int) fs_info.free_cluster_search_start);
 	}
@@ -69,15 +67,22 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 	this->read_root_dir();
 
 	// List it
-	for(unsigned int i = 0; i < root_dir_num_entries; i++) {
-		fat_dirent_t *ent = &root_dir[i];
+	KDEBUG("Root directory: %u items", root_directory->children->num_entries);
+	for(unsigned int i = 0; i < root_directory->children->num_entries; i++) {
+		fs_item_t *item = (fs_item_t *) list_get(root_directory->children, i);
 
-		if((ent->attributes & FAT_ATTR_LFN) != FAT_ATTR_LFN && ent->name[0] != 0xE5 && ent->name[0] != 0x00) {
-			char *name = fs_fat32::dirent_get_8_3_name(ent);
-			KDEBUG("%s: %09u bytes, cluster %08X", name, (unsigned int) ent->filesize, (ent->cluster_high << 16 | ent->cluster_low));
-			kfree(name);
+		if(item->type == kFSItemTypeFile) {
+			fs_file_t *file = (fs_file_t *) item;
+
+			KDEBUG("File: %s", file->i.name);
+		} else if(item->type == kFSItemTypeDirectory) {
+			fs_directory_t *dir = (fs_directory_t *) item;
+
+			KDEBUG(" Dir: %s", dir->i.name);
 		}
 	}
+
+	// root_directory = this->contents_of_directory((char *) "/boot/grub/");
 
 	KSUCCESS("Volume initialised.");
 }
@@ -94,6 +99,18 @@ fs_fat32::~fs_fat32() {
  */
 void fs_fat32::read_root_dir(void) {
 	unsigned int err;
+
+	// Release previous root directory, if it exists
+	if(root_directory) {
+		fs_directory_t *new_root = hal_vfs_allocate_directory(false);
+
+		hal_vfs_deallocate_directory(root_directory, new_root);
+		kfree(root_dir);
+
+		root_directory = new_root;
+	} else {
+		root_directory = hal_vfs_allocate_directory(true);
+	}
 
 	// Follow the cluster chain for the root directory.
 	unsigned int *root_clusters = this->clusterChainForCluster(bpb.root_cluster & FAT32_MASK);
@@ -125,8 +142,218 @@ void fs_fat32::read_root_dir(void) {
 		cnt++;
 	}
 
+	// Process the read FAT directory entries into fs_file_t structs
+	this->processFATDirEnt(root_dir, root_dir_num_entries, root_directory);
+
 	// Clean up temporary buffers needed to read root directory
 	kfree(root_clusters);
+}
+
+/*
+ * Reads a directory, and constructs an fs_directory_t object for it.
+ */
+fs_directory_t *fs_fat32::contents_of_directory(char *path) {
+	// Allocate a directory entry
+	fs_directory_t *directory = hal_vfs_allocate_directory(true);
+
+	// Separate path string
+	list_t *components = this->split_path(path);
+
+	// Iterate over each component
+	for(unsigned int i = 0; i < components->num_entries; i++) {
+		char *component = (char *) list_get(components, i);
+		KDEBUG("%s", component);
+	}
+
+	// Return directory
+	return directory;
+}
+
+/*
+ * Converts FAT32-style directory entries into fat_file_t or fat_directory_t
+ * objects, and adds them as children of the specified directory.
+ */
+void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *root) {
+	// Sanity checking
+	ASSERT(root);
+	ASSERT(entries);
+
+	if(!number) {
+		return;
+	}
+
+	fat_dirent_t *entry;
+	fs_item_t *item;
+
+	// Long name buffer
+	bool foundLongName = false;
+	unsigned int longname_num = 0;
+	uint8_t longname_checksum = 0;
+
+	struct {
+		uint16_t name1[5]; // characters 1-5
+		uint16_t name2[6]; // characters 6-11
+		uint16_t name3[2]; // characters 12-13
+	} longname_buffer[0x3F];
+
+	// Loop over all entries
+	for(unsigned int i = 0; i < number; i++) {
+		entry = &entries[i];
+
+		// Is this entry usable?
+		if(entry->name[0] != 0xE5 && entry->name[0] != 0x00) {
+			// Clear state
+			item = NULL;
+
+			// Long name
+			if((entry->attributes & FAT_ATTR_LFN) == FAT_ATTR_LFN) {
+				// Get longname entry
+				fat_longname_dirent_t *ln = (fat_longname_dirent_t *) entry;
+
+				// Ignore invalid longname entries
+				if(ln->type == 0) {
+					foundLongName = true;
+
+					unsigned int longname_offset = (ln->order & 0x3F) - 1;
+
+					// Last entry?
+					if(ln->order & 0x40) {
+						longname_num = longname_offset + 1;
+					}
+
+					// Copy strings
+					unsigned int c = 0;
+
+					for(c = 0; c < 5; c++){
+						longname_buffer[longname_offset].name1[c] = ln->name1[c];
+					}
+
+					for(c = 0; c < 6; c++){
+						longname_buffer[longname_offset].name2[c] = ln->name2[c];
+					}
+
+					for(c = 0; c < 2; c++){
+						longname_buffer[longname_offset].name3[c] = ln->name3[c];
+					}
+
+					// Copy checksum
+					longname_checksum = ln->checksum;
+				}
+			} else if(entry->attributes & FAT_ATTR_DIRECTORY) { // directory
+				char *name = fs_fat32::dirent_get_8_3_name(entry);
+
+				// Ignore dot and dotdot
+				if(strcmp(".", name) && strcmp("..", name)) {
+					fs_directory_t *dir = hal_vfs_allocate_directory(true);
+					dir->i.name = name;
+					dir->parent = root->i.handle;
+					item = &dir->i;
+
+					// Add directory as child
+					list_add(root->children, dir);
+				}
+			} else { // regular file
+				// Allocate a file object
+				fs_file_t *file = hal_vfs_allocate_file(root);
+				unsigned int c = 0;
+
+				// Handle long name
+				if(foundLongName) {
+					// Allocate memory
+					char *newName = (char *) kmalloc((longname_num * 13) + 1);
+					unsigned int newNameLen = 0;
+
+					// Copy the individual characters
+					if(longname_checksum == this->lfnCheckSum((unsigned char *) &entry->name)) {
+						for(unsigned int l = 0; l < longname_num; l++) {
+							// Copy characters
+							for(c = 0; c < 5; c++){
+								if(longname_buffer[l].name1[c]) {
+									newName[newNameLen++] = longname_buffer[l].name1[c];
+								} else {
+									goto longname_done;
+								}
+							}
+
+							for(c = 0; c < 6; c++){
+								if(longname_buffer[l].name2[c]) {
+									newName[newNameLen++] = longname_buffer[l].name2[c];
+								} else {
+									goto longname_done;
+								}
+							}
+
+							for(c = 0; c < 2; c++){
+								if(longname_buffer[l].name3[c]) {
+									newName[newNameLen++] = longname_buffer[l].name3[c];
+								} else {
+									goto longname_done;
+								}
+							}
+						}
+
+						longname_done: ;
+					}
+
+					// Free old name and save new
+					kfree(file->i.name);
+					file->i.name = newName;
+
+					longname_checksum = longname_num = 0;
+					foundLongName = false;
+				} else {
+					// Lowercase basename?
+					if(entry->nt_reserved & 0x08) {
+						for(c = 0; c < 8; c++) {
+							entry->name[c] = tolower(entry->name[c]);
+						}
+					} 
+
+					// Lowercase extension?
+					if(entry->nt_reserved & 0x10) {
+						for(c = 0; c < 3; c++) {
+							entry->ext[c] = tolower(entry->ext[c]);
+						}
+					}
+
+					// Regular shortname
+					char *name = fs_fat32::dirent_get_8_3_name(entry);
+					file->i.name = name;
+				}
+
+				// Save the item
+				item = &file->i;
+			}
+
+			// Set flags
+			if(item) {
+				item->is_hidden = (entry->attributes & FAT_ATTR_HIDDEN);
+				item->is_system = (entry->attributes & FAT_ATTR_SYSTEM);
+				item->is_readonly = (entry->attributes & FAT_ATTR_READ_ONLY);
+			}
+		} else if(entry->name[0] == 0x00) {
+			// Byte 0 being 0x00 indicates the entry is free.
+			goto done;
+		}
+	}
+
+	// Perform some cleanup after the conversion finishes.
+	done: ;
+}
+
+/*
+ * Calculates the checksum for a long name.
+ */
+uint8_t fs_fat32::lfnCheckSum(unsigned char *shortName) {
+	uint16_t FcbNameLen;
+	uint8_t sum = 0;
+
+	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+		// NOTE: The operation is an unsigned char rotate right
+		sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + *shortName++;
+	}
+
+	return sum;
 }
 
 /*
@@ -222,12 +449,4 @@ void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *er
  */
 unsigned int fs_fat32::sector_for_file(char *path, unsigned int offset) {
 	return 0;
-}
-
-/*
- * Returns a list of hal_vfs_file_t objects, representing the files contained
- * in the specified directory.
- */
-list_t *fs_fat32::contents_of_directory(char *directory) {
-	return NULL;
 }

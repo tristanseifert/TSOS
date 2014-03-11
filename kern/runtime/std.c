@@ -16,17 +16,17 @@
  * modification, are permitted provided that the following conditions
  * are met:
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ *	notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
+ *	notice, this list of conditions and the following disclaimer in the
+ *	documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
+ *	must display the following acknowledgement:
  *	This product includes software developed by the University of
  *	California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *	may be used to endorse or promote products derived from this software
+ *	without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -236,7 +236,7 @@ int strcasecmp(const char *s1, const char *s2) {
 
 /*
  * Performs a case-insensitive comparison between the two strings. Functions
- * otherwise identically to strcmp.
+ * otherwise identically to strncmp.
  *
  * However, only n bytes are checked.
  */
@@ -563,10 +563,10 @@ void* memclr(void* start, size_t count) {
 	// Programmer is an idiot
 	if(!count) return start;
 
-    __asm__("rep stosl;"::"a"(0),"D"((size_t) start),"c"(count / 4));
-    __asm__("rep stosb;"::"a"(0),"D"(((size_t) start) + ((count / 4) * 4)),"c"(count - ((count / 4) * 4)));
+	__asm__("rep stosl;"::"a"(0),"D"((size_t) start),"c"(count / 4));
+	__asm__("rep stosb;"::"a"(0),"D"(((size_t) start) + ((count / 4) * 4)),"c"(count - ((count / 4) * 4)));
 
-    return (void *) ((size_t) start + count);
+	return (void *) ((size_t) start + count);
 }
 
 void *memmove(void *dest, const void *src, size_t n) {
@@ -592,4 +592,19 @@ unsigned int std_popCnt(uint32_t x) {
 	// Get rid of garbage and make a final value
 	x &= 0xF0F0F0F;
 	return (x * 0x01010101) >> 24;
+}
+
+/*
+ * Counts the occurrences of character in the input string.
+ */
+unsigned int std_strcnt(const char *str, char character) {
+	const char *p = str;
+	unsigned int count = 0;
+
+	do {
+		if (*p == character)
+			count++;
+	} while (*(p++));
+
+	return count;
 }

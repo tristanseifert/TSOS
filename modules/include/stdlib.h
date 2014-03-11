@@ -68,3 +68,5 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap);
 
 // Nonstandard standard stuff!
 unsigned int std_popCnt(uint32_t x);
+
+unsigned int std_strcnt(const char *str, char character);

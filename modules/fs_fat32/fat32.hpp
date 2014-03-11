@@ -11,9 +11,6 @@ class fs_fat32 : public hal_fs {
 		fs_fat32(hal_disk_partition_t *, hal_disk_t *);
 		~fs_fat32();
 
-		unsigned int sector_for_file(char *path, unsigned int offset);
-		list_t *contents_of_directory(char *directory);
-
 		// Filename functions
 		/*
 		 * Extracts the 8.3 filename for a directory entry, and formats it as a 14-byte
@@ -21,6 +18,8 @@ class fs_fat32 : public hal_fs {
 		 */
 		static char* dirent_get_8_3_name(fat_dirent_t *d) {
 			char *buf = (char *) kmalloc(16);
+			memclr(buf, 16);
+
 			unsigned int c = 0;
 
 			// Copy filename
@@ -33,7 +32,9 @@ class fs_fat32 : public hal_fs {
 			}
 
 			// Dot
-			buf[c++] = '.';
+			if(!(d->attributes & FAT_ATTR_DIRECTORY)) {
+				buf[c++] = '.';
+			}
 
 			// Extension
 			for(int i = 0; i < 3; i++) {
@@ -49,6 +50,8 @@ class fs_fat32 : public hal_fs {
 		}
 
 	protected:
+		unsigned int sector_for_file(char *path, unsigned int offset);
+		fs_directory_t *contents_of_directory(char *path);
 
 	private:
 		// Structures read from disk
@@ -72,8 +75,16 @@ class fs_fat32 : public hal_fs {
 		uint32_t *fatBuffer;
 
 		void read_root_dir(void);
+
 		fat32_secoff_t fatEntryOffsetForCluster(unsigned int cluster);
 		unsigned int *clusterChainForCluster(unsigned int cluster);
 
+		// Read a cluster from the filesystem
 		void *readCluster(unsigned int cluster, void* buffer, unsigned int* error);
+
+		// Takes an input buffer of FAT directory entries and "prettifies" them.
+		void processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *dir);
+
+		// Compute checksum for long filenames
+		uint8_t lfnCheckSum(unsigned char *shortName);
 };
