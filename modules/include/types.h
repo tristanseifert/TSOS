@@ -1,4 +1,3 @@
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -9,9 +8,18 @@ extern "C" {
 #import <stdbool.h>
 #endif
 
+// Built-ins
 #import <stddef.h>
 #import <stdint.h>
+#import <stdarg.h>
 
+#import <limits.h>
+#import <cpuid.h>
+
+// Intrinsics
+#import <x86intrin.h>
+
+// Standard libraries
 #import "includes/stdlib.h"
 #import "includes/time.h"
 

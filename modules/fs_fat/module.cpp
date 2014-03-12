@@ -11,11 +11,14 @@ static void *fat32_create_superblock(hal_disk_partition_t *part, hal_disk_t *dis
 static fs_directory_t *fat32_list_directory(void *superblock, char *dirname);
 static int fat32_create_directory(void *superblock, char *path);
 static int fat32_unlink(void *superblock, char *path);
-static fs_file_t *fat32_file_open(void *superblock, char *path, fs_file_open_mode_t mode);
+static fs_file_handle_t *fat32_file_open(void *superblock, char *path, fs_file_open_mode_t mode);
 static void fat32_file_close(void *superblock, fs_file_t *file);
 static void fat32_file_update(void *superblock, fs_file_t *file);
-static void* fat32_file_read(void *superblock, void* buffer, unsigned int offset, unsigned int bytes, fs_file_t *file);
-static void fat32_file_write(void *superblock, void* buffer, unsigned int offset, unsigned int bytes, fs_file_t *file);
+static long long fat32_file_read(void *superblock, void* buffer, size_t bytes, fs_file_handle_t *file);
+static long long fat32_file_write(void *superblock, void* buffer, size_t bytes, fs_file_handle_t *file);
+
+// Initialisers
+extern "C" void _init(void);
 
 // Module definition
 static const module_t mod = {
@@ -42,6 +45,9 @@ static const hal_vfs_t vfs = {
  */
 extern "C" {
 	module_t *start(void) {
+		// Call constructors and whatnot
+		// _init();
+
 		hal_vfs_register((hal_vfs_t *) &vfs);
 
 		return (module_t *) &mod;
@@ -78,9 +84,13 @@ static void *fat32_create_superblock(hal_disk_partition_t *part, hal_disk_t *dis
 
 // List a directory.
 static fs_directory_t *fat32_list_directory(void *superblock, char *dirname) {
-	fs_fat32 *fs = (fs_fat32 *) superblock;
+	// Validate input
+	if(dirname) {
+		fs_fat32 *fs = (fs_fat32 *) superblock;
+		return fs->list_directory(dirname, true);
+	}
 
-	return fs->list_directory(dirname, true);
+	return NULL;
 }
 
 // Create a directory
@@ -96,8 +106,18 @@ static int fat32_unlink(void *superblock, char *path) {
 }
 
 // Opens a file, optionally creating it.
-static fs_file_t *fat32_file_open(void *superblock, char *path, fs_file_open_mode_t mode) {
-	UNIMPLEMENTED_WARNING();
+static fs_file_handle_t *fat32_file_open(void *superblock, char *path, fs_file_open_mode_t mode) {
+	// Validate input
+	if(path) {
+		fs_fat32 *fs = (fs_fat32 *) superblock;
+		fs_file_handle_t *handle = fs->get_file(path);
+
+		// Set the file mode
+		handle->mode = mode;
+
+		return handle;
+	}
+
 	return NULL;
 }
 
@@ -112,12 +132,19 @@ static void fat32_file_update(void *superblock, fs_file_t *file) {
 }
 
 // Reads from the specified offset in the file.
-static void* fat32_file_read(void *superblock, void* buffer, unsigned int offset, unsigned int bytes, fs_file_t *file) {
-	UNIMPLEMENTED_WARNING();
-	return NULL;
+static long long fat32_file_read(void *superblock, void* buffer, size_t bytes, fs_file_handle_t *file) {
+	// Validate input
+	if(buffer && file) {
+		fs_fat32 *fs = (fs_fat32 *) superblock;
+		return fs->read_handle(file, bytes, buffer);
+	}
+
+	return -1;
 }
 
 // Writes to the specified offset in the file.
-static void fat32_file_write(void *superblock, void* buffer, unsigned int offset, unsigned int bytes, fs_file_t *file) {
+static long long fat32_file_write(void *superblock, void* buffer, size_t bytes, fs_file_handle_t *file) {
 	UNIMPLEMENTED_WARNING();
+
+	return -1;
 }

@@ -108,13 +108,17 @@ void modules_ramdisk_load() {
 			// Read the section table
 			for(unsigned int s = 0; s < header->sh_entry_count; s++) {
 				elf_section_entry_t *section = &sections[s];
+				char *section_name = shstrtab + section->sh_name;
 
 				// Does this section have physical memory associated with it?
 				if(section->sh_type == SHT_PROGBITS) {
-					progbits_size += section->sh_size;
+					// Ignore .eh_frame section
+					if(strcmp(".eh_frame", section_name)) {
+						progbits_size += section->sh_size;
 
-					if(!progbits_offset) {
-						progbits_offset = section->sh_offset;
+						if(!progbits_offset) {
+							progbits_offset = section->sh_offset;
+						}
 					}
 				} else if(section->sh_type == SHT_NOBITS) { // NOBITS?
 					nobits_size += section->sh_size;
@@ -124,8 +128,11 @@ void modules_ramdisk_load() {
 						nobits_start = section->sh_addr;
 					}
 				} else if(section->sh_type == SHT_REL) { // relocation
-					rtabs[currentRtab].rtab = elf + section->sh_offset;
-					rtabs[currentRtab++].rtab_entries = section->sh_size / sizeof(elf_program_relocation_t);
+					// Ignore .eh_frame section
+					if(strcmp(".rel.eh_frame", section_name)) {
+						rtabs[currentRtab].rtab = elf + section->sh_offset;
+						rtabs[currentRtab++].rtab_entries = section->sh_size / sizeof(elf_program_relocation_t);
+					}
 				} else if(section->sh_type == SHT_SYMTAB) { // symbol table
 					symtab = elf + section->sh_offset;
 					symtab_entries = section->sh_size / sizeof(elf_symbol_entry_t);

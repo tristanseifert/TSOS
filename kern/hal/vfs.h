@@ -19,7 +19,10 @@ typedef enum {
 typedef enum {
 	kFSFileModeReadOnly = (1 << 0),
 	kFSFileModeCreate = (1 << 1),
-	kFSFileModeTruncate = (1 << 2)
+
+	// these two are mutually exclusive
+	kFSFileModeTruncate = (1 << 2),
+	kFSFileModeAppend = (1 << 3)
 } fs_file_open_mode_t;
 
 /*
@@ -107,6 +110,27 @@ struct fs_file {
 	unsigned long long size;
 };
 
+/*
+ * Kernel representation of a file handle, used for accessing a file.
+ */
+typedef struct fs_file_handle fs_file_handle_t;
+struct fs_file_handle {
+	// File this handle is associated with
+	hal_handle_t file;
+
+	// Mode the file was opened in
+	fs_file_open_mode_t mode;
+
+	// Indicates whether the file can be repositioned
+	bool can_seek;
+
+	// Current read/write position
+	unsigned long long position;
+
+	// Various flags
+	bool isOpen;
+};
+
 // Structure defining a VFS driver
 typedef struct hal_vfs hal_vfs_t;
 struct hal_vfs {
@@ -119,7 +143,7 @@ struct hal_vfs {
 	void* (*create_superblock)(hal_disk_partition_t*, hal_disk_t*);
 
 	/*
-	 * Functions declared below are the functions that the VFS drivers are
+	 * Functions declared below are the functions that the VFS drivers areh
 	 * expected to implement in order to receive requests to interface with the
 	 * filesystem.
 	 *
@@ -137,7 +161,7 @@ struct hal_vfs {
 	int (*unlink)(void *superblock, char *path);
 
 	// Opens a file, optionally creating it.
-	fs_file_t* (*file_open)(void *superblock, char *path, fs_file_open_mode_t mode);
+	fs_file_handle_t* (*file_open)(void *superblock, char *path, fs_file_open_mode_t mode);
 
 	// Closes a file handle
 	void (*file_close)(void *superblock, fs_file_t *file);
@@ -146,10 +170,10 @@ struct hal_vfs {
 	void (*file_update)(void *superblock, fs_file_t *file);
 
 	// Reads from the specified offset in the file.
-	void* (*file_read)(void *superblock, void* buffer, unsigned int offset, unsigned int bytes, fs_file_t *file);
+	long long (*file_read)(void *superblock, void* buffer, size_t bytes, fs_file_handle_t *file);
 
 	// Writes to the specified offset in the file.
-	void (*file_write)(void *superblock, void* buffer, unsigned int offset, unsigned int bytes, fs_file_t *file);
+	long long (*file_write)(void *superblock, void* buffer, size_t bytes, fs_file_handle_t *file);
 };
 
 // Include filesystem root class

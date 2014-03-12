@@ -70,10 +70,20 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 				}
 			}*/
 
-			// Read a file
-			fs_file_t *file = fs->file_open(thingie->superblock, (char *) "/test/test2/folder/8254_pit.h", kFSFileModeReadOnly);
+			// Open a file
+			fs_file_handle_t *file = fs->file_open(thingie->superblock, (char *) "/test/test2/folder/binfmt_elf.h", kFSFileModeReadOnly);
 			if(file) {
-				KDEBUG("Opened file handle: %u", file->i.handle);
+				KDEBUG("Opened file handle: %u", file->file);
+			}
+
+			// Read the first 1024 bytes
+			void *data = kmalloc(1024);
+			long long err = 0;
+
+			if((err = fs->file_read(thingie->superblock, data, 1024, file)) >= 0) {
+				KDEBUG("Read file to 0x%08X", (unsigned int) data);
+			} else {
+				KERROR("Error reading file: %i", (int) err);
 			}
 		}
 	}

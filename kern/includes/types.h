@@ -8,13 +8,22 @@ extern "C" {
 #if !defined(__cplusplus)
 #import <stdbool.h>
 #endif
-#import <stddef.h>
-#import <stdint.h>
-#import <stdlib.h>
-
 #import <errno.h>
 
-#import <time.h>
+// Built-ins
+#import <stddef.h>
+#import <stdint.h>
+#import <stdarg.h>
+
+#import <limits.h>
+#import <cpuid.h>
+
+// Intrinsics
+#import <x86intrin.h>
+
+// Standard libraries
+#import "includes/stdlib.h"
+#import "includes/time.h"
 
 // Console support (printing, panic, etc)
 #import "console/console.h"
@@ -34,9 +43,6 @@ extern "C" {
 
 // Timers
 #import "task/systimer.h"
-
-// X86 intrinsic macros (SSE)
-// #import <x86intrin.h>
 
 // These tell gcc how to optimise branches since it's stupid
 #define likely(x)    __builtin_expect(!!(x), 1)

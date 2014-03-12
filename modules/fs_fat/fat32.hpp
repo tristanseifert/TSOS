@@ -49,11 +49,14 @@ class fs_fat32 : public hal_fs {
 			return buf;
 		}
 
-		// Gets the sector that the offset into the file is contained in.
-		unsigned int sector_for_file(char *path, unsigned int offset);
-
 		// Lists a directory, the Fun Way™.
 		fs_directory_t* list_directory(char* dirname, bool cache);
+
+		// Gets the file requested
+		fs_file_handle_t* get_file(char *name);
+
+		// Performs a file read
+		long long read_handle(fs_file_handle_t *h, size_t bytes, void *buffer);
 
 	private:
 		// Small cache for directory handles
@@ -74,6 +77,9 @@ class fs_fat32 : public hal_fs {
 
 		// Buffer for a single sector of FAT data
 		uint32_t *fatBuffer;
+
+		// Buffer for one cluster of data
+		void *clusterBuffer;
 
 		void read_root_dir(void);
 

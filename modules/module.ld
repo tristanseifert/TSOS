@@ -8,8 +8,16 @@ SECTIONS {
 		*(.rodata);
 		*(.rodata*);
 
+		/* Initialisers */
 		*(.init);
 		*(.fini);
+
+		/* C++ destructor/constructor info */
+		*(.ctors);
+		*(.dtors);
+
+		/* Some other initialisation */
+		*(.jcr);
 	}
 
 	/* Read/write data */

@@ -9,7 +9,12 @@
 #import <module.h>
 #import <fat32.hpp>
 
-#define DEBUG_DIRECTORY_CACHING	0
+#define	DEBUG_DIRECTORY_CACHING	0
+#define	DEBUG_READ				0
+
+#define DEBUG_FILE_NOT_FOUND	1
+
+#define	PRINT_ERROR				1
 
 /*
  * Initialises a FAT32 filesystem from the specified partition table entry.
@@ -19,7 +24,9 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 
 	// Read sector 0 of partition synchronously
 	if(!this->hal_fs::read_sectors(0, 1, &bpb, &err)) {
+		#if PRINT_ERROR
 		KERROR("Error reading BPB: %u", err);
+		#endif
 		return;
 	}
 
@@ -47,7 +54,9 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 
 	// Read FSINFO sector
 	if(!this->hal_fs::read_sectors(bpb.fat_info, 1, &fs_info, &err)) {
+		#if PRINT_ERROR
 		KERROR("Error reading FSInfo: %u", err);
+		#endif
 		return;
 	}
 
@@ -78,11 +87,15 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 
 	// Allocate more memory for the filesystem
 	fatBuffer = (uint32_t *) kmalloc(cluster_size);
+	clusterBuffer = kmalloc(cluster_size);
+
 	dirHandleCache = hashmap_allocate();
 
 	// Read FAT sector 0 to get dirty flags
 	if(!this->hal_fs::read_sectors(bpb.reserved_sector_count, 1, fatBuffer, &err)) {
+		#if PRINT_ERROR
 		KERROR("Error reading FAT: %u", err);
+		#endif
 		return;
 	} else {
 		fs_clealyUnmounted = (fatBuffer[1] & FAT32_VOLUME_DIRTY_MASK);
@@ -160,7 +173,9 @@ void fs_fat32::read_root_dir(void) {
 			unsigned int cluster = root_clusters[cnt];
 
 			if(!this->readCluster(cluster, ((uint8_t *) buffer) + (cnt * cluster_size), &err)) {
+				#if PRINT_ERROR
 				KERROR("Error reading root dir cluster %u: %u", cluster, err);
+				#endif
 				return;
 			}
 		} else {
@@ -221,7 +236,9 @@ fat_dirent_t *fs_fat32::read_dir_file(fs_directory_t *parent, char *childName, u
 				unsigned int cluster = chain[cnt];
 
 				if(!this->readCluster(cluster, ((uint8_t *) buffer) + (cnt * cluster_size), &err)) {
+					#if PRINT_ERROR
 					KERROR("Error reading directory file %u: %u", cluster, err);
+					#endif
 					return NULL;
 				}
 			} else {
@@ -235,6 +252,10 @@ fat_dirent_t *fs_fat32::read_dir_file(fs_directory_t *parent, char *childName, u
 	}
 
 	// Directory not found
+	#if DEBUG_FILE_NOT_FOUND
+	KERROR("Could not find directory %s", childName);
+	#endif
+
 	return NULL;
 }
 
@@ -289,6 +310,9 @@ fs_directory_t *fs_fat32::read_directory(fs_directory_t *dir, char *name, bool c
 		}
 
 		directory = currentDir;
+
+		// Increment cache count
+		directory->i.cache_accesses++;
 	}
 
 	// Return directory
@@ -320,6 +344,11 @@ fs_directory_t* fs_fat32::list_directory(char* dirname, bool cache) {
 			return NULL;
 		}
 	}
+
+	// Clean up
+	kfree(currentPath);
+	kfree(list_get(components, 0));
+	list_destroy(components, false);
 
 	return directory;
 }
@@ -627,7 +656,10 @@ unsigned int *fs_fat32::clusterChainForCluster(unsigned int cluster) {
 		if(this->hal_fs::read_sectors(off.sector, bpb.sectors_per_cluster, fatBuffer, &err)) {
 			nextCluster = fatBuffer[off.offset];
 		} else { // read error?
+			#if PRINT_ERROR
 			KERROR("Couldn't read sector %u for FAT", off.sector);
+			#endif
+
 			goto error;
 		}
 
@@ -668,8 +700,195 @@ void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *er
 }
 
 /*
- * Gets the sector, relative to the start of the partition, for a certain file.
+ * Gets a pointer to a VFS file object
  */
-unsigned int fs_fat32::sector_for_file(char *path, unsigned int offset) {
-	return 0;
+fs_file_handle_t* fs_fat32::get_file(char *name) {
+	// Store address of final file
+	fs_file_t *file = NULL;
+
+	// Allocate memory for directory
+	char *dirName = (char *) kmalloc(strlen(name) + 2);
+	unsigned int dirNameOffset = 0;
+
+	dirName[dirNameOffset++] = '/';
+
+	// Separate path string
+	list_t *components = this->split_path(name);
+
+	// Get the base directory name
+	for(unsigned int i = 0; i < components->num_entries-1; i++) {
+		char *component = (char *) list_get(components, i);
+
+		strcat(dirName + dirNameOffset, component);
+		dirNameOffset += strlen(component);
+		dirName[dirNameOffset++] = '/';
+	}
+
+	char *fileName = (char *) list_get(components, components->num_entries - 1);
+
+	// Try to get directory
+	fs_directory_t *dir = this->list_directory(dirName, true);
+
+	// Directory found, search for file.
+	if(dir) {
+		// Locate the child
+		for(unsigned int i = 0; i < dir->children->num_entries; i++) {
+			file = (fs_file_t *) list_get(dir->children, i);
+
+			// Ignore non-directory files
+			if(file->i.type == kFSItemTypeFile) {
+				if(!strcasecmp(fileName, file->i.name)) {
+					goto fileFound;
+				}
+			}
+		}
+
+		goto notFound;
+	} else {
+		goto notFound;
+	}
+
+	// File not found
+	notFound: ;
+	#if DEBUG_FILE_NOT_FOUND
+	KERROR("Couldn't find %s in %s", dirName, fileName);
+	#endif
+
+	kfree(dirName);
+	kfree(list_get(components, 0));
+	list_destroy(components, false);
+
+	return NULL;
+
+	// File found
+	fileFound: ;
+
+	// Clean up
+	kfree(dirName);
+	kfree(list_get(components, 0));
+	list_destroy(components, false);
+
+	// Open a file handle object
+	fs_file_handle_t *handle = (fs_file_handle_t *) kmalloc(sizeof(fs_file_handle_t));
+
+	handle->file = file->i.handle;
+	handle->can_seek = true;
+	handle->position = 0;
+
+	handle->isOpen = true;
+
+	// Increment file's cache reference
+	file->i.cache_accesses++;
+
+	return handle;
+}
+
+/*
+ * Performs a read operation from the file this file handle is opened on,
+ * reading num_bytes bytes into buffer, starting at the current location of
+ * the file handle.
+ *
+ * This function returns between zero and LONG_LONG_MAX 
+ */
+long long fs_fat32::read_handle(fs_file_handle_t *h, size_t bytes, void *buffer) {
+	unsigned int err = 0;
+
+	// Get the file object associated with it
+	fs_file_t *fileObj = (fs_file_t *) hal_handle_get_object(h->file);
+
+	// Verify the file object is still valid
+	if(fileObj->i.type != kFSItemTypeFile) {
+		h->isOpen = false;
+		return -1;
+	}
+
+	// Is there any data available? (not EOF)
+	if(h->position == fileObj->size) {
+		return 0;
+	}
+
+	// Determine starting cluster for this file (from userData)
+	unsigned int start_cluster = (fileObj->i.userData & FAT32_MASK);
+
+	// Get the number of clusters into the file to read
+	unsigned int clusters_in = h->position / cluster_size;
+	unsigned int cluster_offset = h->position % cluster_size;
+
+	// Read cluster chain
+	unsigned int *chain = this->clusterChainForCluster(start_cluster);
+	unsigned int chain_len = (fileObj->size + (cluster_size - 1)) / cluster_size;
+
+	#if DEBUG_READ
+	KDEBUG("File size %u, chain %u entries", (unsigned int) fileObj->size, chain_len);
+	#endif
+
+	// Calculate how many bytes we can actually read
+	size_t bytes_to_read = 0;
+	long long bytes_read = 0;
+
+	// Reading more than the file has?
+	if(fileObj->size - h->position < bytes) {
+		bytes_to_read = fileObj->size - h->position;
+	} else {
+		bytes_to_read = bytes;
+	}
+
+	// Get number of clusters to read
+	unsigned int clusters_to_read = (bytes_to_read + (cluster_size - 1)) / cluster_size;
+
+	// Pointer to the current location in the outbuf
+	uint8_t *outbuf = (uint8_t *) buffer;
+
+	// Begin the process of reading
+	for(unsigned int c = cluster_offset; c < clusters_to_read + cluster_offset; c++) {
+		// Read cluster
+		unsigned int cluster = chain[c];
+
+		#if DEBUG_READ
+		KDEBUG("Cluster %u: 0x%08X, %u bytes left", c, cluster, (unsigned int) bytes_to_read);
+		#endif
+
+		if(!this->readCluster(cluster, clusterBuffer, &err)) {
+			#if PRINT_ERROR
+			KERROR("Cluster read error: %u", err);
+			#endif
+
+			goto done;
+		}
+
+		// We needn't read any more clusters
+		if(bytes_to_read <= cluster_size) {
+			#if DEBUG_READ
+			KDEBUG("Read %u bytes", (unsigned int) bytes_to_read);
+			#endif
+
+			bytes_read += bytes_to_read;
+			memcpy(outbuf, clusterBuffer, bytes_to_read);
+
+			bytes_to_read = 0;
+			goto done;
+		} else {
+			#if DEBUG_READ
+			KDEBUG("Read %u bytes", (unsigned int) cluster_size);
+			#endif
+
+			// We read an entire cluster
+			bytes_to_read -= cluster_size;
+			memcpy(outbuf, clusterBuffer, cluster_size);	
+
+			// Account for the amount of bytes read
+			bytes_read += cluster_size;
+			outbuf += cluster_size;
+		}
+	}
+
+	done: ;
+	#if DEBUG_READ
+	KDEBUG("Total bytes read: %u", (unsigned int) bytes_read);
+	#endif
+
+	// Adjust file pointer
+	h->position += bytes_read;
+
+	return bytes_read;
 }

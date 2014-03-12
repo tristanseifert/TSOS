@@ -70,3 +70,6 @@ int vsnprintf(char* str, size_t size, const char* format, va_list ap);
 unsigned int std_popCnt(uint32_t x);
 
 unsigned int std_strcnt(const char *str, char character);
+
+// Miscallenous math stuff
+#define DIV_ROUND_UP(n, d) ((n < 0) ^ (d < 0)) ? ((n - d/2)/d) : ((n + d/2)/d);
