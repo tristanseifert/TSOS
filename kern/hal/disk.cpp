@@ -95,6 +95,30 @@ extern "C" {
 			}
 		}
 	}
+
+	/*
+	 * Writes to the disk
+	 */
+	hal_disk_error_t hal_disk_write(hal_disk_t* disk, uint32_t lba, uint32_t length, void* buffer, unsigned int* id, hal_disk_callback_t callback, void* ctx) {
+		if(callback) {
+			return disk->f.write(disk, lba, length, buffer, id, callback, ctx);
+		} else {
+			int r = disk->f.write(disk, lba, length, buffer, id, hal_disk_null_callback, NULL);
+
+			// If there was no errors, wait for the callback to be called
+			if(r == kDiskErrorNone) {
+				while(!hal_disk_null_callback_called) {
+					// Wait until the disk read happened
+				}
+
+				hal_disk_null_callback_called = false;
+
+				return hal_disk_null_callback_error;
+			} else {
+				return r;
+			}
+		}		
+	}
 }
 
 /*

@@ -39,8 +39,8 @@ EXECUTABLE=$(MODULE_NAME).kmod
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	@#$(CPP) $(LDFLAGS) $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJECTS) $(CRTEND_OBJ) $(CRTN_OBJ) -lgcc -o $@
-	$(CPP) $(LDFLAGS) $(OBJECTS) -lgcc -o $@
+	$(CPP) $(LDFLAGS) $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJECTS) $(CRTEND_OBJ) $(CRTN_OBJ) -lgcc -o $@
+	@#$(CPP) $(LDFLAGS) $(OBJECTS) -lgcc -o $@
 
 	@i686-pc-elf-objdump -b elf32-i386 -d -S $@ > $@_symbols.txt
 	@i686-pc-elf-objcopy --strip-debug $@

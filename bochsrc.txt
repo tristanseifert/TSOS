@@ -30,10 +30,10 @@ ne2k: ioaddr=0x300, irq=9, mac=b0:c4:20:00:00:00, ethmod=vnet, ethdev=./
 
 print_timestamps: enabled=0
 
-debugger_log: -
+debugger_log: bochs_debug_log.txt
 
 magic_break: enabled=1
-port_e9_hack: enabled=0
+port_e9_hack: enabled=1
 
 private_colormap: enabled=0
 
@@ -42,11 +42,11 @@ clock: sync=none, time0=local, rtc_sync=0
 # no cmosimage
 # no loader
 
-log: -
+log: bochs_log.txt
 
 logprefix: %t%e%d
 
-debug: action=ignore, keyboard=report
+debug: action=ignore#, keyboard=report
 info: action=report
 error: action=report
 panic: action=ask

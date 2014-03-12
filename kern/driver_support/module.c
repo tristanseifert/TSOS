@@ -241,8 +241,29 @@ void modules_ramdisk_load() {
 							elf_symbol_entry_t *symbol = &symtab[symtab_index];
 							char *name = strtab + symbol->st_name;
 							unsigned int *ptr = elf + progbits_offset + ent->r_offset;
+							unsigned int kern_symbol_loc = 0;
 
-							unsigned int kern_symbol_loc = find_symbol_in_kernel(name);
+							// Search the module first
+							for(unsigned int i = 0; i < symtab_entries; i++) {
+								elf_symbol_entry_t *entry = &symtab[i];
+								char *symbol_name = strtab + entry->st_name;
+
+								// Symbol found in module?
+								if(unlikely(!strcmp(name, symbol_name)) && likely(entry->st_shndx != STN_UNDEF)) {
+									kern_symbol_loc = (entry->st_address + module_placement_addr);
+
+									*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
+									
+									#if DEBUG_MOBULE_RELOC
+									KDEBUG("0x%08X -> 0x%08X (%s, module)", (unsigned int) ent->r_offset, *ptr, name);
+									#endif
+
+									goto linkNext;
+								}
+							}
+
+							// We drop down here if the symbol isn't in the module
+							kern_symbol_loc = find_symbol_in_kernel(name);
 
 							if(kern_symbol_loc) {
 								// Perform the relocation.							
@@ -252,25 +273,6 @@ void modules_ramdisk_load() {
 								KDEBUG("0x%08X -> 0x%08X (%s, kernel)", (unsigned int) ent->r_offset, *ptr, name);
 								#endif
 							} else {
-								// Search for the symbol in the module's synbol table
-								for(unsigned int i = 0; i < symtab_entries; i++) {
-									elf_symbol_entry_t *entry = &symtab[i];
-									char *symbol_name = strtab + entry->st_name;
-
-									// Symbol found in module?
-									if(unlikely(!strcmp(name, symbol_name)) && likely(entry->st_shndx != STN_UNDEF)) {
-										kern_symbol_loc = (entry->st_address + module_placement_addr);
-
-										*ptr = kern_symbol_loc + *ptr - (module_placement_addr + ent->r_offset);
-										
-										#if DEBUG_MOBULE_RELOC
-										KDEBUG("0x%08X -> 0x%08X (%s, module)", (unsigned int) ent->r_offset, *ptr, name);
-										#endif
-
-										goto linkNext;
-									}
-								}
-
 								KERROR("Module %s references '%s', but symbol does not exist", moduleName, name);
 								goto nextModule;
 							}

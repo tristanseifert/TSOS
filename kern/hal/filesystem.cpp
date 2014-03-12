@@ -33,6 +33,27 @@ void *hal_fs::read_sectors(unsigned int start, unsigned int numSectors, void *bu
 }
 
 /*
+ * Writes sectors to the drive. Returns NULL if there was an error, or the
+ * start of the original buffer if success.
+ */
+void *hal_fs::write_sectors(unsigned int start, unsigned int numSectors, void *buffer, unsigned int *error) {
+	start += partition->lba_start;
+	unsigned int err = hal_disk_write(disk, start, numSectors, buffer, NULL, NULL, NULL);
+
+	// Error writing to disk?
+	if(err) {
+		// If the caller wants an error code, pass it.
+		if(error) {
+			*error = err;
+		}
+
+		return NULL;
+	}
+
+	return buffer;
+}
+
+/*
  * Splits a string with the slash ("/") character, and returns a string array
  * containing the individual pieces.
  *

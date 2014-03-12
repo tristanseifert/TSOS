@@ -44,9 +44,9 @@ static const hal_vfs_t vfs = {
  * Initialisation function for the FAT32 driver (called by kernel)
  */
 extern "C" {
-	module_t *start(void) {
+	 __attribute__ ((section (".module_init"))) module_t *start(void) {
 		// Call constructors and whatnot
-		// _init();
+		_init();
 
 		hal_vfs_register((hal_vfs_t *) &vfs);
 

@@ -75,7 +75,7 @@ class fs_fat32 : public hal_fs {
 
 		unsigned int cluster_size;
 
-		// Buffer for a single sector of FAT data
+		// Buffer for a single cluster of FAT data
 		uint32_t *fatBuffer;
 
 		// Buffer for one cluster of data
@@ -106,4 +106,11 @@ class fs_fat32 : public hal_fs {
 
 		// Converts a FAT timestamp to a UNIX timestamp
 		time_t convert_timestamp(uint16_t date, uint16_t time, uint8_t millis);
+
+
+		// Finds clusters that are free
+		unsigned int *findFreeClusters(unsigned int c);
+
+		// Updates a cluster chain
+		int update_fat(unsigned int first_cluster, unsigned int *chain);
 };

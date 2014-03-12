@@ -15,9 +15,6 @@ SECTIONS {
 		*(.text);
 		*(.rodata);
 		*(.rodata*);
-
-		*(.init);
-		*(.fini);
 	}
 
 	.modules : AT(ADDR(.modules) - 0xC0000000) {
@@ -54,6 +51,16 @@ SECTIONS {
 	__kern_data_start = .;
 
 	.data ALIGN(4K) : AT(ADDR(.data) - 0xC0000000) {
+		/* Initialisers */
+		*(.init*);
+		*(.fini*);
+
+		/* C++ destructor/constructor info */
+		*(.ctors*);
+		*(.dtors*);
+
+		*(.jcr*);
+
 		*(*.data);
 	}
 

@@ -3,26 +3,25 @@ OUTPUT_FORMAT(elf32-i386)
 /* General data */
 SECTIONS {
 	.text ALIGN(4K): {
-		*(.text);
-
-		*(.rodata);
-		*(.rodata*);
+		*(.module_init);
+		*(.text*);
 
 		/* Initialisers */
-		*(.init);
-		*(.fini);
+		*(.init*);
+		*(.fini*);
+
+		/* Read-only data (strings, etc) */
+		*(.rodata*);
 
 		/* C++ destructor/constructor info */
-		*(.ctors);
-		*(.dtors);
+		*(.ctors*);
+		*(.dtors*);
 
-		/* Some other initialisation */
-		*(.jcr);
+		*(.jcr*);
 	}
 
 	/* Read/write data */
 	.data : {
-		*(.data);
 		*(.data*);
 	}
 
@@ -41,6 +40,5 @@ SECTIONS {
 	/DISCARD/ : {
 		*(.comment);
 		*(.group);
-		*(.eh_frame);
 	}
 }

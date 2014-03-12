@@ -38,7 +38,7 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 
 	// Calculate size of a cluster (in bytes)
 	cluster_size = bpb.sectors_per_cluster * bpb.bytes_per_sector;
-	KDEBUG("Cluster size of %u bytes", cluster_size);
+	// KDEBUG("Cluster size of %u bytes", cluster_size);
 
 	// Calculate address of first data sector
 	first_data_sector = bpb.reserved_sector_count + (bpb.table_count * bpb.table_size_32) + root_dir_sectors;
@@ -94,7 +94,7 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 	// Read FAT sector 0 to get dirty flags
 	if(!this->hal_fs::read_sectors(bpb.reserved_sector_count, 1, fatBuffer, &err)) {
 		#if PRINT_ERROR
-		KERROR("Error reading FAT: %u", err);
+		KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
 		#endif
 		return;
 	} else {
@@ -107,22 +107,6 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 
 	// Read root directory
 	this->read_root_dir();
-
-	// List it
-/*	KDEBUG("Root directory of '%s': %u items (handle: %u)", volumeLabel, root_directory->children->num_entries, root_directory->i.handle);
-	for(unsigned int i = 0; i < root_directory->children->num_entries; i++) {
-		fs_item_t *item = (fs_item_t *) list_get(root_directory->children, i);
-
-		if(item->type == kFSItemTypeFile) {
-			fs_file_t *file = (fs_file_t *) item;
-
-			KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
-		} else if(item->type == kFSItemTypeDirectory) {
-			fs_directory_t *dir = (fs_directory_t *) item;
-
-			KDEBUG(" Dir: %s", dir->i.name);
-		}
-	}*/
 
 	KSUCCESS("Volume initialised.");
 }
@@ -298,6 +282,8 @@ fs_directory_t *fs_fat32::read_directory(fs_directory_t *dir, char *name, bool c
 		// Convert to directory handle
 		fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
 		this->processFATDirEnt(dirBuf, dirBufEntries, currentDir);
+
+		kfree(dirBuf);
 
 		currentDir->parent = dir->i.handle;
 
@@ -891,4 +877,110 @@ long long fs_fat32::read_handle(fs_file_handle_t *h, size_t bytes, void *buffer)
 	h->position += bytes_read;
 
 	return bytes_read;
+}
+
+/*
+ * Finds the specified number of free clusters.
+ */
+unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
+	// Allocate a buffer
+	unsigned int *buf = (unsigned int *) kmalloc(sizeof(unsigned int) * (numClusters + 1));
+	unsigned int bufOffset = 0;
+
+	unsigned int err = 0;
+
+	// Begin search at the offset in the FSInfo structure
+	unsigned int currentCluster = fs_info.free_cluster_search_start;
+	fat32_secoff_t off = fatEntryOffsetForCluster(currentCluster);
+
+	unsigned int currentFATSector = off.sector;
+	unsigned int currentFATOffset = off.offset;
+
+	while(true) {
+		// Crossed the cluster boundary?
+		if(currentFATOffset++ > (cluster_size / 4)) {
+			currentFATSector++;
+			currentFATOffset = 0;
+
+			// Check we're not past the end of the FAT
+			if(currentFATSector > (bpb.table_count * bpb.table_size_32)) {
+				goto error;
+			} else {
+				// Read the new FAT cluster otherwise
+				if(!this->hal_fs::read_sectors(currentFATSector, 1, fatBuffer, &err)) {
+					#if PRINT_ERROR
+					KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
+					#endif
+					return NULL;
+				}
+			}
+		}
+
+		// Is this cluster free?
+		if(!buf[currentFATOffset]) {
+			buf[bufOffset++] = currentCluster;
+		}
+
+		currentCluster++;
+	}
+
+	return buf;
+
+	error: ;
+	#if PRINT_ERROR
+	KERROR("Couldn't find %u free clusters", numClusters);
+	#endif
+	return NULL;
+}
+
+/*
+ * Merges two cluster chains: Begins the insertion process at first_cluster,
+ * replacing an end-of-file mark or zero.
+ *
+ * If the original chain has only one entry and this entry is not used, the
+ * second chain is simply inserted starting at the specified position.
+ *
+ * This function will fail if attempts are made to assign a cluster in the FAT
+ * that has a non-zero value, UNLESS it is an end-of-chain marker. This means
+ * that assigning "broken" clusters will cause this function to fail.
+ *
+ * An important requirement here is that chain MUST be terminated with the FAT
+ * end-of-chain marker, as that is needed to both complete the table, and for
+ * the function to recognise the end of the chain.
+ */
+int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
+	unsigned int err = 0;
+
+	// Read first_cluster's FAT entry
+	fat32_secoff_t off = fatEntryOffsetForCluster(first_cluster);
+	
+	if(!this->hal_fs::read_sectors(off.sector, 1, fatBuffer, &err)) {
+		#if PRINT_ERROR
+		KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
+		#endif
+		return -2;
+	}
+
+	// Is it an end-of-file marker?
+	if((fatBuffer[off.offset] & FAT32_MASK) < FAT32_END_CHAIN && (fatBuffer[off.offset] & FAT32_MASK)) {
+		#if PRINT_ERROR
+		KERROR("%u is not the end of a chain, cannot append chain 0x%08X", 
+			first_cluster, (unsigned int) chain);
+		KDEBUG("(Read 0x%08X)", (unsigned int) fatBuffer[off.offset]);
+		#endif
+
+		return -3;
+	}
+
+	// Modify FAT and write back to device
+	fatBuffer[off.offset] = chain[0];
+	if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
+		#if PRINT_ERROR
+		KERROR("%s: Error writing FAT: %u", __PRETTY_FUNCTION__, err);
+		#endif
+		return -2;
+	}
+
+
+	return -1;
 }

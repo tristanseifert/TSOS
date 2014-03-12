@@ -98,6 +98,7 @@ extern "C" {
 
 	hal_disk_error_t hal_disk_setup(hal_disk_t* disk);
 	hal_disk_error_t hal_disk_read(hal_disk_t* disk, uint32_t lba, uint32_t length, void* buffer, unsigned int* id, hal_disk_callback_t callback, void* ctx);
+	hal_disk_error_t hal_disk_write(hal_disk_t* disk, uint32_t lba, uint32_t length, void* buffer, unsigned int* id, hal_disk_callback_t callback, void* ctx);
 
 #ifdef __cplusplus
 }
