@@ -469,3 +469,15 @@ static unsigned int find_symbol_in_kernel(char *name) {
 	// Symbol not found
 	return 0;
 }
+
+void __deregister_frame_info(void) {
+
+}
+
+void __register_frame_info(void) {
+
+}
+
+void _Jv_RegisterClasses(void) {
+
+}

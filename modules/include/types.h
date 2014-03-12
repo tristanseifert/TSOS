@@ -43,6 +43,8 @@ extern "C" {
 #define ENDIAN_DWORD_SWAP(x) ((x >> 24) & 0xFF) | ((x << 8) & 0xFF0000) | ((x >> 8) & 0xFF00) | ((x << 24) & 0xFF000000)
 #define ENDIAN_WORD_SWAP(x) ((x & 0xFF) << 0x08) | ((x & 0xFF00) >> 0x08)
 
+#define UNIMPLEMENTED_WARNING() KERROR("%s unimplemented", __PRETTY_FUNCTION__);
+
 /*
  * Write a byte to system IO port
  */

@@ -13,9 +13,14 @@ INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/
 OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer -falign-functions=4
 CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions -std=gnu++0x
 
-CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -nostartfiles -nodefaultlibs -ffreestanding -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
-LDFLAGS=-T kern.ld -ffreestanding -O2 -nostdlib -lgcc
+CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -nostartfiles -nodefaultlibs -fno-exceptions -ffreestanding -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
+LDFLAGS=-pipe -T kern.ld -ffreestanding -O2 -nostdlib -fno-exceptions
 ASFLAGS =
+
+CRTI_OBJ=crti.o
+CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
+CRTN_OBJ=crtn.o
 
 # Build number
 BUILD_NUMBER_FILE=buildnum.txt
@@ -58,7 +63,7 @@ $(EXECUTABLE): $(OBJECTS)
 	@if ! test -f $(BUILD_NUMBER_FILE); then echo 0 > $(BUILD_NUMBER_FILE); fi
 	@echo $$(($$(cat $(BUILD_NUMBER_FILE)) + 1)) > $(BUILD_NUMBER_FILE)
 
-	$(CPP) $(LDFLAGS) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) -o $@
+	$(CPP) $(LDFLAGS) $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) $(CRTEND_OBJ) $(CRTN_OBJ) -lgcc -o $@
 
 	@i686-pc-elf-objdump -b elf32-i386 -d $@ > $@_symbols.txt
 	@i686-pc-elf-objcopy --strip-debug $@
@@ -75,6 +80,13 @@ $(EXECUTABLE): $(OBJECTS)
 	@echo "[AS] $<"
 	@$(AS) $(ASFLAGS) $< -o $@
 
+# C Runtime objects
+crt_objs: crti.s crtn.s
+	@echo "[AS] crti.s"
+	@$(AS) $(ASFLAGS) crti.s -o crti.o
+	@echo "[AS] crtn.s"
+	@$(AS) $(ASFLAGS) crtn.s -o crtn.o
+
 # Submodules
 $(SUBDIRS):
 	@echo "\n\n[3;32;40m***** Compiling $@ *****[0;37;49m"
@@ -85,4 +97,4 @@ $(SUBDIRS_CLEAN):
 
 # Cleaning of the shit
 clean: $(SUBDIRS_CLEAN)
-	@rm -rf $(OBJECTS) $(EXECUTABLE)
+	@rm -rf $(OBJECTS) $(EXECUTABLE) crti.o crtn.o

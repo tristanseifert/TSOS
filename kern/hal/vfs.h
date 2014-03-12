@@ -14,6 +14,15 @@ typedef enum {
 } fs_item_type_t;
 
 /*
+ * Modes that a file may be opened in
+ */
+typedef enum {
+	kFSFileModeReadOnly = (1 << 0),
+	kFSFileModeCreate = (1 << 1),
+	kFSFileModeTruncate = (1 << 2)
+} fs_file_open_mode_t;
+
+/*
  * Abstract type representing an object on a filesystem
  */
 typedef struct fs_item fs_item_t;
@@ -47,6 +56,9 @@ struct fs_item {
 
 	// User data
 	unsigned long long userData;
+
+	// To be used by drivers for caching purposes
+	unsigned int cache_accesses;
 };
 
 /*
@@ -105,6 +117,39 @@ struct hal_vfs {
 
 	// Creates a superblock for a filesystem (hal_fs subclass)
 	void* (*create_superblock)(hal_disk_partition_t*, hal_disk_t*);
+
+	/*
+	 * Functions declared below are the functions that the VFS drivers are
+	 * expected to implement in order to receive requests to interface with the
+	 * filesystem.
+	 *
+	 * The value passed in as "superblock" is what the "create_superblock"
+	 * function returned earlier.
+	 */
+
+	// List a directory.
+	fs_directory_t* (*list_directory)(void *superblock, char *dirname);
+
+	// Create a directory
+	int (*create_directory)(void *superblock, char *path);
+
+	// Deletes an item
+	int (*unlink)(void *superblock, char *path);
+
+	// Opens a file, optionally creating it.
+	fs_file_t* (*file_open)(void *superblock, char *path, fs_file_open_mode_t mode);
+
+	// Closes a file handle
+	void (*file_close)(void *superblock, fs_file_t *file);
+
+	// Updates file metadata from struct
+	void (*file_update)(void *superblock, fs_file_t *file);
+
+	// Reads from the specified offset in the file.
+	void* (*file_read)(void *superblock, void* buffer, unsigned int offset, unsigned int bytes, fs_file_t *file);
+
+	// Writes to the specified offset in the file.
+	void (*file_write)(void *superblock, void* buffer, unsigned int offset, unsigned int bytes, fs_file_t *file);
 };
 
 // Include filesystem root class

@@ -1,7 +1,7 @@
 #import "filesystem.hpp"
 
 /*
- * Initialises a basic filesystem
+ * Initialises the filesystem
  */
 hal_fs::hal_fs(hal_disk_partition_t *p, hal_disk_t *d) {
 	partition = p;
@@ -30,37 +30,6 @@ void *hal_fs::read_sectors(unsigned int start, unsigned int numSectors, void *bu
 	}
 
 	return buffer;
-}
-
-// Directory functions
-bool hal_fs::directory_exists(char *directory) {
-	return false;
-}
-
-list_t* hal_fs::list_directory(char* dirname) {
-	// Does directory exist?
-	if(this->directory_exists(dirname)) {
-
-	}
-
-	return NULL;
-}
-
-// File opening
-fs_file_t *hal_fs::file_open(char *path) {
-	return NULL;
-}
-
-void hal_fs::file_close(fs_file_t *file) {
-
-}
-
-void *hal_fs::file_read(void *buffer, unsigned int offset, unsigned int bytes, fs_file_t *file) {
-	return NULL;
-}
-
-void *hal_fs::file_write(void *buffer, unsigned int offset, unsigned int bytes, fs_file_t *file) {
-	return NULL;
 }
 
 /*

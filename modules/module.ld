@@ -7,6 +7,9 @@ SECTIONS {
 
 		*(.rodata);
 		*(.rodata*);
+
+		*(.init);
+		*(.fini);
 	}
 
 	/* Read/write data */
@@ -28,8 +31,8 @@ SECTIONS {
 
 	/* Get rid of stuff we don't care for */
 	/DISCARD/ : {
-		/* Don't need .eh_frame, since the kernel does NOT use C++ exceptions */
-		*(.eh_frame);
 		*(.comment);
+		*(.group);
+		*(.eh_frame);
 	}
 }

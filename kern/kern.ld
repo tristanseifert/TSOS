@@ -15,6 +15,9 @@ SECTIONS {
 		*(.text);
 		*(.rodata);
 		*(.rodata*);
+
+		*(.init);
+		*(.fini);
 	}
 
 	.modules : AT(ADDR(.modules) - 0xC0000000) {
@@ -70,10 +73,4 @@ SECTIONS {
 
 	__kern_end = .;
 
-	/* Get rid of stuff we don't care for */
-	/DISCARD/ : {
-		/* Don't need .eh_frame, since the kernel does NOT use C++ exceptions */
-		*(.eh_frame);
-		*(.comment);
-	}
 }

@@ -1,42 +1,13 @@
 #import <hal/hal.h>
 
 /*
- * Base class that filesystems should inherit from. Provides extra fun benefits
- * like caching and whatnot.
+ * Base class that filesystems should inherit from, which provides some common
+ * functions for tasks such as reading sectors and splitting paths.
  */
 class hal_fs {
 	public:
 		hal_fs(hal_disk_partition_t*, hal_disk_t *);
 
-		// Directory functions
-		bool directory_exists(char *directory);
-		list_t* list_directory(char* dirname);
-
-		// File opening
-		fs_file_t *file_open(char *path);
-		void file_close(fs_file_t *);
-
-		void *file_read(void *buffer, unsigned int offset, unsigned int bytes, fs_file_t *file);
-		void *file_write(void *buffer, unsigned int offset, unsigned int bytes, fs_file_t *file);
-
-	// Various driver state to be exported
-	public:
-		bool fs_clealyUnmounted;
-
-	// These should have to be overridden by the superclass for functionality
-	protected:
-		virtual unsigned int sector_for_file(char *path, unsigned int offset) =0;
-
-		/*
-		 * Reads the contents of a directory from the filesystem and creates
-		 * a VFS directory structure to represent it.
-		 *
-		 * Note: path is relative to the root of THIS filesystem, not the root
-		 * filesystem.
-		 */
-		virtual fs_directory_t *contents_of_directory(char *path) =0;
-
-	protected:
 		// Sector read/write functions
 		void *read_sectors(unsigned int start, unsigned int numSectors, void *buffer, unsigned int *error);
 
@@ -51,4 +22,6 @@ class hal_fs {
 
 		// Filesystem label
 		char *volumeLabel;
+
+		bool fs_clealyUnmounted;
 };

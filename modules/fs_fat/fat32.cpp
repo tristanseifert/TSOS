@@ -9,7 +9,7 @@
 #import <module.h>
 #import <fat32.hpp>
 
-#define DEBUG_DIRECTORY_CACHING	1
+#define DEBUG_DIRECTORY_CACHING	0
 
 /*
  * Initialises a FAT32 filesystem from the specified partition table entry.
@@ -18,7 +18,7 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 	unsigned int err = 0;
 
 	// Read sector 0 of partition synchronously
-	if(!read_sectors(0, 1, &bpb, &err)) {
+	if(!this->hal_fs::read_sectors(0, 1, &bpb, &err)) {
 		KERROR("Error reading BPB: %u", err);
 		return;
 	}
@@ -46,7 +46,7 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 	}
 
 	// Read FSINFO sector
-	if(!read_sectors(bpb.fat_info, 1, &fs_info, &err)) {
+	if(!this->hal_fs::read_sectors(bpb.fat_info, 1, &fs_info, &err)) {
 		KERROR("Error reading FSInfo: %u", err);
 		return;
 	}
@@ -81,7 +81,7 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 	dirHandleCache = hashmap_allocate();
 
 	// Read FAT sector 0 to get dirty flags
-	if(!this->read_sectors(bpb.reserved_sector_count, 1, fatBuffer, &err)) {
+	if(!this->hal_fs::read_sectors(bpb.reserved_sector_count, 1, fatBuffer, &err)) {
 		KERROR("Error reading FAT: %u", err);
 		return;
 	} else {
@@ -110,23 +110,6 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 			KDEBUG(" Dir: %s", dir->i.name);
 		}
 	}*/
-
-	fs_directory_t *dir = this->contents_of_directory((char *) "/test/test2/folder/");
-	dir = this->contents_of_directory((char *) "/test/test2/folder/");
-
-	for(unsigned int i = 0; i < dir->children->num_entries; i++) {
-		fs_item_t *item = (fs_item_t *) list_get(dir->children, i);
-
-		if(item->type == kFSItemTypeFile) {
-			fs_file_t *file = (fs_file_t *) item;
-
-			KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
-		} else if(item->type == kFSItemTypeDirectory) {
-			fs_directory_t *dir = (fs_directory_t *) item;
-
-			KDEBUG(" Dir: %s", dir->i.name);
-		}
-	}
 
 	KSUCCESS("Volume initialised.");
 }
@@ -258,19 +241,70 @@ fat_dirent_t *fs_fat32::read_dir_file(fs_directory_t *parent, char *childName, u
 /*
  * Reads a directory, and constructs an fs_directory_t object for it.
  */
-fs_directory_t *fs_fat32::contents_of_directory(char *path) {
-	fat_dirent_t *dirBuf = NULL;
-	unsigned int num_entries = 0;
+fs_directory_t *fs_fat32::read_directory(fs_directory_t *dir, char *name, bool cache, char *fullpath) {
+	ASSERT(dir);
 
 	fs_directory_t *directory = NULL;
+	fat_dirent_t *dirBuf = NULL;
+	unsigned int dirBufEntries = 0;
 
-	char *currentPath = (char *) kmalloc(strlen(path) + 2);
+	// If caching is enabled, check if this directory's been read
+	hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, fullpath);
+
+	// Verify the handle is valid
+	if(handle) {
+		if(hal_handle_get_type(handle) != kFSItemTypeDirectory) {
+			handle = 0;
+			goto processHandle;
+		}
+
+		// Get object from the handle and verify it is good
+		directory = (fs_directory_t *) hal_handle_get_object(handle);
+		if(directory->i.type != kFSItemTypeDirectory) {
+			handle = 0;
+		}
+	}
+
+	processHandle: ;
+
+	// No handle? Perform directory read.	
+	if(!handle) {
+		// Could we read the child dir?
+		if(!(dirBuf = this->read_dir_file(dir, name, &dirBufEntries))) {
+			return NULL;
+		}
+
+		// Convert to directory handle
+		fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
+		this->processFATDirEnt(dirBuf, dirBufEntries, currentDir);
+
+		currentDir->parent = dir->i.handle;
+
+		if(cache) {
+			hashmap_insert(dirHandleCache, fullpath, (void *) currentDir->i.handle);
+
+			#if DEBUG_DIRECTORY_CACHING
+			KDEBUG("dir_cache add: %s: 0x%08X", fullpath, (unsigned int) currentDir->i.handle);
+			#endif
+		}
+
+		directory = currentDir;
+	}
+
+	// Return directory
+	return directory;
+}
+
+fs_directory_t* fs_fat32::list_directory(char* dirname, bool cache) {
+	fs_directory_t *directory = root_directory;
+
+	char *currentPath = (char *) kmalloc(strlen(dirname) + 2);
 	unsigned int currentPathOffset = 0;
 
 	currentPath[currentPathOffset++] = '/';
 
 	// Separate path string
-	list_t *components = this->split_path(path);
+	list_t *components = this->split_path(dirname);
 
 	// Iterate over each component
 	for(unsigned int i = 0; i < components->num_entries; i++) {
@@ -281,87 +315,12 @@ fs_directory_t *fs_fat32::contents_of_directory(char *path) {
 		currentPathOffset += strlen(component);
 		currentPath[currentPathOffset++] = '/';
 
-		// Special case: root directory
-		if(i == 0) {
-			// Check if this path is in the directory handle cache
-			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
-
-			// Verify the handle is valid
-			if(handle) {
-				if(hal_handle_get_type(handle) != kFSItemTypeDirectory) {
-					handle = 0;
-					break;
-				}
-
-				// Get object from the handle and verify it is good
-				directory = (fs_directory_t *) hal_handle_get_object(handle);
-				if(directory->i.type != kFSItemTypeDirectory) {
-					handle = 0;
-				}
-			}
-
-			// No handle (or invalid)
-			if(!handle) {
-				// Could we read the first child dir?
-				if(!(dirBuf = read_dir_file(root_directory, component, &num_entries))) {
-					return NULL;
-				}
-
-				// Convert to directory handle
-				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
-				processFATDirEnt(dirBuf, num_entries, currentDir);
-
-				currentDir->parent = root_directory->i.handle;
-				hashmap_insert(dirHandleCache, currentPath, (void *) currentDir->i.handle);
-
-				#if DEBUG_DIRECTORY_CACHING
-				KDEBUG("dir_cache add: %s: 0x%08X", currentPath, (unsigned int) currentDir->i.handle);
-				#endif
-
-				directory = currentDir;
-			}
-		} else { // Do the same as above, but with "directory" as the parent.
-			// Check if this path is in the directory handle cache
-			hal_handle_t handle = (hal_handle_t) hashmap_get(dirHandleCache, currentPath);
-
-			// Verify the handle is valid
-			if(handle) {
-				if(hal_handle_get_type(handle) != kFSItemTypeDirectory) {
-					handle = 0;
-					break;
-				}
-
-				// Get object from the handle and verify it is good
-				directory = (fs_directory_t *) hal_handle_get_object(handle);
-				if(directory->i.type != kFSItemTypeDirectory) {
-					handle = 0;
-				}
-			}
-
-			// No handle (or invalid)
-			if(!handle) {
-				// Could we read the child dir?
-				if(!(dirBuf = read_dir_file(directory, component, &num_entries))) {
-					return NULL;
-				}
-
-				// Convert to directory handle
-				fs_directory_t *currentDir = hal_vfs_allocate_directory(true);
-				processFATDirEnt(dirBuf, num_entries, currentDir);
-
-				currentDir->parent = directory->i.handle;
-				hashmap_insert(dirHandleCache, currentPath, (void *) currentDir->i.handle);
-
-				#if DEBUG_DIRECTORY_CACHING
-				KDEBUG("dir_cache add: %s: 0x%08X", currentPath, (unsigned int) currentDir->i.handle);
-				#endif
-
-				directory = currentDir;
-			}
+		// Get the directoryn
+		if(!(directory = this->read_directory(directory, component, cache, currentPath))) {
+			return NULL;
 		}
 	}
 
-	// Return directory
 	return directory;
 }
 
@@ -665,7 +624,7 @@ unsigned int *fs_fat32::clusterChainForCluster(unsigned int cluster) {
 		off = this->fatEntryOffsetForCluster(nextCluster);
 
 		// Read out cluster
-		if(this->read_sectors(off.sector, bpb.sectors_per_cluster, fatBuffer, &err)) {
+		if(this->hal_fs::read_sectors(off.sector, bpb.sectors_per_cluster, fatBuffer, &err)) {
 			nextCluster = fatBuffer[off.offset];
 		} else { // read error?
 			KERROR("Couldn't read sector %u for FAT", off.sector);
@@ -701,7 +660,7 @@ unsigned int *fs_fat32::clusterChainForCluster(unsigned int cluster) {
 void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *error) {
 	unsigned int sector = ((cluster - 2) * bpb.sectors_per_cluster) + first_data_sector;
 
-	if(!this->read_sectors(sector, bpb.sectors_per_cluster, buffer, error)) {
+	if(!this->hal_fs::read_sectors(sector, bpb.sectors_per_cluster, buffer, error)) {
 		return NULL;
 	}
 

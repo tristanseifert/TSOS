@@ -19,6 +19,12 @@ OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer -falign-funct
 CFLAGS=-pipe -c -g $(ARCH_ARGS) -static -O2 -nostartfiles -nodefaultlibs -ffreestanding -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
 CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions -std=gnu++0x
 
+CRTI_OBJ=../include/crti.o
+CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
+CRTN_OBJ=../include/crtn.o
+
+
 # Linker and assembler flags
 LDFLAGS=-ffreestanding -g -O2 -nostdlib -Wl,-T,../module.ld -lgcc -Wl,--unresolved-symbols=ignore-all -Wl,--relocatable
 ASFLAGS =
@@ -26,6 +32,8 @@ ASFLAGS =
 # Source files to compile
 SOURCES=module.cpp info.c fat32.cpp
 OBJECTS=$(sort $(filter-out %.c %.s %.cpp,$(SOURCES:.c=.o) $(SOURCES:.s=.o) $(SOURCES:.cpp=.o)))
+
+#OBJECTS=$(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJECTS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
 # Name of final executable
 EXECUTABLE=$(MODULE_NAME).kmod

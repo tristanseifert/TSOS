@@ -12,6 +12,7 @@
 extern void __stack_chk_guard_setup(void);
 extern void srand(uint32_t);
 extern uint32_t kern_get_ticks(void);
+extern void _init(void);
 
 void kern_idle(void);
 extern void infinite_loop(void);
@@ -44,6 +45,9 @@ void main(void) {
 
 	// Paging and VM
 	paging_init();
+
+	// Init C library
+	_init();
 
 	// Set up platform
 	x86_pc_init();

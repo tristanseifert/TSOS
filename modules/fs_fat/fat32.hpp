@@ -49,11 +49,16 @@ class fs_fat32 : public hal_fs {
 			return buf;
 		}
 
-	protected:
+		// Gets the sector that the offset into the file is contained in.
 		unsigned int sector_for_file(char *path, unsigned int offset);
-		fs_directory_t *contents_of_directory(char *path);
+
+		// Lists a directory, the Fun Way™.
+		fs_directory_t* list_directory(char* dirname, bool cache);
 
 	private:
+		// Small cache for directory handles
+		hashmap_t *dirHandleCache;
+
 		// Structures read from disk
 		fat_fs_bpb32_t bpb;
 		fat_fs_fsinfo32_t fs_info;
@@ -70,19 +75,22 @@ class fs_fat32 : public hal_fs {
 		// Buffer for a single sector of FAT data
 		uint32_t *fatBuffer;
 
-		// Small cache for directory handles
-		hashmap_t *dirHandleCache;
-
 		void read_root_dir(void);
 
+		// Calcualtes FAT entry location for a cluster
 		fat32_secoff_t fatEntryOffsetForCluster(unsigned int cluster);
+
+		// Follows a cluster chain
 		unsigned int *clusterChainForCluster(unsigned int cluster);
 
-		// Read a cluster from the filesystem
+		// Reads a single cluster from the filesystem
 		void *readCluster(unsigned int cluster, void* buffer, unsigned int* error);
 
 		// Reads an entire directory table into memory.
 		fat_dirent_t *read_dir_file(fs_directory_t *parent, char *childName, unsigned int *entries);
+
+		// Reads a directory and converts it
+		fs_directory_t *read_directory(fs_directory_t *dir, char *name, bool cache, char *fullpath);
 
 		// Takes an input buffer of FAT directory entries and "prettifies" them.
 		void processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_directory_t *dir);

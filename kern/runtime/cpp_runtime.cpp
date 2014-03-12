@@ -18,6 +18,8 @@ void operator delete[](void *p) {
 
 extern "C" void __cxa_pure_virtual() {
     // Do nothing or print an error message.
+    KERROR("Pure virtual function called");
+    for(;;);
 }
 
 // Support for local static variables

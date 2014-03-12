@@ -2,22 +2,26 @@
 extern "C" {
 	#import <types.h>
 	#import "vfs.h"
-
-	static list_t *registered_vfs;
-	static list_t *filesystem_superblocks;
-
-	/*
-	 * Initialises the VFS driver.
-	 */
-	static int hal_vfs_init(void) {
-		registered_vfs = list_allocate();
-		filesystem_superblocks = list_allocate();
-
-		return 0;
-	}
-	module_early_init(hal_vfs_init);
 }
 
+static list_t *registered_vfs;
+static list_t *filesystem_superblocks;
+
+struct vfs_ptr {
+	void *superblock;
+	hal_vfs_t *vfs;
+};
+
+/*
+ * Initialises the VFS driver.
+ */
+static int hal_vfs_init(void) {
+	registered_vfs = list_allocate();
+	filesystem_superblocks = list_allocate();
+
+	return 0;
+}
+module_early_init(hal_vfs_init);
 
 /*
  * Registers a VFS driver with the HAL that can be matched on disks to allow
@@ -39,8 +43,38 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 
 		// Does FS support this partition type
 		if(fs->supports_partition(partition)) {
-			void* data = fs->create_superblock(partition, disk);
-			list_add(filesystem_superblocks, data);
+			// Allocate a struct to hold this vfs
+			struct vfs_ptr *thingie = (struct vfs_ptr *) kmalloc(sizeof(struct vfs_ptr));
+
+			thingie->superblock = fs->create_superblock(partition, disk);
+			thingie->vfs = fs;
+
+			list_add(filesystem_superblocks, thingie);
+
+			// Test: list root directory
+			fs_directory_t *dir = fs->list_directory(thingie->superblock, (char *) "/test/test2/folder/");
+
+	/*		if(dir) {
+				for(unsigned int i = 0; i < dir->children->num_entries; i++) {
+					fs_item_t *item = (fs_item_t *) list_get(dir->children, i);
+
+					if(item->type == kFSItemTypeFile) {
+						fs_file_t *file = (fs_file_t *) item;
+
+						KDEBUG("File: %s %u Bytes", file->i.name, (unsigned int) file->size);
+					} else if(item->type == kFSItemTypeDirectory) {
+						fs_directory_t *dir = (fs_directory_t *) item;
+
+						KDEBUG(" Dir: %s", dir->i.name);
+					}
+				}
+			}*/
+
+			// Read a file
+			fs_file_t *file = fs->file_open(thingie->superblock, (char *) "/test/test2/folder/8254_pit.h", kFSFileModeReadOnly);
+			if(file) {
+				KDEBUG("Opened file handle: %u", file->i.handle);
+			}
 		}
 	}
 
