@@ -11,12 +11,12 @@ MODULE_NAME=fs_fat
 
 # General flags
 ARCH_ARGS=-march=i686 -mtune=pentium3 -msoft-float -mno-sse
-WARNINGS=-Werror -Wall -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -Wno-multichar -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wno-format-extra-args
+WARNINGS=-Werror -Wall -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -Wno-multichar -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wno-format-extra-args -Wno-unused-but-set-variable
 INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/../../kern/ -I$(CURRENT_DIR)/../include/
 OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer -falign-functions=4 -fvisibility=hidden -DMODULE_NAME=\"$(MODULE_NAME)\" -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables
 
 # C and C++ specifics
-CFLAGS=-pipe -c $(ARCH_ARGS) -static -O2 -ffreestanding -nostdlib -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
+CFLAGS=-pipe -g -c $(ARCH_ARGS) -static -O2 -ffreestanding -nostdlib -std=c99 $(OPTIONS) $(INCLUDES) $(WARNINGS)
 CPPFLAGS=$(filter-out -std=c99, $(CFLAGS)) -fno-rtti -fno-exceptions -std=gnu++0x
 
 CRTI_OBJ=../include/crti.o
@@ -42,7 +42,7 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CPP) $(LDFLAGS) $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJECTS) $(CRTEND_OBJ) $(CRTN_OBJ) -lgcc -o $@
 	@#$(CPP) $(LDFLAGS) $(OBJECTS) -lgcc -o $@
 
-	@i686-pc-elf-objdump -b elf32-i386 -d -S $@ > $@_symbols.txt
+	@i686-pc-elf-objdump -b elf32-i386 -d -S $@ > $@.sym
 	@i686-pc-elf-objcopy --strip-debug $@
 
 .c.o:

@@ -548,10 +548,9 @@ void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_d
  * Calculates the checksum for a long name.
  */
 uint8_t fs_fat32::lfnCheckSum(unsigned char *shortName) {
-	uint16_t FcbNameLen;
 	uint8_t sum = 0;
 
-	for(FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
+	for(unsigned int FcbNameLen = 11; FcbNameLen != 0; FcbNameLen--) {
 		// NOTE: The operation is an unsigned char rotate right
 		sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + *shortName++;
 	}
@@ -915,8 +914,14 @@ long long fs_fat32::read_handle(fs_file_handle_t *h, size_t bytes, void *buffer)
  * Finds the specified number of free clusters.
  */
 unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
+	unsigned int size = sizeof(unsigned int) * (numClusters + 1);
+
+	if(size < 32) {
+		size = 32;
+	}
+
 	// Allocate a buffer
-	unsigned int *buf = (unsigned int *) kmalloc(sizeof(unsigned int) * (numClusters + 1));
+	unsigned int *buf = (unsigned int *) kmalloc(size);
 	unsigned int bufOffset = 0;
 
 	unsigned int err = 0;
@@ -1007,7 +1012,7 @@ int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
 	
 	if(!this->hal_fs::read_sectors(off.sector, 1, fatBuffer, &err)) {
 		#if PRINT_ERROR
-		KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
+		KERROR("%s: Error reading FAT 1: %u (sector %u)", __PRETTY_FUNCTION__, err, off.sector);
 		#endif
 		return -2;
 	}
@@ -1024,35 +1029,39 @@ int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
 
 	if(chain) {
 		unsigned int chain_off = 0;
+
 		fatBuffer[off.offset] = chain[chain_off++];
 
 		// Write back to device
 		if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
 			#if PRINT_ERROR
-			KERROR("%s: Error writing FAT: %u", __PRETTY_FUNCTION__, err);
+			KERROR("%s: Error writing FAT 1: %u (sector %u)", __PRETTY_FUNCTION__, err, off.sector);
 			#endif
 			return -2;
 		}
 
-		// Process the rest of the chain
-		while(chain[chain_off] < FAT32_END_CHAIN) {
-			off = this->fatEntryOffsetForCluster(first_cluster);
-			
-			if(!this->hal_fs::read_sectors(off.sector, 1, fatBuffer, &err)) {
-				#if PRINT_ERROR
-				KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
-				#endif
-				return -2;
-			}
+		// Don't process if there's no more chainage
+		if(chain[chain_off++] != 0) {
+			// Process the rest of the chain
+			while((chain[chain_off] & FAT32_MASK) <= FAT32_END_CHAIN) {
+				off = this->fatEntryOffsetForCluster(first_cluster);
+				
+				if(!this->hal_fs::read_sectors(off.sector, 1, fatBuffer, &err)) {
+					#if PRINT_ERROR
+					KERROR("%s: Error reading FAT 2: %u (sector %u)", __PRETTY_FUNCTION__, err, off.sector);
+					#endif
+					return -2;
+				}
 
-			// Update FAT and write to device			
-			fatBuffer[off.offset] = chain[chain_off++];
+				// Update FAT and write to device			
+				fatBuffer[off.offset] = chain[chain_off++];
 
-			if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
-				#if PRINT_ERROR
-				KERROR("%s: Error writing FAT: %u", __PRETTY_FUNCTION__, err);
-				#endif
-				return -2;
+				if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
+					#if PRINT_ERROR
+					KERROR("%s: Error writing FAT 2: %u (sector %u)", __PRETTY_FUNCTION__, err, off.sector);
+					#endif
+					return -2;
+				}
 			}
 		}
 	} else {
@@ -1061,7 +1070,7 @@ int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
 		// Write back to device
 		if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
 			#if PRINT_ERROR
-			KERROR("%s: Error writing FAT: %u", __PRETTY_FUNCTION__, err);
+			KERROR("%s: Error writing FAT 3: %u (sector %u)", __PRETTY_FUNCTION__, err, off.sector);
 			#endif
 			return -2;
 		}
@@ -1077,7 +1086,10 @@ int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
  * entries) is created.
  */
 int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
+	KDEBUG("Creating file '%s'", in_name);
+
 	unsigned int err = 0;
+	bool needsChainFix = 0;
 
 	// Create a copy of the name
 	char *name = (char *) kmalloc(strlen(in_name) + 2);
@@ -1142,7 +1154,8 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	}
 
 	// Allocate a buffer and read in the directory
-	fat_dirent_t *dirBuf = (fat_dirent_t *) kmalloc(dir_chain_len * cluster_size);
+	fat_dirent_t *dirBuf = (fat_dirent_t *) kmalloc((dir_chain_len * cluster_size) + 512);
+	unsigned int dirBufEntries = (dir_chain_len * (cluster_size / sizeof(fat_dirent_t)));
 
 	for(unsigned int c = 0; c < dir_chain_len; c++) {
 		unsigned int cluster = dir_chain[c];
@@ -1163,13 +1176,22 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	fat_dirent_t *start_dirent = NULL;
 	unsigned int start_dirent_offset = 0;
 
+	unsigned int entriesAfterLast = dir_entries_needed - 1;	
+	bool hasTriedReordering = false;
+	unsigned int *dirChainAppend = NULL;
+
+	unsigned int last_entry = 0;
+
 	/*
 	 * First, loop through all entries and see if one starts with 0xE5, or 0x00
 	 * which indicate that the entry is free or it's the end of the directory,
 	 * respectively. If we only need a single entry and we find enough, we're
 	 * done and can insert our item.
 	 */
-	for(unsigned int i = 0; i < (dir_chain_len * (cluster_size / sizeof(fat_dirent_t))); i++) {
+	unsigned int numFound = 0;
+
+	searchForFreeDirEnt:
+	for(unsigned int i = 0; i < dirBufEntries; i++) {
 		fat_dirent_t *d = &dirBuf[i];
 
 		// Handle the case of where only a single entry is needed
@@ -1182,6 +1204,19 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 					goto writeDirEnt;
 				}
 			}
+		} else {
+			if(d->name[0] == 0xE5 || d->name[0] == 0x00) {
+				// Ensure it's not an LFN
+				if((d->attributes & FAT_ATTR_LFN) != FAT_ATTR_LFN && !numFound) {
+					start_dirent = d;
+					start_dirent_offset = i;
+				}
+
+				// Have we found enough entries?
+				if(numFound++ == dir_entries_needed) {
+					goto writeDirEnt;
+				}
+			}
 		}
 	}
 
@@ -1190,17 +1225,110 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	 * re-arrange the directory structure to fill gaps and see if there is any
 	 * space now.
 	 */
+	for(unsigned int i = 0; i > dir_entries_needed - 1; i++) {
+		if(dirBuf[i].name[0] == 0xE5) {
+			memcpy(&dirBuf[i], &dirBuf[i+1], entriesAfterLast);
+			memclr(&dirBuf[dir_entries_needed - 1], sizeof(fat_dirent_t));
+		}
+
+		entriesAfterLast--;
+	}
+
+	// Search for the right amount of empty entries again
+	if(!hasTriedReordering) {
+		hasTriedReordering = true;
+		goto searchForFreeDirEnt;
+	}
 
 	/*
 	 * Gap closure didn't help, so just add another cluster to the end of the
 	 * directory.
 	 */
+	needsChainFix = true;
+	dirBuf = (fat_dirent_t *) krealloc(dirBuf, (dir_chain_len++ * cluster_size) + 1024);
+
+	start_dirent = dirBuf + dirBufEntries;
+	dirBufEntries += (cluster_size / sizeof(fat_dirent_t));
+
+	if(!dirBuf) {
+		#if PRINT_ERROR
+		KERROR("%s: Out of Memory", __PRETTY_FUNCTION__);
+		#endif
+
+		kfree(dirBuf);
+		kfree(dir_chain);
+		kfree(name);
+
+		return -255;
+	}
+
+	// Find an empty cluster
+	if(!(dirChainAppend = this->findFreeClusters(1))) {
+		#if PRINT_ERROR
+		KERROR("%s: Could not frind free clusters", __PRETTY_FUNCTION__);
+		#endif
+
+		kfree(dirBuf);
+		kfree(dir_chain);
+		kfree(name);
+
+		return -6;
+	}
+	
+	// Update the FAT
+	if((err = this->update_fat(dir_chain[dir_chain_len - 2], dirChainAppend))) {
+		#if PRINT_ERROR
+		KERROR("%s: Error updating FAT: %i", __PRETTY_FUNCTION__, (int) err);
+		#endif
+
+		kfree(dirBuf);
+		kfree(dir_chain);
+		kfree(name);
+
+		return -7;
+	}
+	
+	// Update the FAT
+	if((err = this->update_fat(dirChainAppend[0], NULL))) {
+		#if PRINT_ERROR
+		KERROR("%s: Error updating FAT: %i", __PRETTY_FUNCTION__, (int) err);
+		#endif
+
+		kfree(dirBuf);
+		kfree(dir_chain);
+		kfree(name);
+
+		return -7;
+	}
+
+	kfree(dirChainAppend);
+
+	// Re-read chain
+	dir_chain = this->clusterChainForCluster(bpb.root_cluster & FAT32_MASK);
+
+	while(dir_chain[dir_chain_len] != FAT32_END_CHAIN) {
+		dir_chain_len++;
+	}
+
+	last_entry = (dir_chain_len * (cluster_size / sizeof(fat_dirent_t))) - 1;
+
+	// Fix the directory buffer, so any 0x00's are marked as 0xE5
+	for(unsigned int i = 0; i < last_entry; i++) {
+		if(dirBuf[i].name[0] == 0x00) {
+			dirBuf[i].name[0] = 0xE5;
+		}
+	}
+
+	// Correctly mark the end of the buffer
+	dirBuf[last_entry].name[0] = 0x00;
 
 	/*
 	 * Since the correct number of directory entries was found above, we can
 	 * assemble the fs_dirent_t, and optionally, fat_longname_dirent_t structs.
 	 */
 	writeDirEnt: ;
+	// KDEBUG("Dirent buf at 0x%08X (%u bytes)", (unsigned int) dirBuf, dir_chain_len * cluster_size);
+
 	unsigned int shortNameOffset = 0;
 
 	if(dir_entries_needed > 1) {
@@ -1208,11 +1336,12 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	}
 
 	// Clear the directory entries' memory
+	// KDEBUG("Starting offset: 0x%08X, %u %u", (unsigned int) start_dirent, (unsigned int) (sizeof(fat_dirent_t) * dir_entries_needed), dir_entries_needed);
 	memclr(start_dirent, sizeof(fat_dirent_t) * dir_entries_needed);
 
 	// If not an LFN-needing one, write original filename
 	if(!lfnNeeded) {
-			// Copy name
+		// Copy name
 		bool hasFoundStringTerminator = false;
 		for(unsigned int c = 0; c < 8; c++) {
 			unsigned char character = ' ';
@@ -1250,21 +1379,59 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		if(extCase == kStringCaseLower) {
 			start_dirent[shortNameOffset].nt_reserved |= 0x10;
 		}
+	} else {
+		// Get short name
+		char *shortName = this->DOSNameFromLongName(dirBuf, dirBufEntries, in_name);
+
+		// Copy name
+		bool hasFoundStringTerminator = false;
+		for(unsigned int c = 0; c < 11; c++) {
+			unsigned char character = ' ';
+
+			if(shortName[c] && !hasFoundStringTerminator) {
+				character = shortName[c];
+			} else {
+				hasFoundStringTerminator = true;
+				character = ' ';
+			}
+
+			start_dirent[shortNameOffset].name[c] = toupper(character);
+		}
+
+		kfree(shortName);
 	}
 
-	// Give it a bullshit size
+	/*
+	 * This is kind of shitty, since FAT does not actually support files whose
+	 * size is zero, so we instead just give it the size of a cluster, which
+	 * we previously allocated.
+	 *
+	 * NOTE: This is kind of a hack since the VFS structs show this file's size
+	 * as zero bytes. Hehe.
+	 */
 	start_dirent[shortNameOffset].filesize = cluster_size;
 
 	// Allocate a cluster
-	unsigned int *chain = this->findFreeClusters(1);
-	// KDEBUG("Free cluster for file: 0x%08X", chain[0]);
-
-	if((err = this->update_fat(chain[0], NULL))) {
+	unsigned int *fileChain = NULL;
+	if(!(fileChain = this->findFreeClusters(1))) {
 		#if PRINT_ERROR
-		KERROR("%s: Error writing file cluster: %i", __PRETTY_FUNCTION__, (int) err);
+		KERROR("%s: Could not frind free clusters", __PRETTY_FUNCTION__);
 		#endif
 
-		kfree(chain);
+		kfree(fileChain);
+		kfree(dirBuf);
+		kfree(dir_chain);
+		kfree(name);
+
+		return -6;
+	}
+
+	if((err = this->update_fat(fileChain[0], NULL))) {
+		#if PRINT_ERROR
+		KERROR("%s: Error updating FAT: %i", __PRETTY_FUNCTION__, (int) err);
+		#endif
+
+		kfree(fileChain);
 		kfree(dirBuf);
 		kfree(dir_chain);
 		kfree(name);
@@ -1272,14 +1439,123 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		return -3;
 	}
 
-	start_dirent[shortNameOffset].cluster_low = chain[0] & 0x0000FFFF;
-	start_dirent[shortNameOffset].cluster_high = (chain[0] & 0xFFFF0000) >> 16;
+	start_dirent[shortNameOffset].cluster_low = fileChain[0] & 0x0000FFFF;
+	start_dirent[shortNameOffset].cluster_high = (fileChain[0] & 0xFFFF0000) >> 16;
 
 	start_dirent[shortNameOffset].attributes = FAT_ATTR_ARCHIVE;
 
+	// Get MSDOS-format timestamps
+	time_components_t currentTime = this->hal_fs::get_current_fs_time();
+	currentTime.year -= 1980;
+
+	uint16_t date = (currentTime.day & 0x1F);
+	date |= (currentTime.month & 0x1F) << 5;
+	date |= (currentTime.year & 0x7F) << 9;
+
+	uint16_t time = (currentTime.second >> 1) & 0x1F;
+	time |= (currentTime.minute & 0x3F) << 5;
+	time |= (currentTime.hour & 0x1F) << 11;
+
+	// Set them on the directory entry
+	start_dirent[shortNameOffset].created_date = date;
+	start_dirent[shortNameOffset].created_time = time;
+
+	start_dirent[shortNameOffset].time_created_seconds = (currentTime.second & 1) * 100;
+
+	start_dirent[shortNameOffset].write_date = date;
+	start_dirent[shortNameOffset].write_time = time;
+
+	start_dirent[shortNameOffset].accessed_date = date;
+
 	// Insert LFNs, if needed
 	if(lfnNeeded) {
+		unsigned int numLFNEntries = dir_entries_needed - 2;
+		unsigned int inNameOffset = 0;
+		unsigned int currentLFNOffset = numLFNEntries;
+		bool hasTerminatedString = false;
 
+		char shortNameBuffer[16];
+		strncpy((char *) &shortNameBuffer, (char *) &start_dirent[shortNameOffset].name, 16);
+
+		uint8_t checksum = this->lfnCheckSum((unsigned char *) &shortNameBuffer);
+
+		// Prepare the order and attributes of the entries
+		unsigned int order = numLFNEntries + 1;
+
+		for(unsigned int e = 0; e < numLFNEntries + 1; e++) {
+			fat_longname_dirent_t *lfn_entry = (fat_longname_dirent_t *) &start_dirent[e];
+
+			// Set order bit
+			lfn_entry->order = (order--) & 0x3F;
+			if(e == 0) {
+				lfn_entry->order |= 0x40;
+			}
+
+			// Attributes
+			lfn_entry->attributes = FAT_ATTR_LFN;
+			lfn_entry->type = 0;
+			lfn_entry->checksum = checksum;
+
+			// Fill in the name field
+			lfn_entry = (fat_longname_dirent_t *) &start_dirent[currentLFNOffset--];
+
+			// Write out name into the three different fields
+			for(unsigned int c = 0; c < 5; c++) {
+				if(in_name[inNameOffset]) {
+					lfn_entry->name1[c] = in_name[inNameOffset++];
+				} else {
+					if(hasTerminatedString) {
+						lfn_entry->name1[c] = 0xFFFF;
+					} else {
+						lfn_entry->name1[c] = 0x0000;
+						hasTerminatedString = true;
+					}
+				}
+			}
+
+			for(unsigned int c = 0; c < 6; c++) {
+				if(in_name[inNameOffset]) {
+					lfn_entry->name2[c] = in_name[inNameOffset++];
+				} else {
+					if(hasTerminatedString) {
+						lfn_entry->name2[c] = 0xFFFF;
+					} else {
+						lfn_entry->name2[c] = 0x0000;
+						hasTerminatedString = true;
+					}
+				}
+			}
+
+			for(unsigned int c = 0; c < 2; c++) {
+				if(in_name[inNameOffset]) {
+					lfn_entry->name3[c] = in_name[inNameOffset++];
+				} else {
+					if(hasTerminatedString) {
+						lfn_entry->name3[c] = 0xFFFF;
+					} else {
+						lfn_entry->name3[c] = 0x0000;
+						hasTerminatedString = true;
+					}
+				}
+			}
+		}
+
+		// Write back the entire directory buffer
+		for(unsigned int c = 0; c < dir_chain_len; c++) {
+			// Write back to device
+			if(!this->writeCluster(dir_chain[c], ((uint8_t *) dirBuf) + (c * cluster_size), &err)) {
+				#if PRINT_ERROR
+				KERROR("%s: Error writing directory file 2: %u", __PRETTY_FUNCTION__, err);
+				#endif
+
+				kfree(fileChain);
+				kfree(dirBuf);
+				kfree(dir_chain);
+				kfree(name);
+
+				return -4;
+			}
+		}
 	} else {
 		// Write back the modified cluster
 		unsigned int offset = start_dirent_offset / (cluster_size / sizeof(fat_dirent_t));
@@ -1288,10 +1564,10 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		// Write back to device
 		if(!this->writeCluster(cluster, ((uint8_t *) dirBuf) + (offset * cluster_size), &err)) {
 			#if PRINT_ERROR
-			KERROR("%s: Error writing directory entry: %u", __PRETTY_FUNCTION__, err);
+			KERROR("%s: Error writing directory file: %u", __PRETTY_FUNCTION__, err);
 			#endif
 
-			kfree(chain);
+			kfree(fileChain);
 			kfree(dirBuf);
 			kfree(dir_chain);
 			kfree(name);
@@ -1303,7 +1579,7 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	// Create an fs_file_t object to represent this
 	fs_file_t *file = hal_vfs_allocate_file(dir);
 
-	file->size = start_dirent[shortNameOffset].filesize;
+	file->size = 0;
 
 	// Convert the timestamps
 	file->i.time_created = this->convert_timestamp(start_dirent[shortNameOffset].created_date, start_dirent[shortNameOffset].created_time, 0);
@@ -1329,7 +1605,7 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	memclr(nullBuf, cluster_size);
 
 	// Write zeroes to device: a write error won't cause problems here.
-	if(!this->writeCluster(chain[0], nullBuf, &err)) {
+	if(!this->writeCluster(fileChain[0], nullBuf, &err)) {
 		#if PRINT_ERROR
 		KERROR("Error zeroing cluster: %u", err);
 		#endif
@@ -1337,9 +1613,78 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 
 	// Clean up directory buffer too
 	kfree(dirBuf);
-	kfree(chain);
+	kfree(fileChain);
 
 	return 0;
+}
+
+/*
+ * Creates a DOS filename from the given long filename. It also takes the raw
+ * directory buffer so it can verify whether the name is already taken.
+ *
+ * DOS filenames work like so:
+ *
+ * FILNAM~1.TXT, incrementing the number from 1 up to 999999, depending on the
+ * existence of other files with the same name.
+ */
+char *fs_fat32::DOSNameFromLongName(fat_dirent_t *dirbuf, size_t dirBufEntries, char *in_longName) {
+	char *longName = (char *) kmalloc(strlen(in_longName) + 2);
+	strncpy(longName, in_longName, strlen(in_longName) + 2);
+
+	// Get the first six characters from the longname
+	char baseName[8];
+	strncpy((char *) &baseName, longName, 4);
+
+	// Convert everything to uppercase
+	for(unsigned int c = 0; c < 6; c++) {
+		baseName[c] = toupper(baseName[c]);
+	}
+
+	// Get the extension
+	char *extension = NULL;
+
+	for(unsigned int c = strlen(longName); c > 0; c--) {
+		if(longName[c] == '.') {
+			longName[c] = 0x00;
+			extension = longName + (c + 1);
+			break;
+		}
+	}
+
+	// Upercase-ify extension and truncate
+	for(unsigned int c = 0; c < 3; c++) {
+		extension[c] = toupper(extension[c]);
+	}
+	extension[4] = 0x00;
+
+	// Try FILNAM~1.TXT format
+	char *shortName = (char *) kmalloc(16);
+	unsigned int n = 1;
+
+	while(true) {
+		snprintf(shortName, 11, "%.4s~%03u%.3s", (char *) &baseName, n, extension);
+
+		if(!this->filenameExistsInBuffer(dirbuf, dirBufEntries, (char *) shortName)) {
+			kfree(longName);
+			return shortName;
+		}
+
+		n++;
+	}
+
+	kfree(longName);
+	return shortName;
+}
+
+/*
+ * Checks if a certain filename exists in a directory entry buffer.
+ */
+bool fs_fat32::filenameExistsInBuffer(fat_dirent_t *dirbuf, size_t dirBufEntries, char *name) {
+	for(unsigned int i = 0; i < dirBufEntries; i++) {
+		if(!strncmp((char *) &dirbuf[i].name, name, 11)) return true;
+	}
+
+	return false;
 }
 
 /*

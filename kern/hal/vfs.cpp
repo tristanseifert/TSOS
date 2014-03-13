@@ -92,7 +92,16 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 			fs->file_close(thingie->superblock, file);
 
 			// Create a file
-			file = fs->file_open(thingie->superblock, (char *) "/hello.TXT", kFSFileModeCreate);
+			/*file = fs->file_open(thingie->superblock, (char *) "/hello.TXT", kFSFileModeCreate);
+			if(file) {
+				KDEBUG("Opened file handle: %u", file->file);
+			}
+
+			// Close file
+			fs->file_close(thingie->superblock, file);*/
+
+			// Create a file
+			file = fs->file_open(thingie->superblock, (char *) "/hello with long name.txt", kFSFileModeCreate);
 			if(file) {
 				KDEBUG("Opened file handle: %u", file->file);
 			}

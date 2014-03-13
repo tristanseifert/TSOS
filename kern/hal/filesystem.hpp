@@ -15,6 +15,9 @@ class hal_fs {
 		// Split path
 		list_t *split_path(char *in);
 
+		// Return current time
+		time_components_t get_current_fs_time(void);
+
 	protected:
 		hal_disk_partition_t *partition;
 		hal_disk_t *disk;

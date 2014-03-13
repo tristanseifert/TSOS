@@ -217,3 +217,20 @@ static void rtc_sys_tick(void* ctx) {
 
 	// KDEBUG("%02u:%02u:%02u (%02u-%02u-%04u)", time.hour, time.minute, time.second, time.day, time.month, time.year);
 }
+
+/*
+ * Returns the date and time.
+ */
+time_components_t rtc_get_time(void) {
+	time_components_t c;
+
+	c.second = time.second;
+	c.minute = time.minute;
+	c.hour = time.hour;
+
+	c.day = time.day;
+	c.month = time.month;
+	c.year = time.year;
+
+	return c;
+}

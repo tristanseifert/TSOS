@@ -126,6 +126,12 @@ class fs_fat32 : public hal_fs {
 		// Create an empty file in the specified directory
 		int createEmptyFile(fs_directory_t *dir, char *name);
 
+		// Given a long filename, create an 8.3 version of it.
+		char *DOSNameFromLongName(fat_dirent_t *dirbuf, size_t dirBufEntries, char *longName);
+
+		// Searches a directory buffer for an entry with the appropriate filename
+		bool filenameExistsInBuffer(fat_dirent_t *dirbuf, size_t dirBufEntries, char *name);
+
 		// Determine if a string is mixed case or not
 		string_case_t getStringCase(char *string);
 };

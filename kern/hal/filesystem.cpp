@@ -1,4 +1,5 @@
 #import "filesystem.hpp"
+#import "x86_pc/cmos_rtc.h"
 
 /*
  * Initialises the filesystem
@@ -81,4 +82,11 @@ list_t *hal_fs::split_path(char *in) {
 	}
 
 	return list;
+}
+
+/*
+ * Return current time.
+ */
+time_components_t hal_fs::get_current_fs_time(void) {
+	return rtc_get_time();
 }
