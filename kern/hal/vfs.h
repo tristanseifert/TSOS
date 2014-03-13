@@ -164,7 +164,7 @@ struct hal_vfs {
 	fs_file_handle_t* (*file_open)(void *superblock, char *path, fs_file_open_mode_t mode);
 
 	// Closes a file handle
-	void (*file_close)(void *superblock, fs_file_t *file);
+	void (*file_close)(void *superblock, fs_file_handle_t *file);
 
 	// Updates file metadata from struct
 	void (*file_update)(void *superblock, fs_file_t *file);

@@ -22,6 +22,10 @@ dot_clean -m ramdisk/
 
 # Copy kernel, etc
 echo "\n[3;32;40m***** Copying files *****[0;37;49m"
+
+# Mount the disk image
+hdiutil attach ./hdd.img
+
 rm -f /Volumes/TSOS/kernel.elf
 cp kern/kernel.elf /Volumes/TSOS/kernel.elf
 rm -f /Volumes/TSOS/initrd.gz
@@ -33,6 +37,9 @@ rm -rf /Volumes/TSOS/.Trashes
 
 # Remove "dot underbar" resource forks
 dot_clean -m /Volumes/TSOS/
+
+# Unmount the disk image
+hdiutil detach /Volumes/TSOS/
 
 # Run QEMU
 if [ "$1" == "qemu" ]; then

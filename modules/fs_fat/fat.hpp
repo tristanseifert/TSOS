@@ -1,8 +1,13 @@
 #include <types.h>
 
-#define FAT_BUF_SECTORS				8
-#define FAT_SECTOR_BUFFER_SIZE		(512 * FAT_BUF_SECTORS)
+// Debugging
+#define	DEBUG_DIRECTORY_CACHING	0
+#define	DEBUG_READ				0
+#define DEBUG_FILE_NOT_FOUND	1
 
+#define	PRINT_ERROR				1
+
+// FAT equates
 #define FAT32_MASK					0x0FFFFFFF
 #define FAT32_BAD_CLUSTER			0x0FFFFFF7
 #define FAT32_END_CHAIN				0x0FFFFFF8

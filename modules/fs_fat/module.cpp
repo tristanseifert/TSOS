@@ -1,6 +1,7 @@
 #import <module.h>
 
 // Filesystem specifics
+#import "fat.hpp"
 #import "fat32.hpp"
 
 // Static functions
@@ -12,7 +13,7 @@ static fs_directory_t *fat32_list_directory(void *superblock, char *dirname);
 static int fat32_create_directory(void *superblock, char *path);
 static int fat32_unlink(void *superblock, char *path);
 static fs_file_handle_t *fat32_file_open(void *superblock, char *path, fs_file_open_mode_t mode);
-static void fat32_file_close(void *superblock, fs_file_t *file);
+static void fat32_file_close(void *superblock, fs_file_handle_t *file);
 static void fat32_file_update(void *superblock, fs_file_t *file);
 static long long fat32_file_read(void *superblock, void* buffer, size_t bytes, fs_file_handle_t *file);
 static long long fat32_file_write(void *superblock, void* buffer, size_t bytes, fs_file_handle_t *file);
@@ -109,8 +110,17 @@ static int fat32_unlink(void *superblock, char *path) {
 static fs_file_handle_t *fat32_file_open(void *superblock, char *path, fs_file_open_mode_t mode) {
 	// Validate input
 	if(path) {
+		// Paths that don't start with a slash are invalid
+		if(path[0] != '/') {
+			#if PRINT_ERROR
+			KERROR("Rejecting invalid path '%s'", path);
+			#endif
+
+			return NULL;
+		}
+
 		fs_fat32 *fs = (fs_fat32 *) superblock;
-		fs_file_handle_t *handle = fs->get_file(path);
+		fs_file_handle_t *handle = fs->get_file_handle(path, mode);
 
 		// Set the file mode
 		handle->mode = mode;
@@ -122,7 +132,7 @@ static fs_file_handle_t *fat32_file_open(void *superblock, char *path, fs_file_o
 }
 
 // Closes a file handle
-static void fat32_file_close(void *superblock, fs_file_t *file) {
+static void fat32_file_close(void *superblock, fs_file_handle_t *file) {
 	UNIMPLEMENTED_WARNING();
 }
 

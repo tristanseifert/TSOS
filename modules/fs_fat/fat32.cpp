@@ -9,13 +9,6 @@
 #import <module.h>
 #import <fat32.hpp>
 
-#define	DEBUG_DIRECTORY_CACHING	0
-#define	DEBUG_READ				0
-
-#define DEBUG_FILE_NOT_FOUND	1
-
-#define	PRINT_ERROR				1
-
 /*
  * Initialises a FAT32 filesystem from the specified partition table entry.
  */
@@ -38,7 +31,6 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 
 	// Calculate size of a cluster (in bytes)
 	cluster_size = bpb.sectors_per_cluster * bpb.bytes_per_sector;
-	// KDEBUG("Cluster size of %u bytes", cluster_size);
 
 	// Calculate address of first data sector
 	first_data_sector = bpb.reserved_sector_count + (bpb.table_count * bpb.table_size_32) + root_dir_sectors;
@@ -71,6 +63,8 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 			(unsigned int) fs_info.last_known_free_sec_cnt,
 			(unsigned int) fs_info.free_cluster_search_start);
 
+		fs_info.free_cluster_search_start = 0;
+
 		// Set up pointer to legacy volume label
 		volumeLabel = (char *) kmalloc(16);
 		memcpy(volumeLabel, &bpb.volume_label, 11);
@@ -87,6 +81,7 @@ fs_fat32::fs_fat32(hal_disk_partition_t *p, hal_disk_t *d) : hal_fs::hal_fs(p, d
 
 	// Allocate more memory for the filesystem
 	fatBuffer = (uint32_t *) kmalloc(cluster_size);
+	freeClusterBuffer = (uint32_t *) kmalloc(cluster_size);
 	clusterBuffer = kmalloc(cluster_size);
 
 	dirHandleCache = hashmap_allocate();
@@ -171,6 +166,9 @@ void fs_fat32::read_root_dir(void) {
 
 	// Process the read FAT directory entries into fs_file_t structs
 	this->processFATDirEnt(buffer, root_dir_num_entries, root_directory);
+
+	// Set root directory's cluster
+	root_directory->i.userData = bpb.root_cluster & FAT32_MASK;
 
 	// Clean up temporary buffers needed to read root directory
 	kfree(root_clusters);
@@ -686,14 +684,30 @@ void *fs_fat32::readCluster(unsigned int cluster, void *buffer, unsigned int *er
 }
 
 /*
+ * Reads the specified cluster.
+ */
+void *fs_fat32::writeCluster(unsigned int cluster, void *buffer, unsigned int *error) {
+	unsigned int sector = ((cluster - 2) * bpb.sectors_per_cluster) + first_data_sector;
+
+	if(!this->hal_fs::write_sectors(sector, bpb.sectors_per_cluster, buffer, error)) {
+		return NULL;
+	}
+
+	return buffer;
+}
+
+/*
  * Gets a pointer to a VFS file object
  */
-fs_file_handle_t* fs_fat32::get_file(char *name) {
+fs_file_handle_t* fs_fat32::get_file_handle(char *name, fs_file_open_mode_t mode) {
+	searchAgain: ;
 	// Store address of final file
 	fs_file_t *file = NULL;
+	fs_directory_t *dir = NULL;
+	char *fileName = NULL;
 
 	// Allocate memory for directory
-	char *dirName = (char *) kmalloc(strlen(name) + 2);
+	char *dirName = (char *) kmalloc(strlen(name));
 	unsigned int dirNameOffset = 0;
 
 	dirName[dirNameOffset++] = '/';
@@ -701,19 +715,25 @@ fs_file_handle_t* fs_fat32::get_file(char *name) {
 	// Separate path string
 	list_t *components = this->split_path(name);
 
-	// Get the base directory name
-	for(unsigned int i = 0; i < components->num_entries-1; i++) {
-		char *component = (char *) list_get(components, i);
+	// If only one element exists, it's at the root level
+	if(components->num_entries > 1) {
+		// Get the base directory name
+		for(unsigned int i = 0; i < components->num_entries-1; i++) {
+			char *component = (char *) list_get(components, i);
 
-		strcat(dirName + dirNameOffset, component);
-		dirNameOffset += strlen(component);
-		dirName[dirNameOffset++] = '/';
+			strcat(dirName + dirNameOffset, component);
+			dirNameOffset += strlen(component);
+			dirName[dirNameOffset++] = '/';
+		}
+
+		fileName = (char *) list_get(components, components->num_entries - 1);
+
+		// Try to get directory
+		dir = this->list_directory(dirName, true);
+	} else {
+		fileName = (char *) list_get(components, 0);
+		dir = root_directory;
 	}
-
-	char *fileName = (char *) list_get(components, components->num_entries - 1);
-
-	// Try to get directory
-	fs_directory_t *dir = this->list_directory(dirName, true);
 
 	// Directory found, search for file.
 	if(dir) {
@@ -729,6 +749,18 @@ fs_file_handle_t* fs_fat32::get_file(char *name) {
 			}
 		}
 
+		// We need to create the file if requested and it didn't exist
+		if(mode & kFSFileModeCreate) {
+			int crtErr = 0;
+			if(!(crtErr = this->createEmptyFile(dir, fileName))) {
+				goto searchAgain;
+			} else {
+				#if PRINT_ERROR
+				KERROR("Could not create %s: %i", name, crtErr);
+				#endif
+			}
+		}
+
 		goto notFound;
 	} else {
 		goto notFound;
@@ -737,7 +769,7 @@ fs_file_handle_t* fs_fat32::get_file(char *name) {
 	// File not found
 	notFound: ;
 	#if DEBUG_FILE_NOT_FOUND
-	KERROR("Couldn't find %s in %s", dirName, fileName);
+	KERROR("Couldn't find '%s' in dir '%s'", fileName, dirName);
 	#endif
 
 	kfree(dirName);
@@ -891,10 +923,20 @@ unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
 
 	// Begin search at the offset in the FSInfo structure
 	unsigned int currentCluster = fs_info.free_cluster_search_start;
-	fat32_secoff_t off = fatEntryOffsetForCluster(currentCluster);
+	fat32_secoff_t off = this->fatEntryOffsetForCluster(currentCluster);
 
 	unsigned int currentFATSector = off.sector;
 	unsigned int currentFATOffset = off.offset;
+
+	// Read the initial sector
+	if(!this->hal_fs::read_sectors(currentFATSector, 1, freeClusterBuffer, &err)) {
+		#if PRINT_ERROR
+		KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
+		#endif
+
+		kfree(buf);
+		return NULL;
+	}
 
 	while(true) {
 		// Crossed the cluster boundary?
@@ -903,25 +945,32 @@ unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
 			currentFATOffset = 0;
 
 			// Check we're not past the end of the FAT
-			if(currentFATSector > (bpb.table_count * bpb.table_size_32)) {
+			if(currentFATSector >= (bpb.table_count * bpb.table_size_32)) {
 				goto error;
 			} else {
 				// Read the new FAT cluster otherwise
-				if(!this->hal_fs::read_sectors(currentFATSector, 1, fatBuffer, &err)) {
+				if(!this->hal_fs::read_sectors(currentFATSector, 1, freeClusterBuffer, &err)) {
 					#if PRINT_ERROR
 					KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
 					#endif
+
+					kfree(buf);
 					return NULL;
 				}
 			}
 		}
 
 		// Is this cluster free?
-		if(!buf[currentFATOffset]) {
-			buf[bufOffset++] = currentCluster;
-		}
+		if(!(freeClusterBuffer[currentFATOffset] & FAT32_MASK)) {
+			currentCluster = ((currentFATSector - bpb.reserved_sector_count) * (cluster_size / 4)) + currentFATOffset;
 
-		currentCluster++;
+			buf[bufOffset++] = currentCluster;
+
+			// Check if enough clusters were found
+			if(bufOffset >= numClusters) {
+				return buf;
+			}
+		}
 	}
 
 	return buf;
@@ -930,6 +979,8 @@ unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
 	#if PRINT_ERROR
 	KERROR("Couldn't find %u free clusters", numClusters);
 	#endif
+
+	kfree(buf);
 	return NULL;
 }
 
@@ -952,7 +1003,7 @@ int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
 	unsigned int err = 0;
 
 	// Read first_cluster's FAT entry
-	fat32_secoff_t off = fatEntryOffsetForCluster(first_cluster);
+	fat32_secoff_t off = this->fatEntryOffsetForCluster(first_cluster);
 	
 	if(!this->hal_fs::read_sectors(off.sector, 1, fatBuffer, &err)) {
 		#if PRINT_ERROR
@@ -964,23 +1015,348 @@ int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
 	// Is it an end-of-file marker?
 	if((fatBuffer[off.offset] & FAT32_MASK) < FAT32_END_CHAIN && (fatBuffer[off.offset] & FAT32_MASK)) {
 		#if PRINT_ERROR
-		KERROR("%u is not the end of a chain, cannot append chain 0x%08X", 
-			first_cluster, (unsigned int) chain);
-		KDEBUG("(Read 0x%08X)", (unsigned int) fatBuffer[off.offset]);
+		KERROR("%u is not the end of a chain nor 0, cannot append chain 0x%08X (Read 0x%08X)", 
+			first_cluster, (unsigned int) chain, (unsigned int) fatBuffer[off.offset]);
 		#endif
 
 		return -3;
 	}
 
-	// Modify FAT and write back to device
-	fatBuffer[off.offset] = chain[0];
-	if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
-		#if PRINT_ERROR
-		KERROR("%s: Error writing FAT: %u", __PRETTY_FUNCTION__, err);
-		#endif
-		return -2;
+	if(chain) {
+		unsigned int chain_off = 0;
+		fatBuffer[off.offset] = chain[chain_off++];
+
+		// Write back to device
+		if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
+			#if PRINT_ERROR
+			KERROR("%s: Error writing FAT: %u", __PRETTY_FUNCTION__, err);
+			#endif
+			return -2;
+		}
+
+		// Process the rest of the chain
+		while(chain[chain_off] < FAT32_END_CHAIN) {
+			off = this->fatEntryOffsetForCluster(first_cluster);
+			
+			if(!this->hal_fs::read_sectors(off.sector, 1, fatBuffer, &err)) {
+				#if PRINT_ERROR
+				KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
+				#endif
+				return -2;
+			}
+
+			// Update FAT and write to device			
+			fatBuffer[off.offset] = chain[chain_off++];
+
+			if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
+				#if PRINT_ERROR
+				KERROR("%s: Error writing FAT: %u", __PRETTY_FUNCTION__, err);
+				#endif
+				return -2;
+			}
+		}
+	} else {
+		fatBuffer[off.offset] = FAT32_END_CHAIN;
+
+		// Write back to device
+		if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
+			#if PRINT_ERROR
+			KERROR("%s: Error writing FAT: %u", __PRETTY_FUNCTION__, err);
+			#endif
+			return -2;
+		}
 	}
 
 
-	return -1;
+	return 0;
+}
+
+/*
+ * Creates an empty file in the specified directory. A single cluster of data
+ * is reserved, but zeroed, and a directory entry (and, if required, LFN
+ * entries) is created.
+ */
+int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
+	unsigned int err = 0;
+
+	// Create a copy of the name
+	char *name = (char *) kmalloc(strlen(in_name) + 2);
+	strncpy(name, in_name, strlen(in_name) + 2);
+
+	// Separate extension and filename
+	size_t name_length = strlen(name);
+	char *extension = NULL;
+
+	// Find the extension
+	for(unsigned int c = name_length; c > 0; c--) {
+		if(name[c] == '.') {
+			name[c] = 0x00;
+			extension = name + (c + 1);
+			break;
+		}
+	}
+
+	// Determine if an LFN entry is needed
+	bool lfnNeeded = false;
+
+	// First, check length of the basename and extension
+	lfnNeeded = (strlen(name) > 8) || (strlen(extension) > 3);
+
+	string_case_t nameCase = this->getStringCase(name);
+	string_case_t extCase = this->getStringCase(extension);
+
+	// Check based on mixed caseness
+	if(!lfnNeeded) {
+		if(nameCase == kStringCaseMixed || extCase == kStringCaseMixed) {
+			lfnNeeded = true;
+			KDEBUG("LFN needed due to mixed case");
+		}
+	}
+
+	// If there's no LFN needed, we just need a single directory entry.
+	unsigned int dir_entries_needed = 0;
+
+	if(!lfnNeeded) {
+		dir_entries_needed = 1;
+	} else {
+		dir_entries_needed = 1;
+
+		// Remove the zero terminator where the period used to be
+		extension[-1] = '.';
+
+		/*
+		 * Each LFN entry is capable of holding 13 characters, so calculate how
+		 * many of them are needed to express this string.
+		 */
+		dir_entries_needed += (name_length + (13 - 1)) / 13;
+	}
+
+	// Find the clusters this directory occupies
+	unsigned int directory_cluster = dir->i.userData & FAT32_MASK;
+	
+	unsigned int *dir_chain = this->clusterChainForCluster(bpb.root_cluster & FAT32_MASK);
+	unsigned int dir_chain_len = 0;
+
+	while(dir_chain[dir_chain_len] != FAT32_END_CHAIN) {
+		dir_chain_len++;
+	}
+
+	// Allocate a buffer and read in the directory
+	fat_dirent_t *dirBuf = (fat_dirent_t *) kmalloc(dir_chain_len * cluster_size);
+
+	for(unsigned int c = 0; c < dir_chain_len; c++) {
+		unsigned int cluster = dir_chain[c];
+
+		if(!this->readCluster(cluster, ((uint8_t *) dirBuf) + (c * cluster_size), &err)) {
+			#if PRINT_ERROR
+			KERROR("Error reading directory cluster %u: %u", cluster, err);
+			#endif
+
+			kfree(dirBuf);
+			kfree(dir_chain);
+			kfree(name);
+			return -2;
+		}		
+	}
+
+	// Points to the first consecutive empty directory entry
+	fat_dirent_t *start_dirent = NULL;
+	unsigned int start_dirent_offset = 0;
+
+	/*
+	 * First, loop through all entries and see if one starts with 0xE5, or 0x00
+	 * which indicate that the entry is free or it's the end of the directory,
+	 * respectively. If we only need a single entry and we find enough, we're
+	 * done and can insert our item.
+	 */
+	for(unsigned int i = 0; i < (dir_chain_len * (cluster_size / sizeof(fat_dirent_t))); i++) {
+		fat_dirent_t *d = &dirBuf[i];
+
+		// Handle the case of where only a single entry is needed
+		if(dir_entries_needed == 1) {
+			if(d->name[0] == 0xE5 || d->name[0] == 0x00) {
+				// Ensure it's not an LFN
+				if((d->attributes & FAT_ATTR_LFN) != FAT_ATTR_LFN) {
+					start_dirent = d;
+					start_dirent_offset = i;
+					goto writeDirEnt;
+				}
+			}
+		}
+	}
+
+	/*
+	 * We couldn't find any free items, and there's more than one needed, so
+	 * re-arrange the directory structure to fill gaps and see if there is any
+	 * space now.
+	 */
+
+	/*
+	 * Gap closure didn't help, so just add another cluster to the end of the
+	 * directory.
+	 */
+
+	/*
+	 * Since the correct number of directory entries was found above, we can
+	 * assemble the fs_dirent_t, and optionally, fat_longname_dirent_t structs.
+	 */
+	writeDirEnt: ;
+	unsigned int shortNameOffset = 0;
+
+	if(dir_entries_needed > 1) {
+		shortNameOffset = dir_entries_needed - 1;
+	}
+
+	// Clear the directory entries' memory
+	memclr(start_dirent, sizeof(fat_dirent_t) * dir_entries_needed);
+
+	// If not an LFN-needing one, write original filename
+	if(!lfnNeeded) {
+			// Copy name
+		bool hasFoundStringTerminator = false;
+		for(unsigned int c = 0; c < 8; c++) {
+			unsigned char character = ' ';
+
+			if(name[c] && !hasFoundStringTerminator) {
+				character = name[c];
+			} else {
+				hasFoundStringTerminator = true;
+				character = ' ';
+			}
+
+			start_dirent[shortNameOffset].name[c] = toupper(character);
+		}
+
+		// Copy extension
+		hasFoundStringTerminator = false;
+		for(unsigned int c = 0; c < 3; c++) {
+			unsigned char character = ' ';
+
+			if(extension[c] && !hasFoundStringTerminator) {
+				character = extension[c];
+			} else {
+				hasFoundStringTerminator = true;
+				character = ' ';
+			}
+
+			start_dirent[shortNameOffset].ext[c] = toupper(character);
+		}
+
+		// Set the "Reserved for NT" extension bits
+		if(nameCase == kStringCaseLower) {
+			start_dirent[shortNameOffset].nt_reserved |= 0x08;
+		}
+
+		if(extCase == kStringCaseLower) {
+			start_dirent[shortNameOffset].nt_reserved |= 0x10;
+		}
+	}
+
+	// Give it a bullshit size
+	start_dirent[shortNameOffset].filesize = cluster_size;
+
+	// Allocate a cluster
+	unsigned int *chain = this->findFreeClusters(1);
+	// KDEBUG("Free cluster for file: 0x%08X", chain[0]);
+
+	if((err = this->update_fat(chain[0], NULL))) {
+		#if PRINT_ERROR
+		KERROR("%s: Error writing file cluster: %i", __PRETTY_FUNCTION__, (int) err);
+		#endif
+
+		kfree(chain);
+		kfree(dirBuf);
+		kfree(dir_chain);
+		kfree(name);
+
+		return -3;
+	}
+
+	start_dirent[shortNameOffset].cluster_low = chain[0] & 0x0000FFFF;
+	start_dirent[shortNameOffset].cluster_high = (chain[0] & 0xFFFF0000) >> 16;
+
+	start_dirent[shortNameOffset].attributes = FAT_ATTR_ARCHIVE;
+
+	// Insert LFNs, if needed
+	if(lfnNeeded) {
+
+	} else {
+		// Write back the modified cluster
+		unsigned int offset = start_dirent_offset / (cluster_size / sizeof(fat_dirent_t));
+		unsigned int cluster = dir_chain[offset];
+
+		// Write back to device
+		if(!this->writeCluster(cluster, ((uint8_t *) dirBuf) + (offset * cluster_size), &err)) {
+			#if PRINT_ERROR
+			KERROR("%s: Error writing directory entry: %u", __PRETTY_FUNCTION__, err);
+			#endif
+
+			kfree(chain);
+			kfree(dirBuf);
+			kfree(dir_chain);
+			kfree(name);
+
+			return -4;
+		}
+	}
+
+	// Create an fs_file_t object to represent this
+	fs_file_t *file = hal_vfs_allocate_file(dir);
+
+	file->size = start_dirent[shortNameOffset].filesize;
+
+	// Convert the timestamps
+	file->i.time_created = this->convert_timestamp(start_dirent[shortNameOffset].created_date, start_dirent[shortNameOffset].created_time, 0);
+	file->i.time_written = this->convert_timestamp(start_dirent[shortNameOffset].write_date, start_dirent[shortNameOffset].write_time, 0);
+	file->i.time_created = this->convert_timestamp(start_dirent[shortNameOffset].accessed_date, 0, 0);
+
+	/*
+	 * To speed up file reads, store the first cluster of this file
+	 * in the low 32 bits of the userData field of the item.
+	 */
+	file->i.userData = (start_dirent[shortNameOffset].cluster_high << 16) | (start_dirent[shortNameOffset].cluster_low);
+
+	// Create a copy of the input name for the file struct
+	file->i.name = (char *) kmalloc(strlen(in_name) + 2);
+	strncpy(file->i.name, in_name, strlen(in_name) + 2);
+
+	// Perform cleanup
+	kfree(dir_chain);
+	kfree(name);
+
+	// Zero out the cluster we allocated to the file
+	void *nullBuf = (void *) dirBuf;
+	memclr(nullBuf, cluster_size);
+
+	// Write zeroes to device: a write error won't cause problems here.
+	if(!this->writeCluster(chain[0], nullBuf, &err)) {
+		#if PRINT_ERROR
+		KERROR("Error zeroing cluster: %u", err);
+		#endif
+	}
+
+	// Clean up directory buffer too
+	kfree(dirBuf);
+	kfree(chain);
+
+	return 0;
+}
+
+/*
+ * Checks if a string contains exclusively all uppercase or all lowercase
+ * characters.
+ */
+string_case_t fs_fat32::getStringCase(char *string) {
+	size_t length = strlen(string);
+
+	bool foundUppercase = false, foundLowercase = false;
+
+	for(unsigned int c = 0; c < length; c++) {
+		if(isupper(string[c])) foundUppercase = true;
+		else if(islower(string[c])) foundLowercase = true;
+	}
+
+	if(foundUppercase && !foundLowercase) return kStringCaseUpper;
+	else if(!foundUppercase && foundLowercase) return kStringCaseLower;
+	else return kStringCaseMixed;
 }

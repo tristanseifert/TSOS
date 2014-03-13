@@ -6,6 +6,12 @@ typedef struct fat32_secoff {
 	unsigned int offset;
 } fat32_secoff_t;
 
+typedef enum {
+	kStringCaseUpper,
+	kStringCaseLower,
+	kStringCaseMixed
+} string_case_t;
+
 class fs_fat32 : public hal_fs {
 	public:
 		fs_fat32(hal_disk_partition_t *, hal_disk_t *);
@@ -53,7 +59,7 @@ class fs_fat32 : public hal_fs {
 		fs_directory_t* list_directory(char* dirname, bool cache);
 
 		// Gets the file requested
-		fs_file_handle_t* get_file(char *name);
+		fs_file_handle_t* get_file_handle(char *name, fs_file_open_mode_t mode);
 
 		// Performs a file read
 		long long read_handle(fs_file_handle_t *h, size_t bytes, void *buffer);
@@ -77,6 +83,7 @@ class fs_fat32 : public hal_fs {
 
 		// Buffer for a single cluster of FAT data
 		uint32_t *fatBuffer;
+		uint32_t *freeClusterBuffer;
 
 		// Buffer for one cluster of data
 		void *clusterBuffer;
@@ -89,8 +96,9 @@ class fs_fat32 : public hal_fs {
 		// Follows a cluster chain
 		unsigned int *clusterChainForCluster(unsigned int cluster);
 
-		// Reads a single cluster from the filesystem
+		// Cluster read/write
 		void *readCluster(unsigned int cluster, void* buffer, unsigned int* error);
+		void *writeCluster(unsigned int cluster, void *buffer, unsigned int *error);
 
 		// Reads an entire directory table into memory.
 		fat_dirent_t *read_dir_file(fs_directory_t *parent, char *childName, unsigned int *entries);
@@ -113,4 +121,11 @@ class fs_fat32 : public hal_fs {
 
 		// Updates a cluster chain
 		int update_fat(unsigned int first_cluster, unsigned int *chain);
+
+
+		// Create an empty file in the specified directory
+		int createEmptyFile(fs_directory_t *dir, char *name);
+
+		// Determine if a string is mixed case or not
+		string_case_t getStringCase(char *string);
 };
