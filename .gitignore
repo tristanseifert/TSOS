@@ -6,3 +6,4 @@ kern/kernel.elf_symbols.txt
 .DS_Store
 initrd.*
 *.kmod
+*.sym

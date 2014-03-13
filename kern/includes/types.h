@@ -61,6 +61,13 @@ extern "C" {
 
 #define BREAKPOINT() __asm__ volatile("xchg	%bx, %bx");
 
+// Macros for defining linkage of functions
+#ifdef __cplusplus
+#define C_FUNCTION extern "C"
+#else
+#define C_FUNCTION
+#endif
+
 /*
  * Write a byte to system IO port
  */

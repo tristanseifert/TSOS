@@ -36,7 +36,7 @@ dot_clean -m /Volumes/TSOS/
 # Determine which emulator to run
 if [ "$1" == "qemu" ]; then
 	echo "\n[3;32;40m***** Running QEMU *****[0;37;49m"
-	qemu-system-i386 -hda hdd.img -m 256M -soundhw sb16 -net nic,model=e1000 -net user -cpu pentium3 -monitor stdio -s
+	qemu-system-i386 -hda hdd.img -m 256M -soundhw sb16 -net nic,model=e1000 -net user -cpu pentium3 -rtc base=utc -monitor stdio -s
 elif [ "$1" == "bochs" ]; then
 	echo "\n[3;32;40m***** Running Bochs *****[0;37;49m"
 	bochs -f bochsrc.txt -q
