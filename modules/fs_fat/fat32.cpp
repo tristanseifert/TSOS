@@ -911,19 +911,9 @@ long long fs_fat32::read_handle(fs_file_handle_t *h, size_t bytes, void *buffer)
 }
 
 /*
- * Finds the specified number of free clusters.
+ * Finds the a single free cluster.
  */
-unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
-	unsigned int size = sizeof(unsigned int) * (numClusters + 1);
-
-	if(size < 32) {
-		size = 32;
-	}
-
-	// Allocate a buffer
-	unsigned int *buf = (unsigned int *) kmalloc(size);
-	unsigned int bufOffset = 0;
-
+unsigned int fs_fat32::findFreeCluster() {
 	unsigned int err = 0;
 
 	// Begin search at the offset in the FSInfo structure
@@ -939,8 +929,7 @@ unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
 		KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
 		#endif
 
-		kfree(buf);
-		return NULL;
+		return 0;
 	}
 
 	while(true) {
@@ -959,8 +948,7 @@ unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
 					KERROR("%s: Error reading FAT: %u", __PRETTY_FUNCTION__, err);
 					#endif
 
-					kfree(buf);
-					return NULL;
+					return 0;
 				}
 			}
 		}
@@ -969,24 +957,16 @@ unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
 		if(!(freeClusterBuffer[currentFATOffset] & FAT32_MASK)) {
 			currentCluster = ((currentFATSector - bpb.reserved_sector_count) * (cluster_size / 4)) + currentFATOffset;
 
-			buf[bufOffset++] = currentCluster;
-
-			// Check if enough clusters were found
-			if(bufOffset >= numClusters) {
-				return buf;
-			}
+			return currentCluster;
 		}
 	}
 
-	return buf;
-
 	error: ;
 	#if PRINT_ERROR
-	KERROR("Couldn't find %u free clusters", numClusters);
+	KERROR("Couldn't find free cluster");
 	#endif
 
-	kfree(buf);
-	return NULL;
+	return 0;
 }
 
 /*
@@ -1004,33 +984,34 @@ unsigned int *fs_fat32::findFreeClusters(unsigned int numClusters) {
  * end-of-chain marker, as that is needed to both complete the table, and for
  * the function to recognise the end of the chain.
  */
-int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
+int fs_fat32::update_fat(unsigned int cluster, unsigned int nextCluster) {
 	unsigned int err = 0;
 
 	// Read first_cluster's FAT entry
-	fat32_secoff_t off = this->fatEntryOffsetForCluster(first_cluster);
+	fat32_secoff_t off = this->fatEntryOffsetForCluster(cluster);
 	
 	if(!this->hal_fs::read_sectors(off.sector, 1, fatBuffer, &err)) {
 		#if PRINT_ERROR
-		KERROR("%s: Error reading FAT 1: %u (sector %u)", __PRETTY_FUNCTION__, err, off.sector);
+		KERROR("%s: Error reading FAT 1: %u (sector %u, cluster 0x%08X)", __PRETTY_FUNCTION__, err, off.sector, cluster);
 		#endif
 		return -2;
 	}
 
-	// Is it an end-of-file marker?
+	// Is it an end-of-file marker or zero?
 	if((fatBuffer[off.offset] & FAT32_MASK) < FAT32_END_CHAIN && (fatBuffer[off.offset] & FAT32_MASK)) {
 		#if PRINT_ERROR
-		KERROR("%u is not the end of a chain nor 0, cannot append chain 0x%08X (Read 0x%08X)", 
-			first_cluster, (unsigned int) chain, (unsigned int) fatBuffer[off.offset]);
+		KERROR("%u is not the end of a chain nor 0, cannot append cluster %u (Read 0x%08X)", 
+			cluster, (unsigned int) nextCluster, (unsigned int) fatBuffer[off.offset]);
 		#endif
 
 		return -3;
 	}
 
-	if(chain) {
+	// Next cluster is specified, so don't terminate the chain
+	if(nextCluster) {
+		// Process first chain entry
 		unsigned int chain_off = 0;
-
-		fatBuffer[off.offset] = chain[chain_off++];
+		fatBuffer[off.offset] = nextCluster;
 
 		// Write back to device
 		if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
@@ -1040,31 +1021,10 @@ int fs_fat32::update_fat(unsigned int first_cluster, unsigned int *chain) {
 			return -2;
 		}
 
-		// Don't process if there's no more chainage
-		if(chain[chain_off++] != 0) {
-			// Process the rest of the chain
-			while((chain[chain_off] & FAT32_MASK) <= FAT32_END_CHAIN) {
-				off = this->fatEntryOffsetForCluster(first_cluster);
-				
-				if(!this->hal_fs::read_sectors(off.sector, 1, fatBuffer, &err)) {
-					#if PRINT_ERROR
-					KERROR("%s: Error reading FAT 2: %u (sector %u)", __PRETTY_FUNCTION__, err, off.sector);
-					#endif
-					return -2;
-				}
-
-				// Update FAT and write to device			
-				fatBuffer[off.offset] = chain[chain_off++];
-
-				if(!this->hal_fs::write_sectors(off.sector, 1, fatBuffer, &err)) {
-					#if PRINT_ERROR
-					KERROR("%s: Error writing FAT 2: %u (sector %u)", __PRETTY_FUNCTION__, err, off.sector);
-					#endif
-					return -2;
-				}
-			}
-		}
+		// Terminate cluster chain
+		this->update_fat(nextCluster, 0);
 	} else {
+		// Just terminate the chain if 0 is passed in
 		fatBuffer[off.offset] = FAT32_END_CHAIN;
 
 		// Write back to device
@@ -1121,18 +1081,13 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	if(!lfnNeeded) {
 		if(nameCase == kStringCaseMixed || extCase == kStringCaseMixed) {
 			lfnNeeded = true;
-			KDEBUG("LFN needed due to mixed case");
 		}
 	}
 
 	// If there's no LFN needed, we just need a single directory entry.
-	unsigned int dir_entries_needed = 0;
+	unsigned int dir_entries_needed = 1;
 
-	if(!lfnNeeded) {
-		dir_entries_needed = 1;
-	} else {
-		dir_entries_needed = 1;
-
+	if(lfnNeeded) {
 		// Remove the zero terminator where the period used to be
 		extension[-1] = '.';
 
@@ -1153,9 +1108,22 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		dir_chain_len++;
 	}
 
+	KDEBUG("Chain length %u", dir_chain_len);
+
 	// Allocate a buffer and read in the directory
 	fat_dirent_t *dirBuf = (fat_dirent_t *) kmalloc((dir_chain_len * cluster_size) + 512);
 	unsigned int dirBufEntries = (dir_chain_len * (cluster_size / sizeof(fat_dirent_t)));
+
+	if(!dirBuf) {
+		#if PRINT_ERROR
+		KERROR("Error allocating directory buffer");
+		#endif
+
+		kfree(dir_chain);
+		kfree(name);
+
+		return -1;
+	}
 
 	for(unsigned int c = 0; c < dir_chain_len; c++) {
 		unsigned int cluster = dir_chain[c];
@@ -1178,7 +1146,7 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 
 	unsigned int entriesAfterLast = dir_entries_needed - 1;	
 	bool hasTriedReordering = false;
-	unsigned int *dirChainAppend = NULL;
+	unsigned int dirChainAppend;
 
 	unsigned int last_entry = 0;
 
@@ -1187,46 +1155,71 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	 * which indicate that the entry is free or it's the end of the directory,
 	 * respectively. If we only need a single entry and we find enough, we're
 	 * done and can insert our item.
+	 *
+	 * Otherwise, keep a counter to see if we find enough entries.
 	 */
 	unsigned int numFound = 0;
 
 	searchForFreeDirEnt:
+	#if DEBUG_FILE_CREATE
+	KDEBUG("Searching for %u dir entries", dir_entries_needed);
+	#endif
+
 	for(unsigned int i = 0; i < dirBufEntries; i++) {
 		fat_dirent_t *d = &dirBuf[i];
 
 		// Handle the case of where only a single entry is needed
 		if(dir_entries_needed == 1) {
 			if(d->name[0] == 0xE5 || d->name[0] == 0x00) {
-				// Ensure it's not an LFN
-				if((d->attributes & FAT_ATTR_LFN) != FAT_ATTR_LFN) {
-					start_dirent = d;
-					start_dirent_offset = i;
-					goto writeDirEnt;
-				}
+				start_dirent = d;
+				start_dirent_offset = i;
+
+				#if DEBUG_FILE_CREATE
+				KDEBUG("Starting address: 0x%08X (offset %u), %u %u", (unsigned int) start_dirent, start_dirent_offset, (unsigned int) (sizeof(fat_dirent_t) * dir_entries_needed), dir_entries_needed);
+				#endif
+
+				goto writeDirEnt;
 			}
 		} else {
 			if(d->name[0] == 0xE5 || d->name[0] == 0x00) {
 				// Ensure it's not an LFN
-				if((d->attributes & FAT_ATTR_LFN) != FAT_ATTR_LFN && !numFound) {
+				if(!numFound) {
 					start_dirent = d;
 					start_dirent_offset = i;
+					numFound = 1;
 				}
 
 				// Have we found enough entries?
 				if(numFound++ == dir_entries_needed) {
+					#if DEBUG_FILE_CREATE
+					KDEBUG("Starting address: 0x%08X (offset %u), %u %u", (unsigned int) start_dirent, start_dirent_offset, (unsigned int) (sizeof(fat_dirent_t) * dir_entries_needed), dir_entries_needed);
+					#endif
 					goto writeDirEnt;
 				}
 			}
 		}
 	}
 
+	#if DEBUG_FILE_CREATE
+	KDEBUG("Couldn't find items free cluster");
+	#endif
+
 	/*
 	 * We couldn't find any free items, and there's more than one needed, so
 	 * re-arrange the directory structure to fill gaps and see if there is any
 	 * space now.
 	 */
+	if(hasTriedReordering) {
+	 	goto extendDirectory;
+	}
+
 	for(unsigned int i = 0; i > dir_entries_needed - 1; i++) {
 		if(dirBuf[i].name[0] == 0xE5) {
+			// Clear this entry
+			memclr(&dirBuf[i], sizeof(fat_dirent_t));
+			dirBuf[i].name[0] = 0xE5;
+
+			// Shift everything after it ontop of it
 			memcpy(&dirBuf[i], &dirBuf[i+1], entriesAfterLast);
 			memclr(&dirBuf[dir_entries_needed - 1], sizeof(fat_dirent_t));
 		}
@@ -1244,10 +1237,14 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	 * Gap closure didn't help, so just add another cluster to the end of the
 	 * directory.
 	 */
-	needsChainFix = true;
-	dirBuf = (fat_dirent_t *) krealloc(dirBuf, (dir_chain_len++ * cluster_size) + 1024);
+	extendDirectory: ;
 
-	start_dirent = dirBuf + dirBufEntries;
+	needsChainFix = true;
+	dirBuf = (fat_dirent_t *) krealloc(dirBuf, (dir_chain_len++ * cluster_size) + 512);
+
+	start_dirent_offset = dirBufEntries - 1;
+	start_dirent = &dirBuf[start_dirent_offset];
+
 	dirBufEntries += (cluster_size / sizeof(fat_dirent_t));
 
 	if(!dirBuf) {
@@ -1263,7 +1260,7 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	}
 
 	// Find an empty cluster
-	if(!(dirChainAppend = this->findFreeClusters(1))) {
+	if(!(dirChainAppend = this->findFreeCluster())) {
 		#if PRINT_ERROR
 		KERROR("%s: Could not frind free clusters", __PRETTY_FUNCTION__);
 		#endif
@@ -1274,8 +1271,12 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 
 		return -6;
 	}
-	
-	// Update the FAT
+
+	#if DEBUG_FILE_CREATE
+	KDEBUG("Extended directory to cluster %u", dirChainAppend);
+	#endif
+
+	// Update the FAT (append to directory file)
 	if((err = this->update_fat(dir_chain[dir_chain_len - 2], dirChainAppend))) {
 		#if PRINT_ERROR
 		KERROR("%s: Error updating FAT: %i", __PRETTY_FUNCTION__, (int) err);
@@ -1288,8 +1289,8 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		return -7;
 	}
 	
-	// Update the FAT
-	if((err = this->update_fat(dirChainAppend[0], NULL))) {
+	// Update the FAT (end chain)
+	if((err = this->update_fat(dirChainAppend, 0))) {
 		#if PRINT_ERROR
 		KERROR("%s: Error updating FAT: %i", __PRETTY_FUNCTION__, (int) err);
 		#endif
@@ -1301,8 +1302,6 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		return -7;
 	}
 
-	kfree(dirChainAppend);
-
 	// Re-read chain
 	dir_chain = this->clusterChainForCluster(bpb.root_cluster & FAT32_MASK);
 
@@ -1313,11 +1312,14 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	last_entry = (dir_chain_len * (cluster_size / sizeof(fat_dirent_t))) - 1;
 
 	// Fix the directory buffer, so any 0x00's are marked as 0xE5
-	for(unsigned int i = 0; i < last_entry; i++) {
+/*	for(unsigned int i = 0; i < last_entry; i++) {
 		if(dirBuf[i].name[0] == 0x00) {
 			dirBuf[i].name[0] = 0xE5;
+		} else if(dirBuf[i].name[0] == 0xE5) {
+			memclr(&dirBuf[i], sizeof(fat_dirent_t));
+			dirBuf[i].name[0] = 0xE5;
 		}
-	}
+	}*/
 
 	// Correctly mark the end of the buffer
 	dirBuf[last_entry].name[0] = 0x00;
@@ -1336,7 +1338,6 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	}
 
 	// Clear the directory entries' memory
-	// KDEBUG("Starting offset: 0x%08X, %u %u", (unsigned int) start_dirent, (unsigned int) (sizeof(fat_dirent_t) * dir_entries_needed), dir_entries_needed);
 	memclr(start_dirent, sizeof(fat_dirent_t) * dir_entries_needed);
 
 	// If not an LFN-needing one, write original filename
@@ -1412,13 +1413,12 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	start_dirent[shortNameOffset].filesize = cluster_size;
 
 	// Allocate a cluster
-	unsigned int *fileChain = NULL;
-	if(!(fileChain = this->findFreeClusters(1))) {
+	unsigned int fileCluster;
+	if(!(fileCluster = this->findFreeCluster())) {
 		#if PRINT_ERROR
 		KERROR("%s: Could not frind free clusters", __PRETTY_FUNCTION__);
 		#endif
 
-		kfree(fileChain);
 		kfree(dirBuf);
 		kfree(dir_chain);
 		kfree(name);
@@ -1426,12 +1426,11 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		return -6;
 	}
 
-	if((err = this->update_fat(fileChain[0], NULL))) {
+	if((err = this->update_fat(fileCluster, 0))) {
 		#if PRINT_ERROR
 		KERROR("%s: Error updating FAT: %i", __PRETTY_FUNCTION__, (int) err);
 		#endif
 
-		kfree(fileChain);
 		kfree(dirBuf);
 		kfree(dir_chain);
 		kfree(name);
@@ -1439,8 +1438,8 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		return -3;
 	}
 
-	start_dirent[shortNameOffset].cluster_low = fileChain[0] & 0x0000FFFF;
-	start_dirent[shortNameOffset].cluster_high = (fileChain[0] & 0xFFFF0000) >> 16;
+	start_dirent[shortNameOffset].cluster_low = fileCluster & 0x0000FFFF;
+	start_dirent[shortNameOffset].cluster_high = (fileCluster & 0xFFFF0000) >> 16;
 
 	start_dirent[shortNameOffset].attributes = FAT_ATTR_ARCHIVE;
 
@@ -1548,7 +1547,6 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 				KERROR("%s: Error writing directory file 2: %u", __PRETTY_FUNCTION__, err);
 				#endif
 
-				kfree(fileChain);
 				kfree(dirBuf);
 				kfree(dir_chain);
 				kfree(name);
@@ -1567,7 +1565,6 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 			KERROR("%s: Error writing directory file: %u", __PRETTY_FUNCTION__, err);
 			#endif
 
-			kfree(fileChain);
 			kfree(dirBuf);
 			kfree(dir_chain);
 			kfree(name);
@@ -1605,7 +1602,7 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	memclr(nullBuf, cluster_size);
 
 	// Write zeroes to device: a write error won't cause problems here.
-	if(!this->writeCluster(fileChain[0], nullBuf, &err)) {
+	if(!this->writeCluster(fileCluster, nullBuf, &err)) {
 		#if PRINT_ERROR
 		KERROR("Error zeroing cluster: %u", err);
 		#endif
@@ -1613,7 +1610,6 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 
 	// Clean up directory buffer too
 	kfree(dirBuf);
-	kfree(fileChain);
 
 	return 0;
 }

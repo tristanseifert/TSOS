@@ -92,19 +92,30 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 			fs->file_close(thingie->superblock, file);
 
 			// Create a file
-			/*file = fs->file_open(thingie->superblock, (char *) "/hello.TXT", kFSFileModeCreate);
+			file = fs->file_open(thingie->superblock, (char *) "/hello.TXT", kFSFileModeCreate);
 			if(file) {
 				KDEBUG("Opened file handle: %u", file->file);
+			}
+
+			char buffer[64];
+
+			// This tries to create "long_filename_0.txt" through "long_filename_10.txt"
+			for(unsigned int i = 0; i < 11; i++) {
+				// Make filename
+				snprintf((char *) &buffer, 64, "/long_filename_%u.txt", i);
+
+				// Close file
+				fs->file_close(thingie->superblock, file);
+
+				// Create a file
+				file = fs->file_open(thingie->superblock, (char *) &buffer, kFSFileModeCreate);
+				if(file) {
+					KDEBUG("Opened file handle: %u", file->file);
+				}
 			}
 
 			// Close file
-			fs->file_close(thingie->superblock, file);*/
-
-			// Create a file
-			file = fs->file_open(thingie->superblock, (char *) "/hello with long name.txt", kFSFileModeCreate);
-			if(file) {
-				KDEBUG("Opened file handle: %u", file->file);
-			}
+			fs->file_close(thingie->superblock, file);
 		}
 	}
 

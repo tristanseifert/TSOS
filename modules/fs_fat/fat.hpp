@@ -4,6 +4,7 @@
 #define	DEBUG_DIRECTORY_CACHING	0
 #define	DEBUG_READ				0
 #define DEBUG_FILE_NOT_FOUND	1
+#define DEBUG_FILE_CREATE		1
 
 #define	PRINT_ERROR				1
 

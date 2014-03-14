@@ -117,10 +117,10 @@ class fs_fat32 : public hal_fs {
 
 
 		// Finds clusters that are free
-		unsigned int *findFreeClusters(unsigned int c);
+		unsigned int findFreeCluster();
 
 		// Updates a cluster chain
-		int update_fat(unsigned int first_cluster, unsigned int *chain);
+		int update_fat(unsigned int cluster, unsigned int nextCluster);
 
 
 		// Create an empty file in the specified directory
