@@ -110,6 +110,13 @@ static inline void io_wait(void) {
 	__asm__ volatile("outb %%al, $0x80" : : "a"(0));
 }
 
+// Macros for defining linkage of functions
+#ifdef __cplusplus
+#define C_FUNCTION extern "C"
+#else
+#define C_FUNCTION
+#endif
+
 #ifdef __cplusplus
 }
 #endif

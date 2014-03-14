@@ -1,4 +1,3 @@
-#import <hal/vfs.h>
 #import "fat.hpp"
 
 typedef struct fat32_secoff {

@@ -42,83 +42,81 @@ static int hal_disk_init(void) {
 }
 module_early_init(hal_disk_init);
 
-extern "C" {
-	/*
-	 * Allocates a new disk structure
-	 */
-	hal_disk_t *hal_disk_alloc() {
-		hal_disk_t *disk = (hal_disk_t *) kmalloc(sizeof(hal_disk_t));
-		
-		if(disk) {
-			memclr(disk, sizeof(hal_disk_t));
-			return disk;
-		}
-
-		return NULL;
+/*
+ * Allocates a new disk structure
+ */
+C_FUNCTION hal_disk_t *hal_disk_alloc() {
+	hal_disk_t *disk = (hal_disk_t *) kmalloc(sizeof(hal_disk_t));
+	
+	if(disk) {
+		memclr(disk, sizeof(hal_disk_t));
+		return disk;
 	}
 
-	/*
-	 * Initialises the disk for access.
-	 */
-	hal_disk_error_t hal_disk_setup(hal_disk_t *disk) {
-		return disk->f.init(disk);
-	}
+	return NULL;
+}
 
-	/*
-	 * Registers a new disk with the HAL.
-	 */
-	void hal_disk_register(hal_disk_t *disk) {
-		list_add(disks, disk);
-	}
+/*
+ * Initialises the disk for access.
+ */
+C_FUNCTION hal_disk_error_t hal_disk_setup(hal_disk_t *disk) {
+	return disk->f.init(disk);
+}
+
+/*
+ * Registers a new disk with the HAL.
+ */
+C_FUNCTION void hal_disk_register(hal_disk_t *disk) {
+	list_add(disks, disk);
+}
 
 
-	/*
-	 * Reads from the disk
-	 */
-	hal_disk_error_t hal_disk_read(hal_disk_t* disk, uint32_t lba, uint32_t length, void* buffer, unsigned int* id, hal_disk_callback_t callback, void* ctx) {
-		if(callback) {
-			return disk->f.read(disk, lba, length, buffer, id, callback, ctx);
-		} else {
-			int r = disk->f.read(disk, lba, length, buffer, id, hal_disk_null_callback, NULL);
+/*
+ * Reads from the disk
+ */
+C_FUNCTION hal_disk_error_t hal_disk_read(hal_disk_t* disk, uint32_t lba, uint32_t length, void* buffer, unsigned int* id, hal_disk_callback_t callback, void* ctx) {
+	if(callback) {
+		return disk->f.read(disk, lba, length, buffer, id, callback, ctx);
+	} else {
+		int r = disk->f.read(disk, lba, length, buffer, id, hal_disk_null_callback, NULL);
 
-			// If there was no errors, wait for the callback to be called
-			if(r == kDiskErrorNone) {
-				while(!hal_disk_null_callback_called) {
-					// Wait until the disk read happened
-				}
-
-				hal_disk_null_callback_called = false;
-
-				return hal_disk_null_callback_error;
-			} else {
-				return r;
+		// If there was no errors, wait for the callback to be called
+		if(r == kDiskErrorNone) {
+			while(!hal_disk_null_callback_called) {
+				// Wait until the disk read happened
 			}
+
+			hal_disk_null_callback_called = false;
+
+			return hal_disk_null_callback_error;
+		} else {
+			return r;
 		}
 	}
+}
 
-	/*
-	 * Writes to the disk
-	 */
-	hal_disk_error_t hal_disk_write(hal_disk_t* disk, uint32_t lba, uint32_t length, void* buffer, unsigned int* id, hal_disk_callback_t callback, void* ctx) {
-		if(callback) {
-			return disk->f.write(disk, lba, length, buffer, id, callback, ctx);
-		} else {
-			int r = disk->f.write(disk, lba, length, buffer, id, hal_disk_null_callback, NULL);
+/*
+ * Writes to the disk
+ */
+C_FUNCTION hal_disk_error_t hal_disk_write(hal_disk_t* disk, uint32_t lba, uint32_t length, void* buffer, unsigned int* id, hal_disk_callback_t callback, void* ctx) {
+	if(callback) {
+		return disk->f.write(disk, lba, length, buffer, id, callback, ctx);
+	} else {
+		int r = disk->f.write(disk, lba, length, buffer, id, hal_disk_null_callback, NULL);
 
-			// If there was no errors, wait for the callback to be called
-			if(r == kDiskErrorNone) {
-				while(!hal_disk_null_callback_called) {
-					// Wait until the disk read happened
-				}
-
-				hal_disk_null_callback_called = false;
-
-				return hal_disk_null_callback_error;
-			} else {
-				return r;
+		// If there was no errors, wait for the callback to be called
+		if(r == kDiskErrorNone) {
+			while(!hal_disk_null_callback_called) {
+				// Wait until the disk read happened
 			}
-		}		
-	}
+
+			hal_disk_null_callback_called = false;
+
+			return hal_disk_null_callback_error;
+		} else {
+			return r;
+		}
+	}		
 }
 
 /*
@@ -175,8 +173,10 @@ static void hal_disk_register_mbr_read_callback(unsigned int id, void *buf, void
 				disk->partitions[p].lba_start = mbr_entry->lba_start;
 				disk->partitions[p].size = mbr_entry->length;
 
-				// Partition loaded
-				hal_vfs_load(&disk->partitions[p], disk);
+				// Try to load a filesystem for this partition
+				if(!hal_vfs_load(&disk->partitions[p], disk)) {
+					KDEBUG("hal_disk: Ignoring partition %u on disk 0x%08X", p, (unsigned int) disk);
+				}
 			}
 		}
 	}

@@ -129,6 +129,9 @@ struct fs_file_handle {
 
 	// Various flags
 	bool isOpen;
+
+	// Filesystem this handle is open on
+	void *fs;
 };
 
 // Structure defining a VFS driver
@@ -194,3 +197,17 @@ fs_file_t *hal_vfs_allocate_file(fs_directory_t *d);
 // Deallocates a directory or file
 void hal_vfs_deallocate_directory(fs_directory_t *d, fs_directory_t *n);
 void hal_vfs_deallocate_file(fs_file_t *f);
+
+// FS Access
+C_FUNCTION list_t *hal_vfs_list_directory(char *dir);
+C_FUNCTION int hal_vfs_create_directory(char *dir);
+
+C_FUNCTION int hal_vfs_unlink(char *path);
+
+C_FUNCTION fs_file_handle_t *hal_vfs_fopen(char *path, fs_file_open_mode_t mode);
+C_FUNCTION void hal_vfs_fclose(fs_file_handle_t *handle);
+
+C_FUNCTION void hal_vfs_fupdate(fs_file_t *file);
+
+C_FUNCTION long long hal_vfs_fread(void *buf, size_t bytes, fs_file_handle_t *handle);
+C_FUNCTION long long hal_vfs_fwrite(void *buf, size_t bytes, fs_file_handle_t *handle);

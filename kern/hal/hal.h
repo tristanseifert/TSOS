@@ -17,13 +17,13 @@ extern "C" {
 
 // Interrupt handling
 typedef void (*hal_irq_callback_t)(void*);
-int hal_register_irq_handler(uint8_t irq, hal_irq_callback_t callback, void* ctx);
+C_FUNCTION int hal_register_irq_handler(uint8_t irq, hal_irq_callback_t callback, void* ctx);
 
 // Bootup handlers
 typedef void (*hal_init_function_t)(void);
-int hal_register_init_handler(hal_init_function_t callback);
+C_FUNCTION int hal_register_init_handler(hal_init_function_t callback);
 
-void hal_run_init_handlers(void);
+C_FUNCTION void hal_run_init_handlers(void);
 
 #ifdef __cplusplus
 }

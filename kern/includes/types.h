@@ -61,6 +61,8 @@ extern "C" {
 
 #define BREAKPOINT() __asm__ volatile("xchg	%bx, %bx");
 
+#define UNIMPLEMENTED_WARNING() KERROR("%s unimplemented", __PRETTY_FUNCTION__);
+
 // Macros for defining linkage of functions
 #ifdef __cplusplus
 #define C_FUNCTION extern "C"
