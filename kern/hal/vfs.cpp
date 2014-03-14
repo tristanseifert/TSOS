@@ -52,9 +52,9 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 			list_add(filesystem_superblocks, thingie);
 
 			// Test: list root directory
-			fs_directory_t *dir = fs->list_directory(thingie->superblock, (char *) "/test/test2/folder/");
+			fs_directory_t *dir = fs->list_directory(thingie->superblock, (char *) "/");
 
-	/*		if(dir) {
+			if(dir) {
 				for(unsigned int i = 0; i < dir->children->num_entries; i++) {
 					fs_item_t *item = (fs_item_t *) list_get(dir->children, i);
 
@@ -68,7 +68,7 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 						KDEBUG(" Dir: %s", dir->i.name);
 					}
 				}
-			}*/
+			}
 
 			// Open a file
 			fs_file_handle_t *file = fs->file_open(thingie->superblock, (char *) "/test/test2/folder/test file with long filename.txt", kFSFileModeReadOnly);

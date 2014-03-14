@@ -303,8 +303,14 @@ fs_directory_t *fs_fat32::read_directory(fs_directory_t *dir, char *name, bool c
 	return directory;
 }
 
+/*
+ * Gets a directory at the specified path, so its contents may be enumerated.
+ */
 fs_directory_t* fs_fat32::list_directory(char* dirname, bool cache) {
 	fs_directory_t *directory = root_directory;
+
+	// Handle the case of "/"
+	if(!strcmp("/", dirname)) return directory;
 
 	char *currentPath = (char *) kmalloc(strlen(dirname) + 2);
 	unsigned int currentPathOffset = 0;
@@ -1165,7 +1171,7 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	KDEBUG("Searching for %u dir entries", dir_entries_needed);
 	#endif
 
-	for(unsigned int i = 0; i < dirBufEntries; i++) {
+	for(unsigned int i = 0; i < dirBufEntries - 1; i++) {
 		fat_dirent_t *d = &dirBuf[i];
 
 		// Handle the case of where only a single entry is needed
@@ -1180,13 +1186,17 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 
 				goto writeDirEnt;
 			}
-		} else {
-			if(d->name[0] == 0xE5 || d->name[0] == 0x00) {
-				// Ensure it's not an LFN
+		} 
+
+		// We need multiple entries: keep a counter internally.
+		else {
+			// Is this entry clear?
+			if((d->name[0] == 0xE5 || d->name[0] == 0x00)) {
+				// Set the starting addresses 
 				if(!numFound) {
 					start_dirent = d;
 					start_dirent_offset = i;
-					numFound = 1;
+					numFound = 0;
 				}
 
 				// Have we found enough entries?
@@ -1196,12 +1206,14 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 					#endif
 					goto writeDirEnt;
 				}
+			} else {
+				numFound = 0;
 			}
 		}
 	}
 
 	#if DEBUG_FILE_CREATE
-	KDEBUG("Couldn't find items free cluster");
+	KDEBUG("Couldn't find a free directory entry");
 	#endif
 
 	/*
@@ -1272,6 +1284,8 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		return -6;
 	}
 
+	fs_info.last_known_free_sec_cnt--;
+
 	#if DEBUG_FILE_CREATE
 	KDEBUG("Extended directory to cluster %u", dirChainAppend);
 	#endif
@@ -1312,14 +1326,14 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 	last_entry = (dir_chain_len * (cluster_size / sizeof(fat_dirent_t))) - 1;
 
 	// Fix the directory buffer, so any 0x00's are marked as 0xE5
-/*	for(unsigned int i = 0; i < last_entry; i++) {
+	for(unsigned int i = 0; i < last_entry; i++) {
 		if(dirBuf[i].name[0] == 0x00) {
 			dirBuf[i].name[0] = 0xE5;
 		} else if(dirBuf[i].name[0] == 0xE5) {
 			memclr(&dirBuf[i], sizeof(fat_dirent_t));
 			dirBuf[i].name[0] = 0xE5;
 		}
-	}*/
+	}
 
 	// Correctly mark the end of the buffer
 	dirBuf[last_entry].name[0] = 0x00;
@@ -1335,6 +1349,17 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 
 	if(dir_entries_needed > 1) {
 		shortNameOffset = dir_entries_needed - 1;
+	}
+
+	// Check each entry is actually free
+	for(unsigned int i = 0; i < dir_entries_needed; i++) {
+		if(start_dirent[i].name[0] != 0x00 && start_dirent[i].name[0] != 0xE5) {
+			#if PRINT_ERROR
+			KERROR("Invalid directory entry: %u", i);
+			#endif
+			
+			return -7;
+		}
 	}
 
 	// Clear the directory entries' memory
@@ -1426,6 +1451,9 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		return -6;
 	}
 
+	fs_info.last_known_free_sec_cnt--;
+
+	// Mark that cluster as being the only one in the chain.
 	if((err = this->update_fat(fileCluster, 0))) {
 		#if PRINT_ERROR
 		KERROR("%s: Error updating FAT: %i", __PRETTY_FUNCTION__, (int) err);
@@ -1435,7 +1463,7 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 		kfree(dir_chain);
 		kfree(name);
 
-		return -3;
+		return -7;
 	}
 
 	start_dirent[shortNameOffset].cluster_low = fileCluster & 0x0000FFFF;
