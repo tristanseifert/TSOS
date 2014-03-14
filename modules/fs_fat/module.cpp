@@ -133,7 +133,10 @@ static fs_file_handle_t *fat32_file_open(void *superblock, char *path, fs_file_o
 
 // Closes a file handle
 static void fat32_file_close(void *superblock, fs_file_handle_t *file) {
-	UNIMPLEMENTED_WARNING();
+	if(file) {
+		fs_fat32 *fs = (fs_fat32 *) superblock;
+		fs->close_file_handle(file);
+	}
 }
 
 // Updates file metadata from struct

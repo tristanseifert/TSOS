@@ -60,6 +60,9 @@ class fs_fat32 : public hal_fs {
 		// Gets the file requested
 		fs_file_handle_t* get_file_handle(char *name, fs_file_open_mode_t mode);
 
+		// Closes a previously opened file handle
+		void close_file_handle(fs_file_handle_t *handle);
+
 		// Performs a file read
 		long long read_handle(fs_file_handle_t *h, size_t bytes, void *buffer);
 

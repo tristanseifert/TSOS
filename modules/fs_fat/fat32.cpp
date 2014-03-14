@@ -786,6 +786,10 @@ fs_file_handle_t* fs_fat32::get_file_handle(char *name, fs_file_open_mode_t mode
 	// File found
 	fileFound: ;
 
+	// Open handles counter
+	dir->handles_open++;
+	file->handles_open++;
+
 	// Clean up
 	kfree(dirName);
 	kfree(list_get(components, 0));
@@ -807,6 +811,25 @@ fs_file_handle_t* fs_fat32::get_file_handle(char *name, fs_file_open_mode_t mode
 }
 
 /*
+ * Closes a file handle that was previously opened. This will cause caches to be
+ * flushed.
+ */
+void fs_fat32::close_file_handle(fs_file_handle_t *handle) {
+	// Don't close already closed handles
+	if(!handle->isOpen) return;
+
+	// Mark as closed
+	handle->isOpen = false;
+
+	// Decrement file handle counts
+	fs_file_t *file = (fs_file_t *) hal_handle_get_object(handle->file);
+	file->handles_open--;
+
+	fs_directory_t *parent = (fs_directory_t *) hal_handle_get_object(file->parent);
+	parent->handles_open--;
+}
+
+/*
  * Performs a read operation from the file this file handle is opened on,
  * reading num_bytes bytes into buffer, starting at the current location of
  * the file handle.
@@ -822,6 +845,11 @@ long long fs_fat32::read_handle(fs_file_handle_t *h, size_t bytes, void *buffer)
 	// Verify the file object is still valid
 	if(fileObj->i.type != kFSItemTypeFile) {
 		h->isOpen = false;
+		return -1;
+	}
+
+	// Is the file open?
+	if(!h->isOpen) {
 		return -1;
 	}
 
@@ -1357,7 +1385,7 @@ int fs_fat32::createEmptyFile(fs_directory_t *dir, char *in_name) {
 			#if PRINT_ERROR
 			KERROR("Invalid directory entry: %u", i);
 			#endif
-			
+
 			return -7;
 		}
 	}
