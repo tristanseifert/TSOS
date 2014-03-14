@@ -8,7 +8,7 @@ LIBCXX_HEADERS=$(dir $(shell which $(CC)))../../libcxx/include/
 CURRENT_DIR=$(shell pwd)
 
 ARCH_ARGS=-march=i686 -mtune=pentium3 -msoft-float -mno-sse
-WARNINGS=-Werror -Wall -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -Wno-multichar -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wno-format-extra-args
+WARNINGS=-Werror -Wall -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -Wno-multichar -Wno-unused-variable -Wno-unused-function -Wno-deprecated -Wno-format-extra-args -Wno-unused-but-set-variable
 INCLUDES=-I$(CURRENT_DIR) -I. -I$(CURRENT_DIR)/includes/
 OPTIONS=-fstack-protector-all -fno-builtin -fno-omit-frame-pointer -falign-functions=4
 
@@ -50,24 +50,25 @@ SUBDIRS_CLEAN=$(addsuffix _clean, $(SUBDIRS))
 SOURCES=entry.s main.c
 OBJECTS=$(sort $(filter-out %.c %.s,$(SOURCES:.c=.o) $(SOURCES:.s=.o)))
 
+CRT_SOURCES=crti.s crtn.s
+CRT_OBJECTS=$(sort $(filter-out %.c %.s,$(CRT_SOURCES:.c=.o) $(CRT_SOURCES:.s=.o)))
+
 # Name of final executable
 EXECUTABLE=kernel.elf
 
-all: $(SUBDIRS) print $(SOURCES) $(EXECUTABLE)
-
-print:
-	@echo "\n\n[3;32;40m***** Compiling kernel core *****[0;37;49m"
-
-$(EXECUTABLE): $(OBJECTS)
+all: $(SUBDIRS) print $(SOURCES) $(OBJECTS) $(CRT_OBJECTS)
 	@echo "\n\n[3;32;40m***** Linking kernel *****[0;37;49m"
 
 	@if ! test -f $(BUILD_NUMBER_FILE); then echo 0 > $(BUILD_NUMBER_FILE); fi
 	@echo $$(($$(cat $(BUILD_NUMBER_FILE)) + 1)) > $(BUILD_NUMBER_FILE)
 
-	$(CPP) $(LDFLAGS) $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJECTS) $(addsuffix /*.oa, $(SUBDIRS)) $(CRTEND_OBJ) $(CRTN_OBJ) -lgcc -o $@
+	$(CPP) $(LDFLAGS) $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJECTS) $(addsuffix /*.o, $(SUBDIRS)) $(CRTEND_OBJ) $(CRTN_OBJ) -lgcc -o $(EXECUTABLE)
 
-	@i686-pc-elf-objdump -b elf32-i386 -d $@ > $@_symbols.txt
-	@i686-pc-elf-objcopy --strip-debug $@
+	@i686-pc-elf-objdump -b elf32-i386 -d $(EXECUTABLE) > $(EXECUTABLE)_symbols.txt
+	@i686-pc-elf-objcopy --strip-debug $(EXECUTABLE)
+
+print:
+	@echo "\n\n[3;32;40m***** Compiling kernel core *****[0;37;49m"
 
 .c.o:
 	@echo "[CC] $<"
@@ -80,13 +81,6 @@ $(EXECUTABLE): $(OBJECTS)
 .s.o:
 	@echo "[AS] $<"
 	@$(AS) $(ASFLAGS) $< -o $@
-
-# C Runtime objects
-crt_objs: crti.s crtn.s
-	@echo "[AS] crti.s"
-	@$(AS) $(ASFLAGS) crti.s -o crti.o
-	@echo "[AS] crtn.s"
-	@$(AS) $(ASFLAGS) crtn.s -o crtn.o
 
 # Submodules
 $(SUBDIRS):
