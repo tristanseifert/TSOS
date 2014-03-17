@@ -26,10 +26,10 @@ echo "\n[3;32;40m***** Copying files *****[0;37;49m"
 hdiutil attach ./hdd.img
 
 # Copy files
-rm -f /Volumes/TSOS/kernel.elf
-cp kern/kernel.elf /Volumes/TSOS/kernel.elf
-rm -f /Volumes/TSOS/initrd.gz
-cp initrd.gz /Volumes/TSOS/initrd.gz
+rm -f /Volumes/TSOS/boot/kernel.elf
+cp kern/kernel.elf /Volumes/TSOS/boot/kernel.elf
+rm -f /Volumes/TSOS/boot/initrd.gz
+cp initrd.gz /Volumes/TSOS/boot/initrd.gz
 
 # Clean up OS X's crap
 rm -rf /Volumes/TSOS/.fseventsd

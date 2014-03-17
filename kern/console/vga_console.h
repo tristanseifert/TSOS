@@ -18,6 +18,9 @@ enum vga_colour {
 	vga_colour_white = 15,
 };
 
+// Use a bold font?
+#define VGA_USE_BOLD_FONT 1
+
 // Initialise VGA driver
 void vga_init(void);
 void vga_textmem_remap(unsigned int newaddr);
