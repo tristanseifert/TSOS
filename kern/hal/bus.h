@@ -2,7 +2,8 @@
 #import "runtime/list.h"
 
 // Bus names
-#define PLATFORM_BUS_NAME "platform"
+#define PLATFORM_BUS_NAME	"platform"
+#define BUS_NAME_PCI		"pci"
 
 // Error codes
 typedef enum {
