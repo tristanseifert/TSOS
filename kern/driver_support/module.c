@@ -484,6 +484,29 @@ static unsigned int find_symbol_in_kernel(char *name) {
 	return 0;
 }
 
+/*
+ * Reads the file from the path into a temporary buffer, and then attempt to
+ * load it as a kernel module.
+ *
+ * @param path Path to the kernel module
+ * @param err Pointer to an integer in which to store a more detailed error
+ * @return true if success, false if error.
+ */
+bool module_load_from_file(char *path, int *err) {
+	// Attempt to open file
+	fs_file_handle_t *module = hal_vfs_fopen(path, kFSFileModeReadOnly);
+	if(module) {
+		KDEBUG("Opened '%s'", path);
+
+		hal_vfs_fclose(module);
+	} else {
+		KERROR("Can't open '%s' for module read", path);
+	}
+
+	return false;
+}
+
+// Stubs
 void __deregister_frame_info(void) {
 
 }

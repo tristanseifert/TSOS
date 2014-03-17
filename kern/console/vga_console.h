@@ -23,6 +23,8 @@ enum vga_colour {
 
 // Initialise VGA driver
 void vga_init(void);
+
+// Updates the internal VGA memory pointer address
 void vga_textmem_remap(unsigned int newaddr);
 
 // Print a character to the VGA console

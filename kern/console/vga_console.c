@@ -17,6 +17,11 @@ static unsigned int tempx, tempy;
 static enum vga_colour fg_colour;
 static enum vga_colour bg_colour;
 
+// Read out the first 16 DAC entries so framebuffer consoles have them
+static struct {
+	uint8_t r, g, b;
+} __attribute__((packed)) vga_dac_colours[16];
+
 // Private functions
 static void vga_scroll_up(void);
 static void vga_move_cursor();
@@ -35,35 +40,40 @@ static inline uint8_t vga_read_reg(uint16_t iport, uint8_t reg){
 }
 
 // Selected screen mode size
-#define SCREEN_COLS 			90
-#define SCREEN_ROWS				30
+#define SCREEN_COLS 				90
+#define SCREEN_ROWS					30
 
-// VGA sequencer registers
-#define VGA_SEQ_INDEX_PORT 0x3C4
-#define VGA_SEQ_DATA_PORT 0x3C5
+// Sequencer IO Ports
+#define VGA_SEQ_INDEX_PORT			0x3C4
+#define VGA_SEQ_DATA_PORT			0x3C5
 
-// VGA Graphics Controller register (VRAM read/write)
-#define VGA_GC_INDEX_PORT 0x3CE
-#define VGA_GC_DATA_PORT 0x3CF
+// Graphics Controller IO Ports (VRAM read/write)
+#define VGA_GC_INDEX_PORT			0x3CE
+#define VGA_GC_DATA_PORT			0x3CF
 
-// VGA Attribute Controller registers
-#define	VGA_AC_INDEX_PORT		0x3C0
-#define	VGA_AC_WRITE_PORT		0x3C0
-#define	VGA_AC_READ_PORT		0x3C1
+// Attribute Controller IO Ports
+#define	VGA_AC_INDEX_PORT			0x3C0
+#define	VGA_AC_WRITE_PORT			0x3C0
+#define	VGA_AC_READ_PORT			0x3C1
 
-// VGA CRT controller registers (timing generator)
-#define VGA_CRTC_INDEX_PORT 0x3D4
-#define VGA_CRTC_DATA_PORT 0x3D5
+// CRT controller IO Ports (timing generator)
+#define VGA_CRTC_INDEX_PORT			0x3D4
+#define VGA_CRTC_DATA_PORT			0x3D5
+
+// VGA DAC control IO ports
+#define VGA_DAC_READ_INDEX_PORT		0x3C7
+#define VGA_DAC_WRITE_INDEX_PORT	0x3C8
+#define VGA_DAC_DATA_PORT			0x3C9
 
 // Sequencer registers
-#define VGA_SEQ_MAP_MASK_REG 0x02
-#define VGA_SEQ_CHARSET_REG 0x03
-#define VGA_SEQ_MEMORY_MODE_REG 0x04
+#define VGA_SEQ_MAP_MASK_REG		0x02
+#define VGA_SEQ_CHARSET_REG			0x03
+#define VGA_SEQ_MEMORY_MODE_REG		0x04
 
 // Graphic controller registers
-#define VGA_GC_READ_MAP_SELECT_REG 0x04
-#define VGA_GC_GRAPHICS_MODE_REG 0x05
-#define VGA_GC_MISC_REG 0x06
+#define VGA_GC_READ_MAP_SELECT_REG	0x04
+#define VGA_GC_GRAPHICS_MODE_REG	0x05
+#define VGA_GC_MISC_REG				0x06
 
 // Miscellaneous register write
 #define	VGA_MISC_WRITE				0x3C2
@@ -100,18 +110,28 @@ void vga_init(void) {
 	space = (((bg_colour << 4) | (fg_colour & 0x0F)) << 0x8) | ' ';
 
 	// Fill screen with spaces
-	for(int i = 0; i < SCREEN_ROWS*SCREEN_COLS; i++) {
+	for(unsigned int i = 0; i < SCREEN_ROWS*SCREEN_COLS; i++) {
 		video_memory[i] = space;
 	}
 
-	// Load the new font
+	// Set DAC read to index 0
+	io_outb(VGA_DAC_READ_INDEX_PORT, 0);
+
+	// Read out the first sixteen DAC entries
+	for(unsigned int i = 0; i < 16; i++) {
+		vga_dac_colours[i].r = io_inb(VGA_DAC_DATA_PORT);
+		vga_dac_colours[i].g = io_inb(VGA_DAC_DATA_PORT);
+		vga_dac_colours[i].b = io_inb(VGA_DAC_DATA_PORT);
+	}
+
+	// Load VGA font
 	#if VGA_USE_BOLD_FONT
 	vga_load_font((unsigned char *) &vga_font_bold);
 	#else
 	vga_load_font((unsigned char *) &vga_font_normal);
 	#endif
 
-	// Enter new text mode
+	// Enter 90x30 text mode
 	vga_update_regs();
 }
 
@@ -183,12 +203,12 @@ static void vga_move_cursor() {
 	uint16_t cursorLocation = vga_y * SCREEN_COLS + vga_x;
 
 	// Set high cursor byte
-	io_outb(0x3D4, 14);
-	io_outb(0x3D5, cursorLocation >> 8);
+	io_outb(VGA_CRTC_INDEX_PORT, 14);
+	io_outb(VGA_CRTC_DATA_PORT, cursorLocation >> 8);
 
 	// Set low cursor byte
-	io_outb(0x3D4, 15);
-	io_outb(0x3D5, cursorLocation);
+	io_outb(VGA_CRTC_INDEX_PORT, 15);
+	io_outb(VGA_CRTC_DATA_PORT, cursorLocation);
 }
 
 /*

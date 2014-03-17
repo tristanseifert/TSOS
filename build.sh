@@ -16,8 +16,7 @@ fi
 
 # Create ramdisk
 echo "\n[3;32;40m***** Building ramdisk *****[0;37;49m"
-cp modules/*/*.kmod ramdisk/
-./tool/mkramdisk ramdisk
+./build_ramdisk.sh
 
 # Copy kernel, etc
 echo "\n[3;32;40m***** Copying files *****[0;37;49m"
@@ -30,6 +29,10 @@ rm -f /Volumes/TSOS/boot/kernel.elf
 cp kern/kernel.elf /Volumes/TSOS/boot/kernel.elf
 rm -f /Volumes/TSOS/boot/initrd.gz
 cp initrd.gz /Volumes/TSOS/boot/initrd.gz
+
+# Copy modules and config
+cp modules/*/*.kmod /Volumes/TSOS/etc/modules/
+cp modules/modules.cfg /Volumes/TSOS/etc/modules/modules.cfg
 
 # Clean up OS X's crap
 rm -rf /Volumes/TSOS/.fseventsd

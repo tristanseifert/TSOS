@@ -3,6 +3,8 @@
  * intelligent heap has been set up. Memory allocated through this way cannot
  * be deallocated again.
  */
+#define KMALLOC_ALIGN sizeof(unsigned int)
+#define KMALLOC_ALIGN_MASK (KMALLOC_ALIGN - 1)
 
 #import <types.h>
 #import "kheap.h"
@@ -21,6 +23,12 @@ extern heap_t *kernel_heap;
  * Allocates memory.
  */
 static void *kmalloc_int(size_t sz, bool align, unsigned int *phys) {
+	// Round size up to a multiple of 4
+	if(sz & KMALLOC_ALIGN_MASK) {
+		size_t alignAdd = KMALLOC_ALIGN - (sz & KMALLOC_ALIGN_MASK);
+		sz += alignAdd;
+	}
+
 	// Use the dumb allocator if needed
 	if(!kernel_heap) {
 		if(align && (dumb_heap_address & 0xFFFFF000)) {

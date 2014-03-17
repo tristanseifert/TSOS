@@ -66,6 +66,12 @@ void list_destroy(list_t *list, bool freeData) {
 	list_entry_t *next;
 
 	while(entry) {
+		// Deallocate the item pointed to by the entry?
+		if(freeData) {
+			kfree(entry->data);
+		}
+
+		// Get next
 		next = entry->next;
 		kfree(entry);
 		entry = next;

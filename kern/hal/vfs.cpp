@@ -68,8 +68,6 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 
 					if(item->type == kFSItemTypeFile) {
 						if(!strcmp("bootvol.txt", item->name)) {
-							KDEBUG("Found bootup volume");
-
 							thingie->mountpoint = (char *) "/";
 						}
 					}
@@ -78,6 +76,23 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 		
 			return true;
 		}
+	}
+
+	return false;
+}
+
+/*
+ * Checks if the root filesystem has been mounted
+ */
+bool hal_vfs_root_mounted(void) {
+	for(unsigned int i = 0; i < filesystem_superblocks->num_entries; i++) {
+		vfs_ptr_t *filesystem = (vfs_ptr_t *) list_get(filesystem_superblocks, i);
+
+		// Is this filesystem mounted?
+		if(!filesystem->mountpoint) continue;
+
+		// Check if it's mounted at "/"
+		if(!strcmp("/", filesystem->mountpoint)) return true;
 	}
 
 	return false;
@@ -233,14 +248,29 @@ static vfs_ptr_t *mount_to_vfs(char *path, char **relPath) {
 
 	// If requested, get the path relative to the root of the filesystem
 	if(relPath) {
-		size_t bufSize = strlen(path);
+		size_t pathLen = strlen(path);
 
-		*relPath = (char *) kmalloc(bufSize);
-		strncpy(*relPath, path + longestMountIdx, bufSize);
-
+		*relPath = (char *) kmalloc(pathLen + 1);
+		strncpy(*relPath, path + longestMountIdx, pathLen);
 	}
 
 	return matchedFS;
+}
+
+/*
+ * Gets the file that a file handle points to.
+ */
+fs_file_t *hal_vfs_handle_to_file(fs_file_handle_t *handle) {
+	// Verify type
+	if(hal_handle_get_type(handle->file) == kFSItemTypeFile) {
+		fs_file_t *file = (fs_file_t *) hal_handle_get_object(handle->file);
+
+		if(file->i.type == kFSItemTypeFile) {
+			return file;
+		}
+	}
+
+	return NULL;
 }
 
 /*
@@ -288,6 +318,8 @@ C_FUNCTION fs_file_handle_t *hal_vfs_fopen(char *path, fs_file_open_mode_t mode)
 	vfs_ptr_t *fs = mount_to_vfs(path, &relPath);
 
 	fs_file_handle_t *handle = fs->fs->file_open(fs->superblock, relPath, mode);
+	handle->fs = fs;
+
 	kfree(relPath);
 	return handle;
 }
@@ -297,6 +329,7 @@ C_FUNCTION fs_file_handle_t *hal_vfs_fopen(char *path, fs_file_open_mode_t mode)
  */
 C_FUNCTION void hal_vfs_fclose(fs_file_handle_t *handle) {
 	vfs_ptr_t *ptr = (vfs_ptr_t *) handle->fs;
+	ASSERT(ptr);
 
 	ptr->fs->file_close(ptr->superblock, handle);
 }
@@ -316,6 +349,7 @@ C_FUNCTION void hal_vfs_fupdate(fs_file_t *file) {
  */
 C_FUNCTION long long hal_vfs_fread(void *buf, size_t bytes, fs_file_handle_t *handle) {
 	vfs_ptr_t *ptr = (vfs_ptr_t *) handle->fs;
+	ASSERT(ptr);
 
 	return ptr->fs->file_read(ptr->superblock, buf, bytes, handle);
 }
@@ -328,6 +362,7 @@ C_FUNCTION long long hal_vfs_fread(void *buf, size_t bytes, fs_file_handle_t *ha
  */
 C_FUNCTION long long hal_vfs_fwrite(void *buf, size_t bytes, fs_file_handle_t *handle) {
 	vfs_ptr_t *ptr = (vfs_ptr_t *) handle->fs;
+	ASSERT(ptr);
 
 	return ptr->fs->file_write(ptr->superblock, buf, bytes, handle);
 }

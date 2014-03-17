@@ -726,7 +726,7 @@ fs_file_handle_t* fs_fat32::get_file_handle(char *name, fs_file_open_mode_t mode
 		for(unsigned int i = 0; i < components->num_entries-1; i++) {
 			char *component = (char *) list_get(components, i);
 
-			strcat(dirName + dirNameOffset, component);
+			strcat(dirName, component);
 			dirNameOffset += strlen(component);
 			dirName[dirNameOffset++] = '/';
 		}
@@ -778,8 +778,7 @@ fs_file_handle_t* fs_fat32::get_file_handle(char *name, fs_file_open_mode_t mode
 	#endif
 
 	kfree(dirName);
-	kfree(list_get(components, 0));
-	list_destroy(components, false);
+	list_destroy(components, true);
 
 	return NULL;
 
@@ -792,8 +791,7 @@ fs_file_handle_t* fs_fat32::get_file_handle(char *name, fs_file_open_mode_t mode
 
 	// Clean up
 	kfree(dirName);
-	kfree(list_get(components, 0));
-	list_destroy(components, false);
+	list_destroy(components, true);
 
 	// Open a file handle object
 	fs_file_handle_t *handle = (fs_file_handle_t *) kmalloc(sizeof(fs_file_handle_t));

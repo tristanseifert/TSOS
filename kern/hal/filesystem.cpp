@@ -77,9 +77,22 @@ list_t *hal_fs::split_path(char *in) {
 	unsigned int i = 0;
 
 	while(component) {
-		list_add(list, component);
+		// Allocate a buffer to copy this into
+		size_t bufSize = strlen(component) + 4;
+		char *newBuf = (char *) kmalloc(bufSize);
+
+		// Clear buffer
+		memclr(newBuf, bufSize);
+
+		// Copy to buffer and add
+		memcpy(newBuf, component, strlen(component));
+		list_add(list, newBuf);
+
 		component = strtok(NULL, "/");
 	}
+
+	// Clean up
+	kfree(path);
 
 	return list;
 }

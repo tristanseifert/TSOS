@@ -14,13 +14,15 @@ static unsigned int previous_directory;
 extern multiboot_info_t *x86_multiboot_info;
 
 // Maps a memory section enum entry to a range
-static unsigned int section_to_memrange[7][2] = {
+static unsigned int section_to_memrange[8][2] = {
 	{0x00000000, 0x00000000}, // kMemorySectionNone
 	
 	{0x00800000, 0x7FFFFFFF}, // kMemorySectionProcess
 	{0x80000000, 0xBFFFFFFF}, // kMemorySectionSharedLibraries
 
 	{0xC0000000, 0xC7FFFFFF}, // kMemorySectionKernel
+	{0xC0000000, 0xC7FFFFFF}, // kMemorySectionKernelBuffers
+
 	{0xC8000000, 0xCFFFFFFF}, // kMemorySectionDrivers
 	
 	{0xD0000000, 0xDFFFFFFF}, // kMemorySectionKernelHeap
@@ -28,13 +30,15 @@ static unsigned int section_to_memrange[7][2] = {
 	{0xE0000000, 0xFFFFFFFF}  // kMemorySectionHardware
 };
 
-static const char* section_name_table[7] = {
+// Maps a section name to a string
+static const char* section_name_table[8] = {
 	"kMemorySectionNone",
 
 	"Process Memory",
 	"Shared Library Memory",
 
 	"Kernel Code/Data",
+	"Buffers",
 	"Driver Code/Data",
 
 	"Kernel Heap",
@@ -197,14 +201,12 @@ void paging_init() {
 	}
 
 
-	// Create pages for the kernel
+	// Create pages for the kernel and buffers
 	unsigned int kern_start = paging_get_memrange(kMemorySectionKernel)[0];
 	unsigned int kern_end = paging_get_memrange(kMemorySectionKernel)[1];
-
 	for(i = kern_start; i < kern_end; i += 0x1000) {
 		paging_get_page(i, true, kernel_directory);
 	}
-
 
 	// Create pages for loaded drivers
 	unsigned int driver_start = paging_get_memrange(kMemorySectionDrivers)[0];
@@ -251,6 +253,19 @@ void paging_init() {
 		page->frame = ((i & 0x0FFFF000) >> 12);
 	}
 
+
+	// Update section mapping
+	section_to_memrange[kMemorySectionKernel][1] = kern_heap_end - 1;
+	unsigned int buf_start = section_to_memrange[kMemorySectionKernelBuffers][0] = kern_heap_end;
+
+	// Round up start of buffer to megabyte bounds
+	if(buf_start & 0x000FFFFF) {
+		buf_start = (buf_start & 0xFFF00000) + 0x100000;
+		section_to_memrange[kMemorySectionKernelBuffers][0] = buf_start;
+	}
+
+	unsigned int buf_bytes_available = 0xC8000000 - paging_get_memrange(kMemorySectionKernelBuffers)[0];
+	KDEBUG("%u KB available for buffers (start 0x%08X)", buf_bytes_available / 1024, buf_start);
 
 	// Convert kernel directory address to physical
 	kern_dir_phys = (unsigned int) &kernel_directory->tablesPhysical;

@@ -38,6 +38,9 @@ extern "C" {
 #import "runtime/ordered_array.h"
 #import "runtime/rand.h"
 
+// Parsers
+#import "runtime/list_parser.h"
+
 // Miscellaneous
 #import "driver_support/module.h"
 
@@ -62,6 +65,9 @@ extern "C" {
 #define BREAKPOINT() __asm__ volatile("xchg	%bx, %bx");
 
 #define UNIMPLEMENTED_WARNING() KERROR("%s unimplemented", __PRETTY_FUNCTION__);
+
+// Method visibility
+#define EXPORT_FUNCTIOn __attribute__((visibility("default")))
 
 // Macros for defining linkage of functions
 #ifdef __cplusplus

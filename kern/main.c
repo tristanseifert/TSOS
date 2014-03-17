@@ -8,6 +8,8 @@
 
 #import "hal/hal.h"
 
+#import "kconfig.h"
+
 // External functions
 extern void __stack_chk_guard_setup(void);
 extern void srand(uint32_t);
@@ -59,7 +61,6 @@ void main(void) {
 	modules_load();
 	modules_ramdisk_load();
 
-
 	// Allocate idle task
 	idle_thread = task_new(kTaskPriorityIdle, true);
 	strncpy((char *) &idle_thread->name, "Kernel Idle Task", 64);
@@ -85,11 +86,53 @@ void kern_idle(void) {
 	
 	hal_run_init_handlers();
 
+	// We can't do anything unless the root fs is mounted
+	if(!hal_vfs_root_mounted()) PANIC("No root mounted");
+
 	// Ensure IRQs are on
 	IRQ_RES();
 
+	// Load the drivers specified in the file at /etc/modules.cfg
+	fs_file_handle_t *modules = hal_vfs_fopen((char *) __kcfg_modules_list_path, kFSFileModeReadOnly);
+	if(modules) {
+		fs_file_t *file = hal_vfs_handle_to_file(modules);
+		// Read file to memory
+		char *buffer = (char *) kmalloc(file->size + 2);
+		memclr(buffer, file->size + 2);
+		hal_vfs_fread(buffer, file->size, modules);
+
+		// Parse list
+		list_t *modulesToLoad = parse_list(buffer, "\n");
+
+		char *modulePathBuf = (char *) kmalloc(512);
+
+		// Iterate over each module
+		for(unsigned int i = 0; i < modulesToLoad->num_entries; i++) {
+			// Initialise modules buffer
+			memclr(modulePathBuf, 512);
+			strncpy(modulePathBuf, __kcfg_modules_path, 512);
+
+			// Get name of module
+			char *moduleName = (char *) list_get(modulesToLoad, i);
+
+			// Concatenate to form a full path
+			strcat(modulePathBuf, moduleName);
+			KDEBUG("Loading '%s'...", moduleName);
+
+			module_load_from_file(modulePathBuf, NULL);
+		}
+
+		// Release memory
+		kfree(modulePathBuf);
+
+		// Close handle
+		hal_vfs_fclose(modules);
+	} else {
+		KWARNING("Couldn't open %s", __kcfg_modules_list_path);
+	}
+
 	/*
-	 * Use of the "htl" instruction allows the CPU to enter lower P states and
+	 * Use of the "hlt" instruction allows the CPU to enter lower P states and
 	 * conserve power, as well as not heating up as much.
 	 */
 	for(;;) {

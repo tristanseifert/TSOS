@@ -190,6 +190,8 @@ int hal_vfs_register(hal_vfs_t *);
 // Attempts to load a filesystem for the specified partition
 bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk);
 
+bool hal_vfs_root_mounted(void);
+
 // Allocates memory for various structures
 fs_directory_t *hal_vfs_allocate_directory(bool createHandle);
 fs_file_t *hal_vfs_allocate_file(fs_directory_t *d);
@@ -197,6 +199,9 @@ fs_file_t *hal_vfs_allocate_file(fs_directory_t *d);
 // Deallocates a directory or file
 void hal_vfs_deallocate_directory(fs_directory_t *d, fs_directory_t *n);
 void hal_vfs_deallocate_file(fs_file_t *f);
+
+// Gets the file that a file handle points to
+fs_file_t *hal_vfs_handle_to_file(fs_file_handle_t *handle);
 
 // FS Access
 C_FUNCTION list_t *hal_vfs_list_directory(char *dir);

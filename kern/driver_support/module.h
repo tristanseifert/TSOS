@@ -22,4 +22,23 @@ typedef void (*module_exitcall_t)(void);
 
 void modules_load();
 void modules_ramdisk_load();
+
+/*
+ * Loads a module from the specified memory address: it must NOT be deallocated
+ * but may be unmapped from kernel space, as it is mapped again in the driver
+ * address space.
+ *
+ * @param elf Pointer to an ELF file
+ * @param moduleName Name of this module: used only for display purposes
+ */
 void module_load(void *elf, char *moduleName);
+
+/*
+ * Reads the file from the path into a temporary buffer, and then attempt to
+ * load it as a kernel module.
+ *
+ * @param path Path to the kernel module
+ * @param err Pointer to an integer in which to store a more detailed error
+ * @return true if success, false if error.
+ */
+bool module_load_from_file(char *path, int *err);
