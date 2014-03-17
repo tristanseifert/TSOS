@@ -1,5 +1,11 @@
 /*
  * 8x16 normal Terminus font
+ *
+ * The original Terminus font is released under the SIL Open Font License 1.1.
+ * See the Terminus website at http://terminus-font.sourceforge.net/ for more
+ * information and to download the original font files.
+ *
+ * This file was converted from the provided bdf files.
  */
 static const unsigned char vga_font_normal[] = {
   0x00, 0x00, 0x7e, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x7e,
