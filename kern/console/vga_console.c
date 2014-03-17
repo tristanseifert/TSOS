@@ -190,10 +190,10 @@ void vga_console_putchar(char c) {
  */
 static void vga_scroll_up(void) {
 	// Move everything upwards
-	memmove(video_memory, video_memory+SCREEN_COLS, 24*SCREEN_COLS*2);
+	memmove(video_memory, video_memory+SCREEN_COLS, (SCREEN_ROWS - 1)	*SCREEN_COLS*2);
 
 	// Clear bottom row
-	memclr(video_memory+24*SCREEN_COLS, 160);
+	memclr(video_memory+(SCREEN_ROWS - 1)*SCREEN_COLS, SCREEN_COLS * 2);
 }
 
 /*

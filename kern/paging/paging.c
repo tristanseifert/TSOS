@@ -267,6 +267,12 @@ void paging_init() {
 	unsigned int buf_bytes_available = 0xC8000000 - paging_get_memrange(kMemorySectionKernelBuffers)[0];
 	KDEBUG("%u KB available for buffers (start 0x%08X)", buf_bytes_available / 1024, buf_start);
 
+	// Allocate the first megabyte of buffers to module loading
+	for(unsigned int i = buf_start; i < buf_start + 0x100000; i += 0x1000) {
+		page_t* page = paging_get_page(i, true, kernel_directory);
+		alloc_frame(page, true, true);
+	}
+
 	// Convert kernel directory address to physical
 	kern_dir_phys = (unsigned int) &kernel_directory->tablesPhysical;
 	kern_dir_phys -= 0xC0000000;
@@ -552,4 +558,49 @@ void paging_flush_tlb(unsigned int addr) {
  */
 unsigned int *paging_get_memrange(paging_memory_section_t section) {
 	return section_to_memrange[section];
+}
+
+/*
+ * Allocates a buffer
+ */
+unsigned int paging_alloc_buffer(size_t sz) {
+	unsigned int start = paging_get_memrange(kMemorySectionKernelBuffers)[0];
+	unsigned int end = paging_get_memrange(kMemorySectionDrivers)[0];
+
+	// Number of pages to require
+	unsigned int numPagesNeeded = sz / 0x1000;
+	if(sz & 0x00000FFF) {
+		numPagesNeeded++;
+	}
+
+	unsigned int pagesFound = 0;
+	unsigned int startAddr;
+
+	// Get the page
+	for(unsigned int i = start; i < end; i += 0x1000) {
+		page_t* page = paging_get_page(i, false, kernel_directory);
+		
+		if(!page || !page->present) {
+			// Store start address
+			if(!pagesFound) {
+				startAddr = i;
+			}
+
+			// Found required amount of pages?
+			if(pagesFound++ == numPagesNeeded) {
+
+			}
+		} else {
+			pagesFound = 0;
+		}
+	}	
+
+	return 0;
+}
+
+/*
+ * Returns the address of the module loading buffer (1MB in size)
+ */
+unsigned int paging_module_buffer() {
+	return paging_get_memrange(kMemorySectionKernelBuffers)[0];
 }

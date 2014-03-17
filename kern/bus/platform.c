@@ -22,7 +22,7 @@ static const device_t rtc = {
  */
 static int platform_init(void) {
 	// Register bus
-	hal_bus_register(&platform_bus, PLATFORM_BUS_NAME);
+	hal_bus_register(&platform_bus, BUS_NAME_PLATFORM);
 
 	// Register PS2 Controller
 	hal_bus_add_device((device_t *) &ps2, &platform_bus);

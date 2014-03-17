@@ -4,7 +4,7 @@
 #define DEBUG_DRIVER_REG	0
 #define DEBUG_DEVICE_REG	0
 #define DEBUG_BUS_REG		0
-#define DEBUG_DRIVER_MATCH	0
+#define DEBUG_DRIVER_MATCH	1
 
 static hashmap_t *busses;
 static list_t *bus_names;
@@ -34,7 +34,7 @@ module_early_init(hal_bus_sys_init);
 /*
  * Called once all drivers are loaded to match them to a device.
  */
-static int hal_bus_match_devices(void) {
+int hal_bus_match_devices(void) {
 	char *name;
 	bus_t *bus;
 	device_t *device;
@@ -69,12 +69,13 @@ void hal_bus_load_drivers(char *name) {
 		// Iterate over all the devices
 		for(unsigned int j = 0; j < bus->devices->num_entries; j++) {
 			device = (device_t *) list_get(bus->devices, j);
-			#if DEBUG_DRIVER_MATCH
-			KDEBUG(" Device '%s'", device->node.name);
-			#endif
 
 			// Does this device have a driver loaded?
 			if(!device->driver) {
+				#if DEBUG_DRIVER_MATCH
+				KDEBUG(" Device '%s'", device->node.name);
+				#endif
+				
 				// Iterate through all drivers
 				for(unsigned int k = 0; k < bus->drivers->num_entries; k++) {
 					driver = (driver_t *) list_get(bus->drivers, k);
@@ -89,7 +90,7 @@ void hal_bus_load_drivers(char *name) {
 						}
 
 						#if DEBUG_DRIVER_MATCH
-						KDEBUG("  Found driver '%s': 0x%X 0x%X", driver->name, driver, device->device_info);
+						KDEBUG("  Found driver '%s': 0x%X 0x%X", driver->name, (unsigned int) driver, (unsigned int) device->device_info);
 						#endif
 					}
 				}

@@ -131,6 +131,12 @@ void kern_idle(void) {
 		KWARNING("Couldn't open %s", __kcfg_modules_list_path);
 	}
 
+	// Run late initcalls
+	modules_late_init();
+
+	// Load drivers for devices that still need them
+	hal_bus_match_devices();
+
 	/*
 	 * Use of the "hlt" instruction allows the CPU to enter lower P states and
 	 * conserve power, as well as not heating up as much.

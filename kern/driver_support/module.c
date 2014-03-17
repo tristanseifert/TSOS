@@ -10,9 +10,14 @@
 #define DEBUG_MODULE_MAPPING	0
 #define DEBUG_MOBULE_RELOC		0
 
+#define MODULE_MAX_SIZE			1048576
+
 // Compiler used to compile the kernel (used for kernel module compatibility checks)
 static const char KERNEL_COMPILER[] = "GNU GCC " __VERSION__;
 extern const char KERNEL_VERSION[];
+
+// Address of module loading buffer
+extern unsigned int paging_module_buffer();
 
 // Addresses of initcall addresses
 extern uint32_t __kern_initcalls, __kern_lateinitcalls, __kern_exitcalls, __kern_callsend;
@@ -44,6 +49,20 @@ void modules_load() {
 	}
 
 	KSUCCESS("Static modules initialised");
+}
+
+/*
+ * Late module initialisation, after additional modules have been loaded from disk
+ */
+void modules_late_init(void) {
+	// Call the post-dynamic-load initcalls in the kernel
+	module_initcall_t *initcallArray = (module_initcall_t *) &__kern_lateinitcalls;
+
+	unsigned int i = 0;
+	while(initcallArray[i] != NULL) {
+		int returnValue = (initcallArray[i]());
+		i++;
+	}
 }
 
 /*
@@ -81,15 +100,6 @@ void modules_ramdisk_load() {
 	}
 
 	KSUCCESS("Dynamically loaded modules initialised");
-
-	// Call the post-dynamic-load initcalls in the kernel
-	module_initcall_t *initcallArray = (module_initcall_t *) &__kern_lateinitcalls;
-
-	unsigned int i = 0;
-	while(initcallArray[i] != NULL) {
-		int returnValue = (initcallArray[i]());
-		i++;
-	}
 }
 
 /*
@@ -390,7 +400,7 @@ void module_load(void *elf, char *moduleName) {
 	unsigned int progbits_end = module_placement_addr + progbits_size;
 
 	for(unsigned int a = module_placement_addr; a < progbits_end; a += 0x1000) {
-		unsigned int progbits_offset = (a - module_placement_addr);
+		unsigned int progbits_offset = a - module_placement_addr;
 		unsigned int progbits_virt_addr = ((unsigned int) elf) + progbits_offset;
 
 		// Get the page whose physical address we want
@@ -496,9 +506,25 @@ bool module_load_from_file(char *path, int *err) {
 	// Attempt to open file
 	fs_file_handle_t *module = hal_vfs_fopen(path, kFSFileModeReadOnly);
 	if(module) {
-		KDEBUG("Opened '%s'", path);
+		// Reject modules > 1MB in size
+		fs_file_t *file = hal_vfs_handle_to_file(module);
+		if(file->size > MODULE_MAX_SIZE) {
+			KERROR("%s is %u bytes, max %u bytes", path, (unsigned int) file->size, MODULE_MAX_SIZE);
+			return false;
+		}
 
+		// Get buffer and zero it
+		void *buf = (void *) paging_module_buffer();
+		memclr(buf, MODULE_MAX_SIZE);
+
+		// Read entire file
+		hal_vfs_fread(buf, file->size, module);
+
+		// Clean up
 		hal_vfs_fclose(module);
+
+		// Perform module loading
+		module_load(buf, file->i.name);
 	} else {
 		KERROR("Can't open '%s' for module read", path);
 	}

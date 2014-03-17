@@ -2,7 +2,7 @@
 #import "runtime/list.h"
 
 // Bus names
-#define PLATFORM_BUS_NAME	"platform"
+#define BUS_NAME_PLATFORM	"platform"
 #define BUS_NAME_PCI		"pci"
 
 // Error codes
@@ -77,3 +77,6 @@ bus_error_t hal_bus_register_driver(driver_t*, char*);
 
 // Tries to load drivers for devices on a bus that lack them
 void hal_bus_load_drivers(char *);
+
+// Matches all drivers
+int hal_bus_match_devices(void);

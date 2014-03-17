@@ -45,7 +45,7 @@ static i8042_ps2_t *shared_driver;
  * Register the driver.
  */
 static int i8042_ps2_init(void) {
-	hal_bus_register_driver((driver_t *) &driver, PLATFORM_BUS_NAME);
+	hal_bus_register_driver((driver_t *) &driver, BUS_NAME_PLATFORM);
 	return 0;
 }
 

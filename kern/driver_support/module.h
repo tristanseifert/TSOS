@@ -24,6 +24,11 @@ void modules_load();
 void modules_ramdisk_load();
 
 /*
+ * Late module initialisation, after additional modules have been loaded from disk
+ */
+void modules_late_init(void);
+
+/*
  * Loads a module from the specified memory address: it must NOT be deallocated
  * but may be unmapped from kernel space, as it is mapped again in the driver
  * address space.

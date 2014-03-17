@@ -47,7 +47,7 @@ static struct {
  * Register the driver.
  */
 static int rtc_driver_register(void) {
-	hal_bus_register_driver((driver_t *) &driver, PLATFORM_BUS_NAME);
+	hal_bus_register_driver((driver_t *) &driver, BUS_NAME_PLATFORM);
 	return 0;
 }
 

@@ -246,10 +246,13 @@ static void pci_probe_bus(pci_bus_t *bus) {
 			}
 
 			// Add "device" to the bus' node.children, and set the bus' node.parent.
-			device->d.node.name = "PCI Device";
+			device->d.node.name = "Unknown PCI Device";
 			device->d.node.parent = &bus->d.node;
 
-			list_add(bus->d.node.children, device);	
+			list_add(bus->d.node.children, device);
+
+			// Register with HAL
+			list_add(hal_bus_get_by_name(BUS_NAME_PCI)->devices, &device->d);
 		}
 	}	
 
@@ -328,7 +331,7 @@ static void pci_enumerate_busses(void) {
  * Initialises IRQ routing
  */
 static void pci_initialise_irq(uint8_t bus) {
-	
+
 }
 
 /*
@@ -380,18 +383,6 @@ static void pci_print_tree(void) {
 		}
 	}
 }
-
-/*
- * Go through all PCI devices that have been enumerated and try to load drivers
- * for them.
- */
-static int pci_load_drivers(void) {
-	hal_bus_load_drivers(BUS_NAME_PCI);
-
-	return 0;
-}
-
-module_post_driver_init(pci_load_drivers);
 
 /*
  * Initialise PCI subsystem

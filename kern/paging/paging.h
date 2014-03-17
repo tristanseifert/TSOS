@@ -56,6 +56,9 @@ void free_frame(page_t*);
 // Get statistics about paging
 paging_stats_t paging_get_stats();
 
+// Allocates a buffer with the specified size.
+unsigned int paging_alloc_buffer(size_t);
+
 // Initialises paging subsystem
 void paging_init();
 
