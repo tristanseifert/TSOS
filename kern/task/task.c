@@ -6,8 +6,6 @@
 static task_t *next_task;
 static task_t *current_task;
 
-task_state_t *task_switchto_state;
-
 // TSC value when this task started
 static uint64_t task_start_ticks;
 
@@ -18,7 +16,7 @@ static unsigned int last_pid;
 extern page_directory_t *kernel_directory;
 
 // Function to perform a context switch
-extern void task_context_switch(task_state_t state);
+extern void task_context_switch(thread_state_t state);
 
 /*
  * Creates a new task. This only sets up the struct and configures priority and
@@ -140,11 +138,11 @@ void task_switch(task_t *task) {
  * Called to cause the current task to yield, saving its register and FPU state
  * so it can be resumed later.
  */
-void task_yield(task_state_t state) {
+void task_yield(thread_state_t state) {
 	IRQ_OFF();
 
 	// Copy task state
-	memcpy(&current_task->cpu_state, &state, sizeof(task_state_t));
+	memcpy(&current_task->cpu_state, &state, sizeof(thread_state_t));
 
 	// Save FPU state, if neccesary
 	if(current_task->uses_fpu) {

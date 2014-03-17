@@ -67,7 +67,7 @@ bool hal_vfs_load(hal_disk_partition_t *partition, hal_disk_t *disk) {
 					fs_item_t *item = (fs_item_t *) list_get(dir->children, i);
 
 					if(item->type == kFSItemTypeFile) {
-						if(!strcmp("kernel.elf", item->name)) {
+						if(!strcmp("bootvol.txt", item->name)) {
 							KDEBUG("Found bootup volume");
 
 							thingie->mountpoint = (char *) "/";
@@ -128,7 +128,7 @@ fs_file_t *hal_vfs_allocate_file(fs_directory_t *d) {
 		file->i.permissions = d->i.permissions;
 
 		// Set parent
-		file->parent = d->i.handle;
+		file->parent = d;
 
 		// Add as a child of the parent
 		list_add(d->children, file);

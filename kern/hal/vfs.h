@@ -82,7 +82,7 @@ struct fs_directory {
 	fs_item_t i;
 
 	// Handle to the directory (or filesystem) containing this directory
-	hal_handle_t parent;
+	fs_item_t *parent;
 
 	// Files (or directories) contained by this directory
 	list_t *children;
@@ -104,7 +104,7 @@ struct fs_file {
 	unsigned int handles_open;
 
 	// Directory this file is contained in
-	hal_handle_t parent;
+	fs_directory_t *parent;
 
 	// Size (in bytes)
 	unsigned long long size;

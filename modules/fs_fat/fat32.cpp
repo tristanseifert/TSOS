@@ -283,7 +283,7 @@ fs_directory_t *fs_fat32::read_directory(fs_directory_t *dir, char *name, bool c
 
 		kfree(dirBuf);
 
-		currentDir->parent = dir->i.handle;
+		currentDir->parent = &dir->i;
 
 		if(cache) {
 			hashmap_insert(dirHandleCache, fullpath, (void *) currentDir->i.handle);
@@ -427,7 +427,7 @@ void fs_fat32::processFATDirEnt(fat_dirent_t *entries, unsigned int number, fs_d
 
 					fs_directory_t *dir = hal_vfs_allocate_directory(true);
 					dir->i.name = name;
-					dir->parent = root->i.handle;
+					dir->parent = &root->i;
 					item = &dir->i;
 
 					// Add directory as child
@@ -825,8 +825,7 @@ void fs_fat32::close_file_handle(fs_file_handle_t *handle) {
 	fs_file_t *file = (fs_file_t *) hal_handle_get_object(handle->file);
 	file->handles_open--;
 
-	fs_directory_t *parent = (fs_directory_t *) hal_handle_get_object(file->parent);
-	parent->handles_open--;
+	file->parent->handles_open--;
 }
 
 /*

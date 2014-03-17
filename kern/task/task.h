@@ -2,7 +2,7 @@
 #import "paging/paging.h"
 
 typedef struct task task_t;
-typedef struct task_state task_state_t;
+typedef struct thread_state thread_state_t;
 
 /*
  * Task priority: These map to one of 16 "queues" within the scheduler, so that
@@ -21,7 +21,7 @@ typedef enum {
 /*
  * State of a task
  */
-struct task_state {	
+struct thread_state {	
 	// When not 0, indicates that the task runs in kernel mode.
 	uint32_t kernel_mode;
 
@@ -51,7 +51,7 @@ struct task {
 	uint8_t priority; // 0-15, where 0 is least and 15 is most
 
 	// Task state
-	task_state_t cpu_state;
+	thread_state_t cpu_state;
 
 	// FPU state
 	bool uses_fpu;
@@ -99,4 +99,4 @@ void task_switch(task_t *task);
  * Called to cause the current task to yield, saving its register and FPU state
  * so it can be resumed later.
  */
-void task_yield(task_state_t state);
+void task_yield(thread_state_t state);

@@ -22,3 +22,4 @@ typedef void (*module_exitcall_t)(void);
 
 void modules_load();
 void modules_ramdisk_load();
+void module_load(void *elf, char *moduleName);

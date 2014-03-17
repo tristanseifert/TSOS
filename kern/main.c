@@ -24,7 +24,7 @@ const char KERNEL_VERSION[] = "0.1";
 extern uint32_t stack_top;
 
 // Idle task
-task_t *idle_task;
+task_t *idle_thread;
 
 /*
  * Kernel entry point
@@ -61,16 +61,16 @@ void main(void) {
 
 
 	// Allocate idle task
-	idle_task = task_new(kTaskPriorityIdle, true);
-	strncpy((char *) &idle_task->name, "Kernel Idle Task", 64);
+	idle_thread = task_new(kTaskPriorityIdle, true);
+	strncpy((char *) &idle_thread->name, "Kernel Idle Task", 64);
 
 	// Set up initial state (%esp and %eip)
-	idle_task->cpu_state.eip = (uint32_t) &kern_idle;
-	idle_task->cpu_state.usersp = (uint32_t) &stack_top;
-	idle_task->cpu_state.eax = 0xDEADBEEF;
+	idle_thread->cpu_state.eip = (uint32_t) &kern_idle;
+	idle_thread->cpu_state.usersp = (uint32_t) &stack_top;
+	idle_thread->cpu_state.eax = 0xDEADBEEF;
 
 	// Switch to the idle task.
-	task_switch(idle_task);
+	task_switch(idle_thread);
 
 	while(1);
 }
