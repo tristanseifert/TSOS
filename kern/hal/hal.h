@@ -15,6 +15,8 @@ extern "C" {
 #import <hal/bus.h>
 #import <hal/vfs.h>
 
+#import <acpi/acpi.h>
+
 // Interrupt handling
 typedef void (*hal_irq_callback_t)(void*);
 C_FUNCTION int hal_register_irq_handler(uint8_t irq, hal_irq_callback_t callback, void* ctx);

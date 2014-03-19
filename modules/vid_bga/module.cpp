@@ -1,5 +1,9 @@
 #import <module.h>
 
+extern "C" {
+	#import "bus/pci.h"
+}
+
 // Initialisers
 extern "C" void _init(void);
 
@@ -37,8 +41,13 @@ extern "C" {
 /*
  * Determines if the device can be supported.
  */
-static bool supportsDevice(device_t *dev) {
-	KDEBUG("device: 0x%08X", (unsigned int) dev);
+static bool supportsDevice(device_t *d) {
+	pci_device_t *dev = (pci_device_t *) d;
+
+	if(dev->ident.vendor == 0x1234 && dev->ident.device == 0x1111) {
+		return true;
+	}
+
 	return false;
 }
 
@@ -46,5 +55,6 @@ static bool supportsDevice(device_t *dev) {
  * Initialises the driver on the specific device.
  */
 static void *initDriver(device_t *dev) {
+	KDEBUG("Initialising Bochs Graphics Driver");
 	return NULL;
 }

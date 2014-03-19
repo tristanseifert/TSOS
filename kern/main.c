@@ -83,14 +83,17 @@ void kern_idle(void) {
 	uint32_t temp;
 	__asm__ volatile("mov %%esp, %0" : "=r" (temp));
 	KSUCCESS("Kernel idle task started");
-	
-	hal_run_init_handlers();
 
-	// We can't do anything unless the root fs is mounted
-	if(!hal_vfs_root_mounted()) PANIC("No root mounted");
+	hal_run_init_handlers();
 
 	// Ensure IRQs are on
 	IRQ_RES();
+
+	// Initialise ACPI
+	acpi_init();
+
+	// We can't do anything unless the root fs is mounted
+	if(!hal_vfs_root_mounted()) PANIC("No root mounted");
 
 	// Load the drivers specified in the file at /etc/modules.cfg
 	fs_file_handle_t *modules = hal_vfs_fopen((char *) __kcfg_modules_list_path, kFSFileModeReadOnly);

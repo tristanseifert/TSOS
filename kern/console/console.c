@@ -24,6 +24,14 @@ static enum vga_colour log_level_colour[6][2] = {
 };
 
 /*
+ * Prints a character on the console.
+ */
+void console_putc(char c) {
+	io_outb(0xE9, c);
+	vga_console_putchar(c);	
+}
+
+/*
  * General printf function
  */
 int kprintf(const char* format, ...) {
@@ -37,8 +45,7 @@ int kprintf(const char* format, ...) {
 
 	// Excrete each char of the buffer
 	while(*buf != 0x00) {
-		io_outb(0xE9, *buf);
-		vga_console_putchar(*buf++);
+		console_putc(*buf++);
 	}
 
 	return n;
@@ -71,8 +78,7 @@ int klog(enum log_type type, const char* format, ...) {
 	// Display each char of the buffer
 	for(int i = 0; i < 1024+32; i++) {
 		if(log_buffer[i]) {
-			io_outb(0xE9, log_buffer[i]);
-			vga_console_putchar(log_buffer[i]);
+			console_putc(log_buffer[i]);
 		} else {
 			// Terminating character reached
 			break;

@@ -28,7 +28,7 @@ a few have provided the majority of the input and deserve special mention:
 //  of values that are legitimately found on the PCI bus.  The size
 //  definitions should be used for loop control when the table is searched.
 
-typedef struct {
+/*typedef struct {
 	uint16_t vendor_id;
 	char *vendor_short;
 	char *vendor_full;
@@ -1606,7 +1606,7 @@ pci_str_vendor_t pci_map_vendor[] = {
 	{0xFFFF, "Generic", "Generic"}
 };
 
-#define	PCI_VENDOR_MAP_LENGTH	(sizeof(pci_map_vendor) / sizeof(pci_str_vendor_t))
+#define	PCI_VENDOR_MAP_LENGTH	(sizeof(pci_map_vendor) / sizeof(pci_str_vendor_t))*/
 
 typedef struct {
 	uint16_t vendor_id;
@@ -1618,6 +1618,9 @@ typedef struct {
 pci_str_device_t pci_map_device[] = {
 	// AGP bus
 	{0xFFFF, 0xDEAD, "AGP Bridge", "AGP Bus Bridge"},
+
+	// Emulated PCI devices
+	{0x1234, 0x1111, "BGA Adapter", "Bochs Graphics Adapter"},
 
 	// Actual PCI devices
 	{0x165C, 0x0002, "FT232BL", "FT232BL"},

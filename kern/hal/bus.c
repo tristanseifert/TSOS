@@ -4,7 +4,7 @@
 #define DEBUG_DRIVER_REG	0
 #define DEBUG_DEVICE_REG	0
 #define DEBUG_BUS_REG		0
-#define DEBUG_DRIVER_MATCH	1
+#define DEBUG_DRIVER_MATCH	0
 
 static hashmap_t *busses;
 static list_t *bus_names;
@@ -82,11 +82,16 @@ void hal_bus_load_drivers(char *name) {
 
 					// This driver supports this device
 					if(driver->supportsDevice(device)) {
-						device->driver = driver;
 
 						// Run driver data fetching method, if defined
 						if(driver->getDriverData) {
-							device->device_info = driver->getDriverData(device);
+							void *driverInfo = driver->getDriverData(device);
+
+							// Ignore drivers that return NULL
+							if(driverInfo) {
+								device->device_info = driverInfo;
+								device->driver = driver;
+							}
 						}
 
 						#if DEBUG_DRIVER_MATCH

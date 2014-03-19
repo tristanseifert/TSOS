@@ -19,4 +19,6 @@ void x86_pc_write_msr(uint32_t msr, uint32_t lo, uint32_t hi);
 
 uint64_t x86_pc_read_tsc(void);
 
+void x86_flush_cpu_caches(void);
+
 #endif

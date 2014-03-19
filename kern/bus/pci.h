@@ -26,7 +26,7 @@ typedef struct {
 typedef struct {
 	uint16_t vendor;
 	uint16_t device;
-	uint32_t class;
+	uint32_t dev_class;
 	uint32_t class_mask;
 } pci_ident_t;
 
@@ -37,8 +37,10 @@ typedef struct pci_loc {
 typedef struct {
 	pci_ident_t ident;
 
-	uint32_t class;
+	uint32_t dev_class;
 	pci_bar_t bar[6];
+
+	char *name;
 } pci_function_t;
 
 typedef struct {

@@ -11,6 +11,8 @@ enum log_type {
 
 #define CONSOLE_MIN_LOG_LEVEL kLogLevelDebug
 
+void console_putc(char c);
+
 int kprintf(const char* format, ...) __attribute__ ((format (printf, 1, 2)));
 int klog(enum log_type type, const char* format, ...) __attribute__ ((format (printf, 2, 3)));
 

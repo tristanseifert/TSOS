@@ -1,6 +1,8 @@
 #import <types.h>
 #import "runtime/list.h"
 
+#define BUS_NO_INIT_DATA	((void *) 0xDEAFBEEF)
+
 // Bus names
 #define BUS_NAME_PLATFORM	"platform"
 #define BUS_NAME_PCI		"pci"

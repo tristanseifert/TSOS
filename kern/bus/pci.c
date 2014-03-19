@@ -2,6 +2,8 @@
 #import "hal/hal.h"
 #import "pci.h"
 
+#import "pci_tables.h"
+
 #define PCI_CONFIG_ADDR 0xCF8
 #define PCI_CONFIG_DATA 0xCFC
 
@@ -12,6 +14,7 @@ static void pci_enumerate_busses(void);
 
 static void pci_initialise_irq(uint8_t bus);
 
+static pci_str_device_t* pci_info_get_device(uint16_t vendor, uint16_t device);
 static void pci_print_tree(void);
 
 // Struct passed to bus driver
@@ -127,7 +130,7 @@ void pci_device_update_bar(pci_device_t *d, int function, int bar, uint32_t valu
 static void pci_set_function_info(uint8_t bus, uint8_t device, uint8_t function, pci_function_t* finfo) {
 	uint32_t temp;
 
-	finfo->class = pci_config_read(bus, device, function, 0x08);
+	finfo->dev_class = pci_config_read(bus, device, function, 0x08);
 
 	uint8_t header_type = ((pci_config_read(bus, device, function, 0x0C)) >> 0x10) & 0x7F;
 
@@ -210,7 +213,7 @@ static void pci_probe_bus(pci_bus_t *bus) {
 
 			device->ident.vendor = vendor_id;
 			device->ident.device = device_id;
-			device->ident.class = pci_config_read(bus_number, i, 0, 0x08);
+			device->ident.dev_class = pci_config_read(bus_number, i, 0, 0x08);
 			device->ident.class_mask = 0xFFFFFFFF;
 
 			device->location.bus = bus_number;
@@ -239,14 +242,33 @@ static void pci_probe_bus(pci_bus_t *bus) {
 
 						device->function[f].ident.device = temp >> 0x10;
 					}
+
+					// Set up name
+					pci_str_device_t *dev = pci_info_get_device(vendor_id, device->function[f].ident.device);
+
+					if(dev) {
+						device->function[f].name = dev->chip_desc;
+					} else {
+						device->function[f].name = "Unknown PCI Function";
+					}
 				}
 			} else {
 				pci_set_function_info(bus_number, i, 0, &device->function[0]);
 				device->multifunction = false;
 			}
 
+			// See if we have a sqongulating name
+			pci_str_device_t *dev = pci_info_get_device(vendor_id, device_id);
+
+			if(dev) {
+				device->d.node.name = dev->chip_desc;
+			} else if(device->multifunction) {
+				device->d.node.name = "Multifunction PCI Device";
+			} else {
+				device->d.node.name = "Unknown PCI Device";
+			}
+
 			// Add "device" to the bus' node.children, and set the bus' node.parent.
-			device->d.node.name = "Unknown PCI Device";
 			device->d.node.parent = &bus->d.node;
 
 			list_add(bus->d.node.children, device);
@@ -328,6 +350,19 @@ static void pci_enumerate_busses(void) {
 }
 
 /*
+ * Tries to find some info about the given device by the specified vendor.
+ */
+static pci_str_device_t* pci_info_get_device(uint16_t vendor, uint16_t device) {
+	for(int i = 0; i < PCI_DEVTABLE_LEN; i++) {
+		if(unlikely((pci_map_device[i].vendor_id == vendor) && pci_map_device[i].device_id == device)) {
+			return &pci_map_device[i];
+		}
+	}
+
+	return NULL;
+}
+
+/*
  * Initialises IRQ routing
  */
 static void pci_initialise_irq(uint8_t bus) {
@@ -359,7 +394,7 @@ static void pci_print_tree(void) {
 						uint16_t device_id = device->ident.device;
 
 						if(device->multifunction) {
-							KDEBUG(" Device %u: Multifunction", d);
+							KDEBUG(" Device %u: %s", d, device->d.node.name);
 
 							for(int f = 0; f < 7; f++) {
 								pci_function_t function = device->function[f];
@@ -368,14 +403,15 @@ static void pci_print_tree(void) {
 
 								// This function is defined
 								if(vendor_id != 0xFFFF) {
-									KDEBUG("  Function %u[%.4X:%.4X %.2X:%.2X]", f, 
+									KDEBUG("  Function %u[%.4X:%.4X %.2X:%.2X]: %s", f, 
 										vendor_id, device_id, 
-										(unsigned int) PCI_GET_CLASS(function.class), 
-										(unsigned int) PCI_GET_SUBCLASS(function.class));
+										(unsigned int) PCI_GET_CLASS(function.dev_class), 
+										(unsigned int) PCI_GET_SUBCLASS(function.dev_class),
+										function.name);
 								}
 							}
 						} else {
-							KDEBUG(" Device %u[%.4X:%.4X]", d, vendor_id, device_id);
+							KDEBUG(" Device %u[%.4X:%.4X]: %s", d, vendor_id, device_id, device->d.node.name);
 						}
 					}
 				}

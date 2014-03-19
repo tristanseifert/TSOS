@@ -40,8 +40,13 @@ static inline uint8_t vga_read_reg(uint16_t iport, uint8_t reg){
 }
 
 // Selected screen mode size
+#if VGA_USE_90x30_MODE
 #define SCREEN_COLS 				90
 #define SCREEN_ROWS					30
+#else
+#define SCREEN_COLS 				80
+#define SCREEN_ROWS					25
+#endif
 
 // Sequencer IO Ports
 #define VGA_SEQ_INDEX_PORT			0x3C4
@@ -78,6 +83,7 @@ static inline uint8_t vga_read_reg(uint16_t iport, uint8_t reg){
 // Miscellaneous register write
 #define	VGA_MISC_WRITE				0x3C2
 
+#if VGA_USE_90x30_MODE
 static uint8_t vga_text_mode_regs[] = {
 	// MISC
 	0xE7,
@@ -96,6 +102,7 @@ static uint8_t vga_text_mode_regs[] = {
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
 	0x0C, 0x00, 0x0F, 0x08, 0x00,
 };
+#endif
 
 /*
  * Clears the screen.
@@ -131,8 +138,10 @@ void vga_init(void) {
 	vga_load_font((unsigned char *) &vga_font_normal);
 	#endif
 
+#if VGA_USE_90x30_MODE
 	// Enter 90x30 text mode
 	vga_update_regs();
+#endif
 }
 
 /*
@@ -297,6 +306,7 @@ static void vga_load_font(unsigned char *font) {
 	vga_write_reg(VGA_GC_INDEX_PORT, VGA_GC_MISC_REG, 0x0C);	
 }
 
+#if VGA_USE_90x30_MODE
 /*
  * Enters the 90x30 text mode.
  */
@@ -346,3 +356,4 @@ static void vga_update_regs(void) {
 	io_inb(0x3DA);
 	io_outb(VGA_AC_INDEX_PORT, 0x20);
 }
+#endif

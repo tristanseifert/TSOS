@@ -91,7 +91,7 @@ static void* rtc_init(device_t *dev) {
 	// Re-enable IRQs
 	IRQ_RES();
 
-	return NULL;
+	return BUS_NO_INIT_DATA;
 }
 
 /*

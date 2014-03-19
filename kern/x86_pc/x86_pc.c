@@ -160,3 +160,10 @@ uint64_t x86_pc_read_tsc(void) {
 	__asm__ volatile("rdtsc" : "=a" (lo), "=d" (hi));
 	return (uint64_t) hi << 32 | lo;
 }
+
+/*
+ * Flush CPU caches?
+ */
+void x86_flush_cpu_caches(void) {
+
+}
