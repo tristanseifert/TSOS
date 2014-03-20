@@ -516,27 +516,119 @@ int memcmp(const void* ptr1, const void* ptr2, size_t num) {
 
 /*
  * Copies num bytes from source to destination.
+ *
+ * This uses several optimisations for the Pentium 3 and above: copies less
+ * than 64 bytes use a simple loop with "rep movsd," whereas anything above
+ * uses a slightly more complicated version that prefetches large chunks of
+ * data at a time.
  */
 void* memcpy(void* destination, void* source, size_t num) {
-	uint32_t *dst = (uint32_t *) destination;
-	uint32_t *src = (uint32_t *) source;
+	// Prefetch the first 32 bytes
+	__asm__ volatile("prefetchnta (%0)\n" : : "r" (source));
 
-	int i = 0;
-	for(i = 0; i < num/4; i++) {
-		*dst++ = *src++;
-	}
+	// Pointer to return at end of function
+	void *returnPtr = destination;
 
-	// If we have more bytes to copy, perform the copy
-	if((i * 4) != num) {
-		uint8_t *dst_byte = (uint8_t *) dst;
-		uint8_t *src_byte = (uint8_t *) src;
+	// Is copy less than 64 bytes?
+	if(num <= 64) {
+		// If the copy is more than 32 bytes, prefetch the next 32 bytes
+		if(likely(num > 32)) {
+			__asm__ volatile("prefetchnta 32(%0)\n" : : "r" (source));			
+		}
 
-		for(int x = (i * 4); x < num; x++) {
-			*dst_byte++ = *src_byte++;
+		// Copy entire dwords
+		unsigned int dwords = ((num & 0x3F) / 4);
+		register unsigned long int dummy;
+		__asm__ volatile("rep; movsd" :
+			"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+			"0" (destination), "1" (source), "2" (dwords) :
+			"memory");
+
+		// Copy any remaining bytes
+		unsigned int remaining = (num & 0x03);
+
+		if(unlikely(remaining)) {
+			__asm__ volatile("rep; movsb" :
+				"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+				"0" (destination), "1" (source),"2" (remaining) :
+				"memory");
+		}
+	} else {
+		// Size less than 4K?
+		if(num < 4096) {
+			// Determine number of 32-byte blocks to prefetch
+			unsigned int blocks = (num - 32) / 32;
+
+			for(unsigned int i = 0; i < blocks; i++) {
+				__asm__ volatile("prefetchnta (%0)\n" : : "r" (source + (i * 32) + 32));				
+			}
+
+			// Copy dwords
+			unsigned int dwords = (num / 4);
+			register unsigned long int dummy;
+			__asm__ volatile("rep movsd" :
+				"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+				"0" (destination), "1" (source),"2" (dwords) :
+				"memory");
+
+			// Any remaining bytes?
+			unsigned int remaining = num & 0x03;
+
+			if(unlikely(remaining)) {
+			__asm__ volatile("rep movsb" :
+				"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+				"0" (destination), "1" (source),"2" (remaining) :
+				"memory");
+			}
+		} else {
+			// Number of 4k blocks
+			unsigned int blocks = (num + 4095) / 4096;
+
+			// Process each block
+			for(unsigned int block = 0; block < blocks; block++) {
+				// We can copy an entire 4k block
+				if(likely(num > 4096)) {
+					// Prefetch 4K
+					for(unsigned int i = 0; i < 128; i++) {
+						__asm__ volatile("prefetchnta (%0)\n" : : "r" (source + (i * 32) + 32));				
+					}
+
+					// Now copy 4k
+					register unsigned long int dummy;
+					__asm__ volatile("rep; movsd" :
+						"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+						"0" (destination), "1" (source),"2" (1024) :
+						"memory");
+				} else { // < 4096 bytes left
+					// Copy dwords
+					unsigned int dwords = (num / 4);
+					register unsigned long int dummy;
+					__asm__ volatile("rep; movsd" :
+						"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+						"0" (destination), "1" (source),"2" (dwords) :
+						"memory");
+
+					// Copy remaining bytes
+					unsigned int remaining = num & 0x03;
+
+					if(unlikely(remaining)) {
+					__asm__ volatile("rep; movsb" :
+						"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+						"0" (destination), "1" (source),"2" (remaining) :
+						"memory");
+					}
+
+					// Done.
+					return returnPtr;
+				}
+
+				// Decrement bytes remaining
+				num -= 4096;
+			}
 		}
 	}
 
-	return destination;
+	return returnPtr;
 }
 
 /*
@@ -571,7 +663,7 @@ void* memclr(void* start, size_t count) {
 
 void *memmove(void *dest, const void *src, size_t n) {
 	uint8_t tmp[n];
-	memcpy(tmp, (char *) src, n);
+	memcpy(tmp, (void *) src, n);
 	memcpy(dest, tmp, n);
 	return dest;
 }
