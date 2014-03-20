@@ -1,9 +1,12 @@
 # TSOS
-(Also known as **T**otally **S**hitty **O**perating **S**ystem)
+(Also known as Totally Shitty Operating System)
 
 Something resembling MS-DOS, except with 100% more Protected Mode. But not much more. Because I can never write enough operating systems. That's why. 
 
 Got any more questions? No? I thought so.
+
+## Screenshots
+![bootup](https://dl.dropboxusercontent.com/u/14283494/Forum%20Images/Github/TSOS/Screen%20Shot%202014-03-19%20at%2020.09.11.PNG)
 
 ## License
 The source code is released under the BSD license.

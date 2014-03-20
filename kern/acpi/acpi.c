@@ -14,6 +14,8 @@ static char *acpi_printf_buffer;
  * Initialises ACPI.
  */
 int acpi_init(void) {
+	return 0;
+
 	ACPI_STATUS status;
 
 	// Initialise ACPI buffers
