@@ -3,8 +3,6 @@
 #import <limits.h>
 #import <errno.h>
 
-#define SSE_XMSIZE 0x10
-
 /*
  * Portions of this code are taken from the OpenBSD libc, released under the
  * following license:
@@ -424,7 +422,6 @@ unsigned long strtoul(const char *nptr, char **endptr, int base) {
 	/*
 	 * See strtol for comments as to the logic used.
 	 */
-
 	do {
 		c = *s++;
 	} while (isspace(c));
@@ -575,10 +572,10 @@ void* memcpy(void* destination, void* source, size_t num) {
 			unsigned int remaining = num & 0x03;
 
 			if(unlikely(remaining)) {
-			__asm__ volatile("rep movsb" :
-				"=&D"(destination), "=&S"(source), "=&c"(dummy) :
-				"0" (destination), "1" (source),"2" (remaining) :
-				"memory");
+				__asm__ volatile("rep movsb" :
+					"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+					"0" (destination), "1" (source),"2" (remaining) :
+					"memory");
 			}
 		} else {
 			// Number of 4k blocks
@@ -589,17 +586,22 @@ void* memcpy(void* destination, void* source, size_t num) {
 				// We can copy an entire 4k block
 				if(likely(num > 4096)) {
 					// Prefetch 4K
+					for(unsigned int i = 0; i < (num + 31) / 32; i++) {
+						__asm__ volatile("prefetchnta (%0)\n" : : "r" (source + (i * 32) + 32));				
+					}
+
+					// Copy a 4k block
+					register unsigned long int dummy;
+					__asm__ volatile("rep; movsd" :
+						"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+						"0" (destination), "1" (source), "2" (1024) :
+						"memory");
+				} else { // < 4096 bytes left
+					// Prefetch
 					for(unsigned int i = 0; i < 128; i++) {
 						__asm__ volatile("prefetchnta (%0)\n" : : "r" (source + (i * 32) + 32));				
 					}
 
-					// Now copy 4k
-					register unsigned long int dummy;
-					__asm__ volatile("rep; movsd" :
-						"=&D"(destination), "=&S"(source), "=&c"(dummy) :
-						"0" (destination), "1" (source),"2" (1024) :
-						"memory");
-				} else { // < 4096 bytes left
 					// Copy dwords
 					unsigned int dwords = (num / 4);
 					register unsigned long int dummy;
@@ -612,10 +614,10 @@ void* memcpy(void* destination, void* source, size_t num) {
 					unsigned int remaining = num & 0x03;
 
 					if(unlikely(remaining)) {
-					__asm__ volatile("rep; movsb" :
-						"=&D"(destination), "=&S"(source), "=&c"(dummy) :
-						"0" (destination), "1" (source),"2" (remaining) :
-						"memory");
+						__asm__ volatile("rep; movsb" :
+							"=&D"(destination), "=&S"(source), "=&c"(dummy) :
+							"0" (destination), "1" (source),"2" (remaining) :
+							"memory");
 					}
 
 					// Done.
@@ -635,7 +637,8 @@ void* memcpy(void* destination, void* source, size_t num) {
  * Fills a given segment of memory with a specified value.
  */
 void* memset(void* ptr, uint8_t value, size_t num) {
-	if(value == 0x00) {
+	// make zero fills faster
+	if(unlikely(value == 0x00)) {
 		return memclr(ptr, num);
 	}
 

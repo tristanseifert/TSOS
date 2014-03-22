@@ -90,10 +90,10 @@ void kern_idle(void) {
 	IRQ_RES();
 
 	// Initialise ACPI
-	acpi_init();
+	// acpi_init();
 
 	// We can't do anything unless the root fs is mounted
-	if(!hal_vfs_root_mounted()) PANIC("No root mounted");
+	if(!hal_vfs_root_mounted()) PANIC("No root fs mounted");
 
 	// Load the drivers specified in the file at /etc/modules.cfg
 	fs_file_handle_t *modules = hal_vfs_fopen((char *) __kcfg_modules_list_path, kFSFileModeReadOnly);
