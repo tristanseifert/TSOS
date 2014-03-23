@@ -48,6 +48,9 @@ typedef struct paging_stats {
 	unsigned int pages_wired;
 } paging_stats_t;
 
+// Kernel page directory
+extern page_directory_t *kernel_directory;
+
 // Allocate physical memory to a page frame
 void alloc_frame(page_t*, bool, bool);
 // Deallocate physical memory from a page frame

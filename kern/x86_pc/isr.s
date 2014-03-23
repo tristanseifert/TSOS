@@ -202,4 +202,5 @@ error_common_stub:
 
 .globl irq_dummy
 irq_dummy:
+	sti
 	iret

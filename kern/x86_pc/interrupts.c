@@ -35,12 +35,14 @@ void irq_handler(uint32_t irq) {
 
 	// IRQs 7 and 15 can be spurious
 	if(irq == 7 || irq == 15) {
-		uint16_t isr = i8259_get_isr();
+		if(pic_enabled) {
+			uint16_t isr = i8259_get_isr();
 
-		// If the in-service bit for the IRQ isn't set, the IRQ was spurious
-		if(!(isr & (1 << irq))) {
-			irqs_spurious++;
-			return;
+			// If the in-service bit for the IRQ isn't set, the IRQ was spurious
+			if(!(isr & (1 << irq))) {
+				irqs_spurious++;
+				return;
+			}
 		}
 	}
 	

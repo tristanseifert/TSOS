@@ -8,10 +8,43 @@
 #import "8259_pic.h"
 #import "8254_pit.h"
 #import "tss.h"
+#import "apic.h"
 
 #import "task/systimer.h"
 
 #import "driver_support/ramdisk.h"
+
+#define MAX_IRQ 16
+
+// Assembly IRQ handlers
+extern void irq_0(void); 
+extern void irq_1(void); 
+extern void irq_2(void); 
+extern void irq_3(void); 
+extern void irq_4(void); 
+extern void irq_5(void); 
+extern void irq_6(void); 
+extern void irq_7(void); 
+extern void irq_8(void); 
+extern void irq_9(void); 
+extern void irq_10(void); 
+extern void irq_11(void); 
+extern void irq_12(void); 
+extern void irq_13(void); 
+extern void irq_14(void); 
+extern void irq_15(void); 
+
+// Assembly IRQ handlers
+static const uint32_t asm_irq_handlers[MAX_IRQ] = {
+	(uint32_t) irq_0, (uint32_t) irq_1,
+	(uint32_t) irq_2, (uint32_t) irq_3,
+	(uint32_t) irq_4, (uint32_t) irq_5,
+	(uint32_t) irq_6, (uint32_t) irq_7,
+	(uint32_t) irq_8, (uint32_t) irq_9,
+	(uint32_t) irq_10, (uint32_t) irq_11,
+	(uint32_t) irq_12, (uint32_t) irq_13,
+	(uint32_t) irq_14, (uint32_t) irq_15,
+};
 
 // Some info from the ELF
 char *kern_elf_strtab;
@@ -110,11 +143,21 @@ void x86_pc_init(void) {
 	// Set up IDT
 	idt_init();
 
-	// Set up bogus TSS
+	// Set up a TSS (for CR3 => CR0 ints)
 	tss_init();
 
-	// Remap PICs
-	i8259_remap(0x20, 0x28);
+	// Determine if we can use APIC
+	if(apic_supported()) {
+		apic_init();
+	} else {
+		// Set up IRQ gates
+		for(int irq = 0; irq < 16; irq++) {
+			idt_set_gate(irq+0x20, asm_irq_handlers[irq], GDT_KERNEL_CODE, 0x8E);
+		}
+
+		// Remap PICs
+		i8259_remap(0x20, 0x28);
+	}
 
 	// Set up system timer
 	x86_pc_init_timer();
