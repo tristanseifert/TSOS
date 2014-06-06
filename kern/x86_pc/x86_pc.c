@@ -147,9 +147,9 @@ void x86_pc_init(void) {
 	tss_init();
 
 	// Determine if we can use APIC
-	if(apic_supported()) {
+/*	if(apic_supported()) {
 		apic_init();
-	} else {
+	} else {*/
 		// Set up IRQ gates
 		for(int irq = 0; irq < 16; irq++) {
 			idt_set_gate(irq+0x20, asm_irq_handlers[irq], GDT_KERNEL_CODE, 0x8E);
@@ -157,7 +157,7 @@ void x86_pc_init(void) {
 
 		// Remap PICs
 		i8259_remap(0x20, 0x28);
-	}
+//	}
 
 	// Set up system timer
 	x86_pc_init_timer();

@@ -16,7 +16,7 @@ static unsigned int last_pid;
 extern page_directory_t *kernel_directory;
 
 // Function to perform a context switch
-extern void task_context_switch(thread_state_t state);
+extern void __attribute__((noreturn)) task_context_switch(thread_state_t state);
 
 /*
  * Creates a new task. This only sets up the struct and configures priority and
@@ -110,7 +110,7 @@ void task_map(task_t *task, uint32_t kern_addr, size_t length, uint32_t user_add
  *
  * @param task Task to switch to
  */
-void task_switch(task_t *task) {
+void __attribute__((noreturn)) task_switch(task_t *task) {
 	IRQ_OFF();
 	current_task = task;
 
@@ -138,7 +138,7 @@ void task_switch(task_t *task) {
  * Called to cause the current task to yield, saving its register and FPU state
  * so it can be resumed later.
  */
-void task_yield(thread_state_t state) {
+void __attribute__((noreturn)) task_yield(thread_state_t state) {
 	IRQ_OFF();
 
 	// Copy task state

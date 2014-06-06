@@ -26,7 +26,8 @@ const char KERNEL_VERSION[] = "0.1";
 extern uint32_t stack_top;
 
 // Idle task
-task_t *idle_thread;
+task_t *idle_thread = NULL;
+static task_t *gInitTask = NULL;
 
 /*
  * Kernel entry point
@@ -63,7 +64,7 @@ void main(void) {
 
 	// Allocate idle task
 	idle_thread = task_new(kTaskPriorityIdle, true);
-	strncpy((char *) &idle_thread->name, "Kernel Idle Task", 64);
+	strncpy((char *) &idle_thread->name, "Kernel Idle Task", sizeof(idle_thread->name));
 
 	// Set up initial state (%esp and %eip)
 	idle_thread->cpu_state.eip = (uint32_t) &kern_idle;
@@ -72,8 +73,6 @@ void main(void) {
 
 	// Switch to the idle task.
 	task_switch(idle_thread);
-
-	while(1);
 }
 
 /*
@@ -139,6 +138,17 @@ void kern_idle(void) {
 
 	// Load drivers for devices that still need them
 	hal_bus_match_devices();
+
+	// Start "init" process in userland
+	KINFO("Starting \"init\" now...");
+
+	// Load "/bin/init" from disk
+	fs_file_handle_t *init = hal_vfs_fopen((char *) "/bin/init", kFSFileModeReadOnly);
+	if(init) {
+		gInitTask = task_new(kTaskPriorityHigh, false);
+	} else {
+		PANIC("couldn't start init");
+	}
 
 	/*
 	 * Use of the "hlt" instruction allows the CPU to enter lower P states and

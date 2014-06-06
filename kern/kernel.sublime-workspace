@@ -4,12 +4,104 @@
 		"selected_items":
 		[
 			[
-				"i",
-				"i8254_mode_t"
+				"ramdis",
+				"ramdisk_loc"
+			],
+			[
+				"un",
+				"uint32_t"
+			],
+			[
+				"irq_callback",
+				"irq_callback_t"
+			],
+			[
+				"irq_register",
+				"irq_register_handler_ctx"
+			],
+			[
+				"kLogLevel",
+				"kLogLevelError"
+			],
+			[
+				"kLogL",
+				"kLogLevelWarning"
+			],
+			[
+				"I8042",
+				"I8042_SENDQUEUE_SIZE"
+			],
+			[
+				"I804",
+				"I8042_SENDQUEUE_SIZE"
+			],
+			[
+				"sendqueue",
+				"sendqueue_bytes"
+			],
+			[
+				"ctrl",
+				"ctrl_l"
+			],
+			[
+				"shift",
+				"shift_l"
+			],
+			[
+				"ps2_kbd_speci",
+				"ps2_kbd_special_key_up"
+			],
+			[
+				"kStateKey",
+				"kStateKeyReleaseKey"
+			],
+			[
+				"kLogLevle",
+				"kLogLevelSuccess"
+			],
+			[
+				"i8259_",
+				"i8259_eoi"
+			],
+			[
+				"i8042_ps2",
+				"i8042_ps2_device_t"
+			],
+			[
+				"i80",
+				"i8042_flush_send_queue"
+			],
+			[
+				"kL",
+				"klog"
+			],
+			[
+				"i804",
+				"i8042_device_type_t"
+			],
+			[
+				"I80",
+				"I8042_COMMAND_PORT"
+			],
+			[
+				"I",
+				"I8042_STATUS_PORT"
+			],
+			[
+				"I8042_",
+				"I8042_DATA_PORT"
 			],
 			[
 				"i8",
-				"i8254_set_ticks"
+				"i8042_ps2_device"
+			],
+			[
+				"I8",
+				"I8042_COMMAND_PORT"
+			],
+			[
+				"i",
+				"i8254_mode_t"
 			],
 			[
 				"i82",
@@ -132,50 +224,18 @@
 	"buffers":
 	[
 		{
-			"file": "x86_pc/x86_pc.c",
+			"file": "x86_pc/apic.c",
 			"settings":
 			{
-				"buffer_size": 4586,
+				"buffer_size": 2526,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "x86_pc/x86_pc.h",
+			"file": "x86_pc/apic.h",
 			"settings":
 			{
-				"buffer_size": 474,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "x86_pc/multiboot.h",
-			"settings":
-			{
-				"buffer_size": 4577,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "x86_pc/isr.s",
-			"settings":
-			{
-				"buffer_size": 6276,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "x86_pc/8254_pit.c",
-			"settings":
-			{
-				"buffer_size": 745,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "x86_pc/8254_pit.h",
-			"settings":
-			{
-				"buffer_size": 246,
+				"buffer_size": 67,
 				"line_ending": "Unix"
 			}
 		},
@@ -183,7 +243,7 @@
 			"file": "x86_pc/interrupts.c",
 			"settings":
 			{
-				"buffer_size": 2774,
+				"buffer_size": 2521,
 				"line_ending": "Unix"
 			}
 		},
@@ -191,7 +251,47 @@
 			"file": "x86_pc/interrupts.h",
 			"settings":
 			{
-				"buffer_size": 201,
+				"buffer_size": 269,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/x86_pc.c",
+			"settings":
+			{
+				"buffer_size": 5981,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/x86_pc.h",
+			"settings":
+			{
+				"buffer_size": 508,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/tss.c",
+			"settings":
+			{
+				"buffer_size": 1266,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/tss.h",
+			"settings":
+			{
+				"buffer_size": 849,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "x86_pc/8042_ps2.c",
+			"settings":
+			{
+				"buffer_size": 15021,
 				"line_ending": "Unix"
 			}
 		}
@@ -220,27 +320,41 @@
 	},
 	"file_history":
 	[
-		"/Users/tristanseifert/TSOS/kern/x86_pc/tss.h",
-		"/Users/tristanseifert/TSOS/kern/x86_pc/tss.c",
-		"/Users/tristanseifert/TSOS/kern/runtime/error.h",
-		"/Users/tristanseifert/TSOS/kern/x86_pc/Makefile",
-		"/Users/tristanseifert/TSOS/kern/x86_pc/isr.S",
 		"/Users/tristanseifert/TSOS/kern/x86_pc/isr.s",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/idt.c",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/8259_pic.c",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/Makefile",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/cmos_rtc.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/cmos_rtc.c",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/ps2_kbd.c",
+		"/Users/tristanseifert/TSOS/kern/includes/types.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/8042_ps2.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/binfmt_elf.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/multiboot.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/ps2_kbd.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/idt.h",
+		"/Users/tristanseifert/TSOS/kern/console/vga_console.c",
+		"/Users/tristanseifert/TSOS/build.sh",
+		"/Users/tristanseifert/TSOS/kern/kernel.sublime-project",
+		"/Users/tristanseifert/TSOS/kern/runtime/hashmap.c",
+		"/Users/tristanseifert/TSOS/kern/runtime/hashmap.h",
+		"/Users/tristanseifert/TSOS/kern/kern.ld",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/tss.c",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/8254_pit.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/8254_pit.c",
+		"/Users/tristanseifert/TSOS/kern/runtime/error.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/tss.h",
+		"/Users/tristanseifert/TSOS/kern/x86_pc/isr.S",
 		"/Users/tristanseifert/TSOS/kern/Makefile",
 		"/Users/tristanseifert/TSOS/kern/kernel.elf_symbols.txt",
 		"/Users/tristanseifert/TSOS/kern/x86_pc/8259_pic.h",
-		"/Users/tristanseifert/TSOS/kern/x86_pc/8259_pic.c",
 		"/Users/tristanseifert/TSOS/kern/task/Makefile",
 		"/Users/tristanseifert/TSOS/bochsrc.txt",
-		"/Users/tristanseifert/TSOS/kern/x86_pc/idt.h",
-		"/Users/tristanseifert/TSOS/kern/x86_pc/idt.c",
 		"/Users/tristanseifert/TSOS/kern/runtime/Makefile",
-		"/Users/tristanseifert/TSOS/kern/x86_pc/multiboot.h",
 		"/Users/tristanseifert/MosquitOS/kern/sys/system.c",
 		"/Users/tristanseifert/MosquitOS/kern/sys/system.h",
 		"/Users/tristanseifert/MosquitOS/kern/sys/paging.c",
 		"/Users/tristanseifert/MosquitOS/kern/Makefile",
-		"/Users/tristanseifert/TSOS/kern/x86_pc/binfmt_elf.h",
 		"/Users/tristanseifert/MosquitOS/kern/runtime/error_handler.c",
 		"/Users/tristanseifert/MosquitOS/kern/runtime/error_handler.h",
 		"/Users/tristanseifert/MosquitOS/kern/sys/irq.h",
@@ -260,10 +374,8 @@
 		"/Users/tristanseifert/TSOS/kern/paging/Makefile",
 		"/Users/tristanseifert/MosquitOS/kern/runtime/panic.c",
 		"/Users/tristanseifert/MosquitOS/kern/runtime/panic.h",
-		"/Users/tristanseifert/TSOS/kern/kern.ld",
 		"/Users/tristanseifert/MosquitOS/kern/sys/paging.h",
 		"/Users/tristanseifert/MosquitOS/kern/io/io.h",
-		"/Users/tristanseifert/TSOS/kern/includes/types.h",
 		"/Users/tristanseifert/TSOS/kern/console/printf.c",
 		"/Users/tristanseifert/TSOS/kern/runtime/std.h",
 		"/Users/tristanseifert/TSOS/kern/console/console.h",
@@ -280,7 +392,6 @@
 		"/Users/tristanseifert/TSOS/kern/main.asm",
 		"/Users/tristanseifert/TSOS/kernel.ld",
 		"/Volumes/TSOS/BOOT/GRUB/GRUB.CFG",
-		"/Users/tristanseifert/TSOS/build.sh",
 		"/Users/tristanseifert/MosquitOS/build.sh",
 		"/Users/tristanseifert/TSOS/out/kernel.lst",
 		"/Users/tristanseifert/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
@@ -336,18 +447,7 @@
 		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/author.js",
 		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/author.css",
 		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/author.html",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/main.js",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/main.css",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/index.html",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/article.html",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/bootstrap-theme.css",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/bootstrap.css",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/bootstrap.min.css",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/bootstrap.css.map",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/jquery.cookie.js",
-		"/Users/tristanseifert/Downloads/fancyapps-fancyBox-18d1712/source/helpers/jquery.fancybox-thumbs.js",
-		"/Users/tristanseifert/Downloads/fancyapps-fancyBox-18d1712/source/helpers/jquery.fancybox-buttons.js",
-		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/css/fancybox.css"
+		"/Users/tristanseifert/NEWSPAPERIEREN/New Website/js/main.js"
 	],
 	"find":
 	{
@@ -355,7 +455,7 @@
 	},
 	"find_in_files":
 	{
-		"height": 88.0,
+		"height": 0.0,
 		"where_history":
 		[
 			"<open folders>,/Users/tristanseifert/TSOS/kern",
@@ -368,6 +468,67 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"apic_virt_addr",
+			"   ",
+			"irq_du",
+			"irq_0",
+			"irq0",
+			"pic_enabled",
+			"irq_",
+			"irq",
+			"irq_",
+			"interrupt",
+			"byte_from_device",
+			"irq_eoi",
+			"x86_pc_init_multiboot",
+			"i8042_irq_port1",
+			"kI8042StateReady",
+			"device.device_info",
+			"->device.device_info",
+			"device->device.device_info",
+			"ps2_kbd_init",
+			"ps2_kbd_byte_received",
+			"bus_",
+			"kern_timer_tick",
+			"i8042_irq_port1",
+			"irq_register_handler",
+			"\n			ps2_kbd_debug_modifiers();",
+			"ps2_kbd_debug_modifiers",
+			"irq_count",
+			"get_update_in_progress_flag",
+			"get_RTC_register",
+			"unsigned char",
+			"      ",
+			"match",
+			"0xFF",
+			"wait_input",
+			"i8042_irq_port1",
+			"dev->sendqueue_bytes",
+			"dev->",
+			"i8042_send_byte",
+			"i8042_send",
+			"ps2_kbd_special_key_down",
+			"identify res",
+			"identify",
+			"idt_flush_cache",
+			"irq_unmask",
+			"i8042_irq_port1",
+			"i8259_remap",
+			"i8042_flush_send_queue",
+			"kern_timer_register_handler",
+			"i8042_send_byte",
+			"->device",
+			"device",
+			"dual-po",
+			"connected",
+			"i8042_wait_input_buffer()",
+			"i8042_send_byte",
+			"i8042_send_byte_sync",
+			"i8042_send_byte",
+			"i8042_read_byte_polling",
+			"i8042_read_byte",
+			"bee",
+			"asm_irq_handlers",
 			"i8259_",
 			"x86_pc_init_timer",
 			"    ",
@@ -434,68 +595,7 @@
 			"dw",
 			"flush_gdt",
 			"''",
-			"elf",
-			"row",
-			"data-orig",
-			"JV",
-			"check",
-			"  ",
-			"post_get_markup",
-			"date",
-			"posts",
-			"CKEDITOR.dialog.add",
-			"icons:",
-			"youtube",
-			"indent",
-			"widget",
-			"indent",
-			"image_box",
-			".parts",
-			"imageURL",
-			"nulla",
-			"Image ID",
-			"updateDates",
-			"z-index",
-			"z",
-			"    ",
-			"class",
-			"    ",
-			"pickImage",
-			"    ",
-			"widget",
-			"\\\"",
-			"'",
-			"\"",
-			"Upload",
-			"  ",
-			"    ",
-			"jpeg_quality",
-			"browser_container",
-			"    ",
-			"request",
-			"6",
-			"content",
-			"    ",
-			"download",
-			"chmod",
-			"create_scaled_image",
-			"chmod",
-			"image_mode",
-			"umask",
-			"create_scaled",
-			"gd_create_scaled",
-			"image_mode",
-			"gd_create_scaled_image",
-			"image_library",
-			"gd_create_scaled_image",
-			"$write_func",
-			"$file_path",
-			"		list($file_path, $new_file_path) =\n			$this->get_scaled_image_file_paths($file_name, $version);",
-			"scaled",
-			"set_additional_file_properties",
-			"deleteURl",
-			"get_scaled_image",
-			"get_scaled_image_file_paths"
+			"elf"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -503,6 +603,17 @@
 		"regex": false,
 		"replace_history":
 		[
+			"lapic_virt_addr",
+			"	",
+			"   ",
+			"",
+			"rtc_update_in_progress",
+			"rtc_read_reg",
+			"uint8_t",
+			"	",
+			"i8042_send_byte",
+			"i8042_send_byte_sync",
+			"i8042_read_byte_polling",
 			"	",
 			"kern_tss_gdt_entry.",
 			"entry->",
@@ -576,18 +687,18 @@
 			[
 				{
 					"buffer": 0,
-					"file": "x86_pc/x86_pc.c",
+					"file": "x86_pc/apic.c",
 					"settings":
 					{
-						"buffer_size": 4586,
+						"buffer_size": 2526,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3544,
-								3550
+								1688,
+								1688
 							]
 						],
 						"settings":
@@ -596,25 +707,25 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 1163.0,
+						"translation.y": 268.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "x86_pc/x86_pc.h",
+					"file": "x86_pc/apic.h",
 					"settings":
 					{
-						"buffer_size": 474,
+						"buffer_size": 67,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								153,
-								153
+								51,
+								60
 							]
 						],
 						"settings":
@@ -629,77 +740,22 @@
 				},
 				{
 					"buffer": 2,
-					"file": "x86_pc/multiboot.h",
+					"file": "x86_pc/interrupts.c",
 					"settings":
 					{
-						"buffer_size": 4577,
+						"buffer_size": 2521,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3959,
-								3969
+								926,
+								926
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "x86_pc/isr.s",
-					"settings":
-					{
-						"buffer_size": 6276,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1200,
-								1250
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/R/R.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 743.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "x86_pc/8254_pit.c",
-					"settings":
-					{
-						"buffer_size": 745,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								548,
-								554
-							]
-						],
-						"settings":
-						{
-							"auto_name": "",
 							"syntax": "Packages/C++/C.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
@@ -710,19 +766,72 @@
 					"type": "text"
 				},
 				{
-					"buffer": 5,
-					"file": "x86_pc/8254_pit.h",
+					"buffer": 3,
+					"file": "x86_pc/interrupts.h",
 					"settings":
 					{
-						"buffer_size": 246,
+						"buffer_size": 269,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								246,
-								246
+								17,
+								17
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "x86_pc/x86_pc.c",
+					"settings":
+					{
+						"buffer_size": 5981,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5613,
+								5629
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2172.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "x86_pc/x86_pc.h",
+					"settings":
+					{
+						"buffer_size": 508,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								499,
+								468
 							]
 						],
 						"settings":
@@ -737,18 +846,18 @@
 				},
 				{
 					"buffer": 6,
-					"file": "x86_pc/interrupts.c",
+					"file": "x86_pc/tss.c",
 					"settings":
 					{
-						"buffer_size": 2774,
+						"buffer_size": 1266,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1447,
-								1453
+								179,
+								179
 							]
 						],
 						"settings":
@@ -757,33 +866,62 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 358.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 7,
-					"file": "x86_pc/interrupts.h",
+					"file": "x86_pc/tss.h",
 					"settings":
 					{
-						"buffer_size": 201,
+						"buffer_size": 849,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								201,
-								144
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.tmLanguage"
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "x86_pc/8042_ps2.c",
+					"settings":
+					{
+						"buffer_size": 15021,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1354,
+								1354
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"translate_tabs_to_spaces": false,
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 688.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -826,6 +964,10 @@
 	{
 		"height": 113.0
 	},
+	"output.unsaved_changes":
+	{
+		"height": 98.0
+	},
 	"replace":
 	{
 		"height": 64.0
@@ -851,6 +993,6 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 150.0,
+	"side_bar_width": 151.0,
 	"status_bar_visible": true
 }
